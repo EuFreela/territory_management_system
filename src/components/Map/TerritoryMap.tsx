@@ -9,6 +9,7 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 import { IconCheck, IconLock, IconPencil, IconTag, IconTrash, IconUndo } from './mapIcons';
 
 export type LatLng = [number, number];
@@ -68,6 +69,42 @@ function centroid(points: LatLng[]): LatLng {
     [0, 0] as LatLng,
   );
   return [sum[0] / points.length, sum[1] / points.length];
+}
+
+/** Normaliza rótulos: "Quadra 1", "quadra1", "Q1", "1" → comparáveis */
+export function normalizeAreaKey(text: string) {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/quadra\s*/gi, '')
+    .replace(/^q(?=\d)/, '') // Q1 → 1
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+export function areaMatchesBlock(areaLabel: string, blockName: string) {
+  const a = normalizeAreaKey(areaLabel || '');
+  const b = normalizeAreaKey(blockName || '');
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+export function findAreaForBlock(areas: MapArea[], blockName: string) {
+  if (!blockName?.trim() || areas.length === 0) return null;
+  // 1) match exato normalizado
+  const exact = areas.find((area) => {
+    const a = normalizeAreaKey(area.label);
+    const b = normalizeAreaKey(blockName);
+    return a && b && a === b;
+  });
+  if (exact) return exact;
+  // 2) match parcial (Quadra 1 ↔ 1, etc.)
+  return areas.find((area) => areaMatchesBlock(area.label, blockName)) ?? null;
+}
+
+export function findBlockForArea<T extends { name: string }>(blocks: T[], areaLabel: string) {
+  return blocks.find((block) => areaMatchesBlock(areaLabel, block.name)) ?? null;
 }
 
 /** Converte GeoJSON (Feature, FeatureCollection ou Polygon) → áreas com rótulo */
@@ -167,6 +204,38 @@ function MapClickDraw({
   return null;
 }
 
+/** Zoom com scroll só com o mouse em cima do mapa (evita “roubar” o scroll da página) */
+function ScrollWheelOnHover({ enabled }: { enabled: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (enabled) {
+      map.scrollWheelZoom.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+    }
+  }, [enabled, map]);
+  return null;
+}
+
+/** Enquadra a área selecionada (quando vem do card ou clique) */
+function FocusOnSelected({
+  area,
+  focusToken,
+}: {
+  area: MapArea | null;
+  focusToken: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!area || area.points.length < 2 || focusToken <= 0) return;
+    const bounds = L.latLngBounds(area.points.map(([lat, lng]) => L.latLng(lat, lng)));
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 18, animate: true });
+  }, [area, focusToken, map]);
+
+  return null;
+}
+
 function InitialMapView({
   centerLat,
   centerLng,
@@ -201,11 +270,80 @@ function InitialMapView({
   return null;
 }
 
-function AreaLabelMarker({ position, label }: { position: LatLng; label: string }) {
+function AreaLabelMarker({
+  position,
+  label,
+  selected = false,
+}: {
+  position: LatLng;
+  label: string;
+  selected?: boolean;
+}) {
   const text = (label || '?').trim() || '?';
 
   const icon = useMemo(() => {
-    // Largura aproximada para o Leaflet posicionar o âncora no centro
+    if (selected) {
+      // Balão de destaque: nome da área + legenda “Área destacada” (sempre legível)
+      const approxWidth = Math.min(280, Math.max(140, text.length * 10 + 56));
+      const height = 58;
+      return L.divIcon({
+        className: 'territorio-area-label territorio-area-selected-balloon',
+        html: `<div class="territorio-selected-balloon-root" style="
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          pointer-events:none;
+          font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+        ">
+          <div style="
+            max-width:260px;
+            padding:9px 16px 10px;
+            border-radius:16px;
+            background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);
+            color:#fff;
+            border:3px solid #fff;
+            text-align:center;
+            line-height:1.15;
+            box-shadow:0 6px 20px rgba(3,105,161,0.55), 0 0 0 3px rgba(14,165,233,0.35);
+          ">
+            <div style="
+              font-size:10px;
+              font-weight:800;
+              letter-spacing:0.08em;
+              text-transform:uppercase;
+              opacity:0.95;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              gap:4px;
+            ">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:9999px;background:#7dd3fc;box-shadow:0 0 0 2px rgba(125,211,252,0.4);"></span>
+              Área destacada
+            </div>
+            <div style="
+              margin-top:3px;
+              font-size:16px;
+              font-weight:800;
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+              max-width:230px;
+            ">${escapeHtml(text)}</div>
+          </div>
+          <div style="
+            width:0;height:0;
+            border-left:11px solid transparent;
+            border-right:11px solid transparent;
+            border-top:13px solid #0369a1;
+            margin-top:-1px;
+            filter:drop-shadow(0 2px 2px rgba(3,105,161,0.3));
+          "></div>
+        </div>`,
+        iconSize: [approxWidth, height + 14],
+        iconAnchor: [approxWidth / 2, height + 14],
+      });
+    }
+
     const approxWidth = Math.min(220, Math.max(36, text.length * 8.5 + 28));
     const height = 28;
 
@@ -235,9 +373,9 @@ function AreaLabelMarker({ position, label }: { position: LatLng; label: string 
       iconSize: [approxWidth, height],
       iconAnchor: [approxWidth / 2, height / 2],
     });
-  }, [text]);
+  }, [text, selected]);
 
-  return <Marker position={position} icon={icon} interactive={false} />;
+  return <Marker position={position} icon={icon} interactive={false} zIndexOffset={selected ? 1200 : 0} />;
 }
 
 function escapeHtml(text: string) {
@@ -295,6 +433,12 @@ type TerritoryMapProps = {
   cepLabel?: string | null;
   editable?: boolean;
   heightClass?: string;
+  /** Seleção externa (ex.: nome da quadra / rótulo da área) */
+  selectedKey?: string | null;
+  /** Incrementar para reenquadrar a área selecionada no mapa */
+  focusToken?: number;
+  /** Clique em um polígono (modo leitura ou edição) */
+  onAreaSelect?: (area: { id: string; label: string }) => void;
 };
 
 export default function TerritoryMap({
@@ -305,13 +449,18 @@ export default function TerritoryMap({
   cepLabel,
   editable = true,
   heightClass = 'h-[28rem]',
+  selectedKey = null,
+  focusToken = 0,
+  onAreaSelect,
 }: TerritoryMapProps) {
+  const confirm = useConfirm();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
   const [draftPoints, setDraftPoints] = useState<LatLng[]>([]);
   /** false = mapa travado (só navegar); true = desenhar */
   const [drawMode, setDrawMode] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [seedGeoJson, setSeedGeoJson] = useState<string | null>(() => value ?? null);
+  const [mapHovered, setMapHovered] = useState(false);
 
   const drawingLocally = useRef(false);
   const seededFromServer = useRef(Boolean(value && parseGeoJsonToAreas(value).length > 0));
@@ -323,9 +472,35 @@ export default function TerritoryMap({
       setAreas(parsed);
       setSeedGeoJson(value ?? null);
       seededFromServer.current = true;
-      setSelectedId(parsed[0]?.id ?? null);
+      // Em edição: pré-seleciona a 1ª área. Em leitura: só destaca quando o usuário escolher.
+      if (editable && !selectedKey) {
+        setSelectedId(parsed[0]?.id ?? null);
+      }
     }
-  }, [value]);
+  }, [value, selectedKey, editable]);
+
+  // Seleção controlada pelo card (selectedKey) — resolvida no mesmo render (sem atraso de useEffect)
+  const selectedFromKey = useMemo(() => {
+    if (selectedKey == null || selectedKey === '') return null;
+    return (
+      findAreaForBlock(areas, selectedKey) ??
+      areas.find((a) => a.id === selectedKey) ??
+      null
+    );
+  }, [selectedKey, areas]);
+
+  // Mantém selectedId alinhado (edição de rótulo / toolbar)
+  useEffect(() => {
+    if (selectedKey == null || selectedKey === '') {
+      if (!editable) setSelectedId(null);
+      return;
+    }
+    if (selectedFromKey) {
+      setSelectedId(selectedFromKey.id);
+    } else if (!editable) {
+      setSelectedId(null);
+    }
+  }, [selectedKey, selectedFromKey, editable]);
 
   const cepCenter: LatLng | null =
     centerLat != null &&
@@ -338,8 +513,17 @@ export default function TerritoryMap({
   const mapStartCenter = cepCenter ?? DEFAULT_CENTER;
   const mapStartZoom = cepCenter ? 15 : 5;
 
-  const selected = areas.find((a) => a.id === selectedId) ?? null;
+  // Com chave externa (card NÃO EM CASA): prioriza o match do card no mesmo frame
+  const selected =
+    selectedKey != null && selectedKey !== ''
+      ? selectedFromKey
+      : (areas.find((a) => a.id === selectedId) ?? null);
   const areaReady = areas.some((a) => a.points.length >= 3);
+
+  function selectArea(area: MapArea) {
+    setSelectedId(area.id);
+    onAreaSelect?.({ id: area.id, label: area.label });
+  }
 
   function emit(nextAreas: MapArea[]) {
     drawingLocally.current = true;
@@ -394,8 +578,20 @@ export default function TerritoryMap({
     setDrawMode(false);
   }
 
-  function clearAll() {
+  async function clearAll() {
     if (!editable) return;
+    if (areas.length === 0 && draftPoints.length === 0) return;
+
+    const ok = await confirm({
+      title: 'Apagar todas as áreas',
+      message:
+        'Todas as áreas desenhadas no mapa serão removidas. Essa ação não pode ser desfeita (até você salvar de novo com novas áreas). Deseja continuar?',
+      confirmLabel: 'Apagar tudo',
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
     setDraftPoints([]);
     setSelectedId(null);
     emit([]);
@@ -408,8 +604,20 @@ export default function TerritoryMap({
     emit(next);
   }
 
-  function removeSelected() {
+  async function removeSelected() {
     if (!selectedId || !editable) return;
+
+    const label = selected?.label?.trim() || 'esta área';
+
+    const ok = await confirm({
+      title: 'Remover área selecionada',
+      message: `A área “${label}” será removida do mapa. Deseja continuar?`,
+      confirmLabel: 'Remover',
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
     const next = areas.filter((a) => a.id !== selectedId);
     emit(next);
     setSelectedId(next[0]?.id ?? null);
@@ -457,7 +665,7 @@ export default function TerritoryMap({
             title="Apagar todas as áreas"
             tone="danger"
             disabled={areas.length === 0 && draftPoints.length === 0}
-            onClick={clearAll}
+            onClick={() => void clearAll()}
           >
             <IconTrash />
           </ToolButton>
@@ -475,24 +683,96 @@ export default function TerritoryMap({
             ) : (
               <>
                 <span className="font-semibold text-slate-800">Mapa travado</span>
-                {' — zoom livre, sem desenhar. Clique no lápis para desenhar.'}
+                {' — zoom só com o mouse em cima do mapa. Clique no lápis para desenhar.'}
               </>
             )}
           </p>
         </div>
       ) : null}
 
+      {/* Nome da área — acima do mapa para não precisar rolar “através” do zoom */}
+      {editable && areas.length > 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
+            <IconTag className="h-4 w-4 text-sky-600" />
+            Nome / texto da área no mapa
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            {areas.map((area, index) => {
+              const palette = AREA_COLORS[index % AREA_COLORS.length];
+              return (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => selectArea(area)}
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                    area.id === selectedId
+                      ? 'ring-2 ring-sky-500 ring-offset-1'
+                      : 'opacity-80 hover:opacity-100'
+                  }`}
+                  style={{ backgroundColor: palette.fill, color: '#0f172a' }}
+                >
+                  {area.label || `Área ${index + 1}`}
+                </button>
+              );
+            })}
+          </div>
+
+          {selected ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                value={selected.label}
+                onChange={(e) => updateSelectedLabel(e.target.value)}
+                placeholder="Ex: 1, Quadra A, Norte…"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => void removeSelected()}
+                title="Remover área"
+                aria-label="Remover área"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
+              >
+                <IconTrash className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              Selecione uma área (chip ou clique no mapa) para nomear.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       <div
-        className={`${heightClass} w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
-          drawMode ? 'ring-2 ring-sky-400' : ''
+        className={`relative ${heightClass} w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
+          drawMode ? 'ring-2 ring-sky-400' : selected ? 'ring-2 ring-sky-300' : ''
         }`}
+        onMouseEnter={() => setMapHovered(true)}
+        onMouseLeave={() => setMapHovered(false)}
       >
+        {/* Chip flutuante: reforço visual fixo no canto (além do balão no centróide) */}
+        {selected && !drawMode ? (
+          <div className="pointer-events-none absolute left-3 top-3 z-[500] max-w-[min(100%-1.5rem,18rem)]">
+            <div className="territorio-map-selected-chip rounded-xl border-2 border-white bg-sky-600 px-3 py-2 text-white shadow-lg shadow-sky-900/35">
+              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-100">
+                <span className="territorio-map-selected-dot inline-block h-2 w-2 rounded-full bg-sky-200" />
+                Área destacada
+              </p>
+              <p className="truncate text-sm font-extrabold leading-tight">{selected.label || '—'}</p>
+            </div>
+          </div>
+        ) : null}
+
         <MapContainer
           center={mapStartCenter}
           zoom={mapStartZoom}
-          scrollWheelZoom
+          scrollWheelZoom={false}
           className="h-full w-full"
         >
+          <ScrollWheelOnHover enabled={mapHovered} />
+          <FocusOnSelected area={selected} focusToken={focusToken} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -510,22 +790,27 @@ export default function TerritoryMap({
 
           {areas.map((area, index) => {
             const palette = AREA_COLORS[index % AREA_COLORS.length];
-            const isSelected = area.id === selectedId;
+            const isSelected = selected != null && area.id === selected.id;
+            // Com seleção ativa: área escolhida em destaque forte; demais “somem” (cinza tracejado)
+            const dimOthers = Boolean(selected) && !isSelected;
             return (
               <Polygon
                 key={area.id}
                 positions={area.points}
                 pathOptions={{
-                  color: isSelected ? '#0369a1' : palette.color,
-                  fillColor: palette.fill,
-                  fillOpacity: isSelected ? 0.5 : 0.35,
-                  weight: isSelected ? 4 : 3,
+                  color: isSelected ? '#0369a1' : dimOthers ? '#94a3b8' : palette.color,
+                  fillColor: isSelected ? '#0ea5e9' : dimOthers ? '#cbd5e1' : palette.fill,
+                  fillOpacity: isSelected ? 0.62 : dimOthers ? 0.12 : 0.35,
+                  weight: isSelected ? 6 : dimOthers ? 1.5 : 3,
+                  opacity: isSelected ? 1 : dimOthers ? 0.45 : 0.9,
+                  dashArray: isSelected ? undefined : dimOthers ? '5 7' : undefined,
+                  className: isSelected ? 'territorio-polygon-selected' : dimOthers ? 'territorio-polygon-dim' : undefined,
                 }}
                 eventHandlers={{
                   click: (e) => {
                     if (drawMode) return;
                     L.DomEvent.stopPropagation(e);
-                    setSelectedId(area.id);
+                    selectArea(area);
                   },
                 }}
               />
@@ -538,6 +823,7 @@ export default function TerritoryMap({
                 key={`label-${area.id}`}
                 position={centroid(area.points)}
                 label={area.label || '?'}
+                selected={selected != null && area.id === selected.id}
               />
             ) : null,
           )}
@@ -573,59 +859,6 @@ export default function TerritoryMap({
           <MapClickDraw enabled={editable && drawMode} onAdd={addPoint} />
         </MapContainer>
       </div>
-
-      {/* Nome / texto de cada área */}
-      {editable && areas.length > 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
-            <IconTag className="h-4 w-4 text-sky-600" />
-            Nome / texto da área no mapa
-          </div>
-
-          <div className="mb-3 flex flex-wrap gap-2">
-            {areas.map((area, index) => {
-              const palette = AREA_COLORS[index % AREA_COLORS.length];
-              return (
-                <button
-                  key={area.id}
-                  type="button"
-                  onClick={() => setSelectedId(area.id)}
-                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                    area.id === selectedId
-                      ? 'ring-2 ring-sky-500 ring-offset-1'
-                      : 'opacity-80 hover:opacity-100'
-                  }`}
-                  style={{ backgroundColor: palette.fill, color: '#0f172a' }}
-                >
-                  {area.label || `Área ${index + 1}`}
-                </button>
-              );
-            })}
-          </div>
-
-          {selected ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <input
-                value={selected.label}
-                onChange={(e) => updateSelectedLabel(e.target.value)}
-                placeholder="Ex: 1, Quadra A, Norte…"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={removeSelected}
-                title="Remover área"
-                aria-label="Remover área"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
-              >
-                <IconTrash className="h-5 w-5" />
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">Selecione uma área (clique no mapa ou no chip) para nomear.</p>
-          )}
-        </div>
-      ) : null}
 
       {editable ? (
         <p className={`text-sm font-medium ${areaReady ? 'text-emerald-700' : 'text-amber-700'}`}>

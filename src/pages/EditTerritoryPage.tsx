@@ -1,8 +1,13 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { IconArrowLeft, IconPlus, IconSave, IconTrash } from '@/components/Map/mapIcons';
-import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
+import { IconArrowLeft, IconPlus, IconSave, IconTrash, IconX } from '@/components/Map/mapIcons';
+import TerritoryMap, {
+  areaMatchesBlock,
+  hasValidMapArea,
+  parseGeoJsonToAreas,
+} from '@/components/Map/TerritoryMap';
 import { useConfirm } from '@/components/ui/ConfirmModal';
+import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
 import { api } from '@/lib/api';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
@@ -18,11 +23,16 @@ export default function EditTerritoryPage() {
   const [blockName, setBlockName] = useState('');
   const [streetName, setStreetName] = useState('');
   const [houseNumbers, setHouseNumbers] = useState('');
+  /** null = novo registro; number = editando esse block */
+  const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [blockError, setBlockError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingBlock, setAddingBlock] = useState(false);
+  /** Destaque mapa ↔ card de não em casa */
+  const [mapSelectedKey, setMapSelectedKey] = useState<string | null>(null);
+  const [mapFocusToken, setMapFocusToken] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +48,52 @@ export default function EditTerritoryPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Abre direto na seção NÃO EM CASA quando vem de "Gerenciar não em casa" (#nao-em-casa)
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === 'undefined') return;
+    if (window.location.hash !== '#nao-em-casa') return;
+
+    const scrollToSection = () => {
+      const el = document.getElementById('nao-em-casa');
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const firstField = el.querySelector<HTMLElement>('select, input');
+      firstField?.focus({ preventScroll: true });
+    };
+
+    // espera o mapa/layout renderizar para não “voltar” para o topo
+    const t1 = window.setTimeout(scrollToSection, 80);
+    const t2 = window.setTimeout(scrollToSection, 350);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [loading, id]);
+
+  /** Nomes das áreas desenhadas no mapa (fonte do select de quadra) */
+  const mapQuadraOptions = useMemo(() => {
+    const areas = parseGeoJsonToAreas(geojson);
+    const labels = areas
+      .map((a) => a.label.trim())
+      .filter(Boolean);
+    // únicos, mantendo ordem
+    return [...new Set(labels)];
+  }, [geojson]);
+
+  /** No cadastro novo: só quadras ainda sem registro de não em casa */
+  const selectableQuadraOptions = useMemo(() => {
+    if (editingBlockId != null) {
+      // em edição: todas as do mapa + a atual (se não estiver no mapa por legado)
+      const current = blockName.trim();
+      const set = new Set(mapQuadraOptions);
+      if (current) set.add(current);
+      return [...set];
+    }
+    const used = new Set(blocks.map((b) => b.name.trim().toLowerCase()));
+    return mapQuadraOptions.filter((label) => !used.has(label.toLowerCase()));
+  }, [mapQuadraOptions, blocks, editingBlockId, blockName]);
 
   async function saveTerritory(event: FormEvent) {
     event.preventDefault();
@@ -67,7 +123,53 @@ export default function EditTerritoryPage() {
     }
   }
 
-  async function addBlock(event: FormEvent) {
+  function clearBlockForm() {
+    setEditingBlockId(null);
+    setBlockName('');
+    setStreetName('');
+    setHouseNumbers('');
+    setBlockError('');
+    setMapSelectedKey(null);
+  }
+
+  function loadBlockForEdit(block: Block) {
+    const name = (block.name ?? '').trim();
+    setEditingBlockId(block.id);
+    setBlockName(name);
+    setStreetName(block.street_name ?? '');
+    setHouseNumbers((block.house_numbers ?? []).join(', '));
+    setBlockError('');
+    // Destaca a quadra correspondente no mapa
+    setMapSelectedKey(name || null);
+    setMapFocusToken((n) => n + 1);
+    // sobe até o mapa para ver o destaque, depois o formulário permanece abaixo
+    window.setTimeout(() => {
+      document.getElementById('territorio-mapa-edit')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  }
+
+  /** Clique na área do mapa → destaca / prepara formulário (sem rolar para não em casa) */
+  function onMapAreaSelect(area: { id: string; label: string }) {
+    setMapSelectedKey(area.label);
+    setMapFocusToken((n) => n + 1);
+    // se já existe card com esse nome, carrega para edição (usuário permanece no mapa)
+    const match = blocks.find(
+      (b) => b.name.trim().toLowerCase() === area.label.trim().toLowerCase(),
+    );
+    if (match) {
+      setEditingBlockId(match.id);
+      setBlockName(match.name ?? '');
+      setStreetName(match.street_name ?? '');
+      setHouseNumbers((match.house_numbers ?? []).join(', '));
+      setBlockError('');
+    } else {
+      // pré-preenche a quadra no formulário novo
+      setEditingBlockId(null);
+      setBlockName(area.label);
+    }
+  }
+
+  async function saveBlock(event: FormEvent) {
     event.preventDefault();
     if (!id) return;
 
@@ -76,30 +178,51 @@ export default function EditTerritoryPage() {
       .map((v) => v.trim())
       .filter(Boolean);
 
-    if (!blockName.trim() || !streetName.trim() || numbers.length === 0) {
-      setBlockError('Preencha número da quadra, nome da rua e ao menos uma casa.');
+    if (!blockName.trim()) {
+      setBlockError('Selecione a quadra desenhada no mapa.');
+      return;
+    }
+    if (mapQuadraOptions.length === 0) {
+      setBlockError('Desenhe e salve as áreas no mapa antes de cadastrar não em casa.');
+      return;
+    }
+    if (!streetName.trim() || numbers.length === 0) {
+      setBlockError('Preencha o nome da rua e ao menos uma casa.');
       return;
     }
 
     setAddingBlock(true);
     setBlockError('');
 
+    const payload = {
+      name: blockName.trim(),
+      street_name: streetName.trim(),
+      house_numbers: numbers,
+    };
+
     try {
-      await api(`/api/territories/${id}/blocks`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: blockName.trim(),
-          street_name: streetName.trim(),
-          house_numbers: numbers,
-        }),
-      });
+      if (editingBlockId != null) {
+        await api(`/api/territories/${id}/blocks/${editingBlockId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await api(`/api/territories/${id}/blocks`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
       const refreshed = await api<Territory>(`/api/territories/${id}`);
       setBlocks(refreshed.blocks ?? []);
-      setBlockName('');
-      setStreetName('');
-      setHouseNumbers('');
+      clearBlockForm();
     } catch (err) {
-      setBlockError(err instanceof Error ? err.message : 'Erro ao adicionar não em casa.');
+      setBlockError(
+        err instanceof Error
+          ? err.message
+          : editingBlockId != null
+            ? 'Erro ao atualizar não em casa.'
+            : 'Erro ao adicionar não em casa.',
+      );
     } finally {
       setAddingBlock(false);
     }
@@ -118,6 +241,7 @@ export default function EditTerritoryPage() {
     try {
       await api(`/api/territories/${id}/blocks/${blockId}`, { method: 'DELETE' });
       setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      if (editingBlockId === blockId) clearBlockForm();
     } catch (err) {
       setBlockError(err instanceof Error ? err.message : 'Erro ao remover.');
     }
@@ -130,6 +254,7 @@ export default function EditTerritoryPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
+        {/* 1. Localidade + mapa */}
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <Link
             to={`/territories/${id}`}
@@ -141,10 +266,11 @@ export default function EditTerritoryPage() {
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Editar cartão de território</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Ajuste a localidade e redesenhe a área no mapa se necessário. Ao salvar, grava só esta área.
+            Ajuste localidade e áreas no mapa. Em seguida gerencie o <strong>não em casa</strong>. O
+            botão de salvar fica no final da página.
           </p>
 
-          <form onSubmit={saveTerritory} className="mt-6 space-y-5">
+          <form id="territory-form" onSubmit={saveTerritory} className="mt-6 space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Localidade</label>
@@ -174,8 +300,11 @@ export default function EditTerritoryPage() {
               </div>
             ) : null}
 
-            <div>
+            <div id="territorio-mapa-edit" className="scroll-mt-6">
               <label className="mb-2 block text-sm font-medium text-slate-700">Área do território no mapa</label>
+              <p className="mb-2 text-xs text-slate-500">
+                Clique no card de não em casa abaixo para destacar a quadra no mapa (e o contrário).
+              </p>
               <TerritoryMap
                 value={geojson}
                 onChange={setGeojson}
@@ -183,24 +312,21 @@ export default function EditTerritoryPage() {
                 centerLng={mapConfig?.lng ?? null}
                 cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
                 editable
+                selectedKey={mapSelectedKey}
+                focusToken={mapFocusToken}
+                onAreaSelect={onMapAreaSelect}
               />
             </div>
 
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <button
-              type="submit"
-              disabled={saving}
-              title={saving ? 'Salvando…' : 'Salvar localidade e área'}
-              aria-label={saving ? 'Salvando…' : 'Salvar localidade e área'}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-700 disabled:opacity-70"
-            >
-              <IconSave className="h-6 w-6" />
-            </button>
           </form>
         </div>
 
-        <div className="rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm">
+        {/* 2. Não em casa (meio da página) */}
+        <div
+          id="nao-em-casa"
+          className="scroll-mt-6 rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm"
+        >
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold tracking-wide text-amber-900">NÃO EM CASA</h2>
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -208,23 +334,75 @@ export default function EditTerritoryPage() {
             </span>
           </div>
           <p className="mb-4 text-sm text-slate-600">
-            Registre a <strong>quadra</strong>, a <strong>rua</strong> e os <strong>números das casas</strong>{' '}
-            onde não havia ninguém em casa.
+            A <strong>quadra</strong> deve ser a mesma desenhada no mapa. Escolha no select, informe a{' '}
+            <strong>rua</strong> e os <strong>números</strong>. Clique em um card para editar e destacar a
+            área no mapa.
           </p>
 
-          <form onSubmit={addBlock} className="mb-6 space-y-3">
+          {mapQuadraOptions.length === 0 ? (
+            <div className="mb-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Nenhuma área no mapa ainda. Desenhe as quadras no mapa (acima), salve a localidade e área, e
+              depois cadastre o não em casa.
+            </div>
+          ) : null}
+
+          <form
+            id="nao-em-casa-form"
+            onSubmit={saveBlock}
+            className={`mb-6 space-y-3 rounded-xl border p-4 ${
+              editingBlockId != null
+                ? 'border-sky-300 bg-sky-50/50'
+                : 'border-transparent bg-transparent p-0'
+            }`}
+          >
+            {editingBlockId != null ? (
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-sky-800">
+                  Editando quadra · {blockName || editingBlockId}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearBlockForm}
+                  title="Cancelar edição"
+                  aria-label="Cancelar edição"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <IconX className="h-3.5 w-3.5" />
+                  Nova entrada
+                </button>
+              </div>
+            ) : null}
+
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-                  N.º da quadra
+                <label
+                  htmlFor="block-quadra-select"
+                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500"
+                >
+                  Quadra (mapa)
                 </label>
-                <input
+                <select
+                  id="block-quadra-select"
                   value={blockName}
                   onChange={(event) => setBlockName(event.target.value)}
-                  placeholder="Ex: 1, 2, A…"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                   required
-                />
+                  disabled={mapQuadraOptions.length === 0 && !blockName}
+                >
+                  <option value="">
+                    {mapQuadraOptions.length === 0
+                      ? 'Nenhuma quadra no mapa'
+                      : 'Selecione a quadra…'}
+                  </option>
+                  {selectableQuadraOptions.map((label) => (
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">
+                  Mesmo nome/número da área desenhada no mapa.
+                </p>
               </div>
               <div className="md:col-span-2">
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -234,7 +412,7 @@ export default function EditTerritoryPage() {
                   value={streetName}
                   onChange={(event) => setStreetName(event.target.value)}
                   placeholder="Ex: Rua Bahia, Av. da Saudade…"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                   required
                 />
               </div>
@@ -248,23 +426,62 @@ export default function EditTerritoryPage() {
                 value={houseNumbers}
                 onChange={(event) => setHouseNumbers(event.target.value)}
                 placeholder="Ex: 101, 103, 105, 210"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
                 required
               />
-              <p className="mt-1 text-xs text-slate-500">Separe os números por vírgula ou espaço.</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Separe por vírgula ou espaço. Ao editar, você pode incluir ou remover números.
+              </p>
             </div>
 
             {blockError ? <p className="text-sm text-red-600">{blockError}</p> : null}
 
-            <button
-              type="submit"
-              disabled={addingBlock}
-              title={addingBlock ? 'Adicionando…' : 'Adicionar não em casa'}
-              aria-label={addingBlock ? 'Adicionando…' : 'Adicionar não em casa'}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-700 text-white shadow-sm hover:bg-amber-800 disabled:opacity-70"
-            >
-              <IconPlus className="h-6 w-6" />
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="submit"
+                disabled={
+                  addingBlock ||
+                  (mapQuadraOptions.length === 0 && editingBlockId == null) ||
+                  selectableQuadraOptions.length === 0
+                }
+                title={
+                  addingBlock
+                    ? 'Salvando…'
+                    : editingBlockId != null
+                      ? 'Salvar alterações'
+                      : 'Adicionar não em casa'
+                }
+                aria-label={
+                  editingBlockId != null ? 'Salvar alterações' : 'Adicionar não em casa'
+                }
+                className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold text-white shadow-sm disabled:opacity-70 ${
+                  editingBlockId != null
+                    ? 'bg-sky-600 hover:bg-sky-700'
+                    : 'bg-amber-700 hover:bg-amber-800'
+                }`}
+              >
+                {editingBlockId != null ? (
+                  <>
+                    <IconSave className="h-5 w-5" />
+                    <span className="text-sm">Salvar edição</span>
+                  </>
+                ) : (
+                  <>
+                    <IconPlus className="h-5 w-5" />
+                    <span className="text-sm">Adicionar</span>
+                  </>
+                )}
+              </button>
+              {editingBlockId != null ? (
+                <button
+                  type="button"
+                  onClick={clearBlockForm}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+              ) : null}
+            </div>
           </form>
 
           <div className="space-y-3">
@@ -273,24 +490,50 @@ export default function EditTerritoryPage() {
               const done = completed.filter((h) => block.house_numbers.includes(h)).length;
               const total = block.house_numbers.length;
               const finished = total > 0 && done >= total;
+              const isEditing = editingBlockId === block.id;
+              const onMap =
+                mapSelectedKey != null &&
+                (mapSelectedKey.trim().toLowerCase() === block.name.trim().toLowerCase() ||
+                  areaMatchesBlock(mapSelectedKey, block.name));
               return (
                 <div
                   key={block.id}
-                  className={`flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4 ${
-                    finished
-                      ? 'border-slate-200 bg-slate-100/80 opacity-75'
-                      : 'border-amber-200 bg-amber-50'
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => loadBlockForEdit(block)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      loadBlockForEdit(block);
+                    }
+                  }}
+                  className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-xl border p-4 text-left transition hover:shadow-md ${
+                    isEditing || onMap
+                      ? 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
+                      : finished
+                        ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
+                        : 'border-amber-200 bg-amber-50 hover:border-amber-300'
                   }`}
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p
                         className={`text-xs font-medium uppercase tracking-wide ${
-                          finished ? 'text-slate-500' : 'text-amber-800'
+                          finished && !isEditing ? 'text-slate-500' : 'text-amber-800'
                         }`}
                       >
-                        Quadra
+                        Quadra · clique para destacar no mapa
                       </p>
+                      {isEditing ? (
+                        <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                          Em edição
+                        </span>
+                      ) : null}
+                      {onMap && !isEditing ? (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
+                          No mapa
+                        </span>
+                      ) : null}
                       {finished ? (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
                           Finalizado
@@ -303,7 +546,7 @@ export default function EditTerritoryPage() {
                     </div>
                     <p
                       className={`text-2xl font-bold ${
-                        finished ? 'text-slate-500' : 'text-slate-900'
+                        finished && !isEditing ? 'text-slate-500' : 'text-slate-900'
                       }`}
                     >
                       {block.name}
@@ -333,13 +576,13 @@ export default function EditTerritoryPage() {
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Marque os feitos no cartão do território (checklist).
-                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => void removeBlock(block.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void removeBlock(block.id);
+                    }}
                     title="Remover"
                     aria-label="Remover"
                     className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
@@ -354,6 +597,16 @@ export default function EditTerritoryPage() {
             ) : null}
           </div>
         </div>
+
+        {/* 3. Salvar por último (localidade + áreas do mapa) */}
+        <SaveActionBar hint="Grava localidade, Terr. N.º e áreas do mapa. Os registros de não em casa já são salvos ao adicionar/editar cada quadra.">
+          <SaveButton
+            form="territory-form"
+            loading={saving}
+            label="Salvar localidade e área"
+            loadingLabel="Salvando…"
+          />
+        </SaveActionBar>
       </div>
     </main>
   );

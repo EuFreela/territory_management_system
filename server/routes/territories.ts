@@ -359,6 +359,55 @@ router.post('/:id/blocks', requireAuth, async (req, res) => {
   });
 });
 
+/** Atualiza quadra / rua / números (edição do formulário) */
+router.put('/:id/blocks/:blockId', requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const { id, blockId } = req.params;
+
+  const parsed = blockSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+    return;
+  }
+
+  const { name, street_name, house_numbers, sort_order } = parsed.data;
+  const houses = house_numbers.map(String);
+
+  const [rows] = await pool.execute(
+    `SELECT b.* FROM blocks b
+     INNER JOIN territories t ON t.id = b.territory_id
+     WHERE b.id = ? AND b.territory_id = ? AND t.user_id = ?`,
+    [blockId, id, user.id],
+  );
+  const list = rows as Array<Record<string, unknown>>;
+  const block = list[0];
+  if (!block) {
+    res.status(404).json({ error: 'Registro não encontrado.' });
+    return;
+  }
+
+  // Mantém só as casas concluídas que ainda existem na lista
+  const prevCompleted = parseHouseNumbers(block.completed_houses);
+  const completed = prevCompleted.filter((h) => houses.includes(h));
+
+  await pool.execute(
+    `UPDATE blocks
+     SET name = ?, street_name = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
+     WHERE id = ?`,
+    [
+      name.trim(),
+      street_name.trim(),
+      JSON.stringify(houses),
+      JSON.stringify(completed),
+      sort_order ?? null,
+      blockId,
+    ],
+  );
+
+  const [updatedRows] = await pool.execute('SELECT * FROM blocks WHERE id = ?', [blockId]);
+  res.json(mapBlock((updatedRows as Array<Record<string, unknown>>)[0]));
+});
+
 /** Checklist: marcar / desmarcar número de casa já trabalhado */
 router.patch('/:id/blocks/:blockId/houses', requireAuth, async (req, res) => {
   const user = (req as AuthedRequest).user;
