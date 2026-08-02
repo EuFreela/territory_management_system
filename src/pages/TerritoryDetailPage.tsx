@@ -110,7 +110,7 @@ export default function TerritoryDetailPage() {
     }
   }
 
-  /** Clique no card → destaca e foca a área da quadra no mapa */
+  /** Clique no card → destaca a área no mapa (sem rolar a página) */
   function onBlockCardSelect(block: Block) {
     const name = (block.name ?? '').trim();
     setLinkedKey(name);
@@ -125,10 +125,6 @@ export default function TerritoryDetailPage() {
         `Nenhuma área no mapa com o nome “${name}”. Confira se a quadra no mapa tem o mesmo rótulo (ex.: ${name}).`,
       );
     }
-
-    window.setTimeout(() => {
-      document.getElementById('territorio-mapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
   }
 
   async function toggleHouse(block: Block, house: string) {
@@ -287,8 +283,8 @@ export default function TerritoryDetailPage() {
               Área no mapa
             </h2>
             <p className="mb-2 text-xs text-slate-500">
-              Clique em uma área do mapa para destacá-la e marcar o card correspondente (sem sair do
-              mapa). Nos cards abaixo, o clique foca a área aqui no mapa.
+              Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
+              correspondente. A página não rola sozinha — suba ou desça quando quiser.
             </p>
             {linkedKey ? (
               <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -331,6 +327,9 @@ export default function TerritoryDetailPage() {
               selectedKey={linkedKey}
               focusToken={mapFocusToken}
               onAreaSelect={onMapAreaSelect}
+              finishedKeys={(territory.blocks ?? [])
+                .filter((b) => blockProgress(b).finished)
+                .map((b) => b.name)}
             />
             {!hasArea ? (
               <p className="mt-2 text-sm text-amber-700">
@@ -346,14 +345,22 @@ export default function TerritoryDetailPage() {
         <div id="nao-em-casa-cards" className="scroll-mt-6 rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm">
           <h2 className="mb-1 text-lg font-bold tracking-wide text-amber-900">NÃO EM CASA</h2>
           <p className="mb-4 text-sm text-slate-600">
-            Clique no card da quadra para destacar a área correspondente no mapa (cor + balão). Toque nos
-            números para marcar as casas já trabalhadas.
+            Clique no card da quadra para destacar a área no mapa (cor + balão), sem mover a página. Toque
+            nos números para marcar as casas já trabalhadas.
           </p>
           {territory.blocks && territory.blocks.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {territory.blocks.map((block) => {
                 const { done, total, finished } = blockProgress(block);
                 const linked = isBlockLinked(block);
+                // Finalizado + selecionado: mantém visual de concluído e anel de seleção
+                const cardTone = linked
+                  ? finished
+                    ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 shadow-md shadow-sky-200/50 opacity-100'
+                    : 'border-sky-500 bg-sky-50 ring-2 ring-sky-400 shadow-md shadow-sky-200/60'
+                  : finished
+                    ? 'border-slate-200 bg-slate-100/80 opacity-70 hover:opacity-100'
+                    : 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:shadow-md';
                 return (
                   <div
                     key={block.id}
@@ -367,26 +374,21 @@ export default function TerritoryDetailPage() {
                         onBlockCardSelect(block);
                       }
                     }}
-                    className={`cursor-pointer rounded-xl border p-4 shadow-sm transition scroll-mt-6 ${
-                      linked
-                        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-400 shadow-md shadow-sky-200/60'
-                        : finished
-                          ? 'border-slate-200 bg-slate-100/80 opacity-70 hover:opacity-100'
-                          : 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:shadow-md'
-                    }`}
+                    className={`cursor-pointer rounded-xl border p-4 shadow-sm transition scroll-mt-6 ${cardTone}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p
                           className={`text-xs font-medium uppercase tracking-wide ${
-                            linked ? 'text-sky-700' : finished ? 'text-slate-500' : 'text-amber-800'
+                            finished ? 'text-slate-500' : linked ? 'text-sky-700' : 'text-amber-800'
                           }`}
                         >
                           Quadra
+                          {finished ? ' · finalizada' : ''}
                         </p>
                         <p
                           className={`text-3xl font-bold ${
-                            finished && !linked
+                            finished
                               ? 'text-slate-500 line-through decoration-slate-400'
                               : 'text-slate-900'
                           }`}
@@ -394,28 +396,39 @@ export default function TerritoryDetailPage() {
                           {block.name}
                         </p>
                         {linked ? (
-                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          <p
+                            className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ${
+                              finished ? 'bg-sky-700' : 'bg-sky-600'
+                            }`}
+                          >
                             <span className="territorio-map-selected-dot inline-block h-1.5 w-1.5 rounded-full bg-sky-200" />
                             Destacada no mapa
                           </p>
                         ) : null}
                       </div>
-                      {finished ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
-                          <IconCheckCircle className="h-4 w-4" />
-                          Finalizado
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
-                          {done}/{total}
-                        </span>
-                      )}
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {finished ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                            <IconCheckCircle className="h-4 w-4" />
+                            Finalizado
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
+                            {done}/{total}
+                          </span>
+                        )}
+                        {linked && finished ? (
+                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-300">
+                            Selecionada
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
 
                     {block.street_name ? (
                       <p
                         className={`mt-1 text-sm font-medium ${
-                          finished && !linked ? 'text-slate-500' : 'text-slate-800'
+                          finished ? 'text-slate-500' : 'text-slate-800'
                         }`}
                       >
                         {block.street_name}

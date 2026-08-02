@@ -274,18 +274,26 @@ function AreaLabelMarker({
   position,
   label,
   selected = false,
+  finished = false,
 }: {
   position: LatLng;
   label: string;
   selected?: boolean;
+  finished?: boolean;
 }) {
   const text = (label || '?').trim() || '?';
 
   const icon = useMemo(() => {
     if (selected) {
-      // Balão de destaque: nome da área + legenda “Área destacada” (sempre legível)
-      const approxWidth = Math.min(280, Math.max(140, text.length * 10 + 56));
-      const height = 58;
+      // Selecionada: balão sólido. Finalizada usa cinza (como o card), sem trocar para ciano.
+      const title = finished ? 'Finalizada · selecionada' : 'Área destacada';
+      const bg = finished ? '#64748b' : '#0284c7';
+      const glow = finished
+        ? '0 6px 16px rgba(51,65,85,0.4), 0 0 0 3px rgba(148,163,184,0.45)'
+        : '0 6px 20px rgba(3,105,161,0.55), 0 0 0 3px rgba(14,165,233,0.35)';
+      const dot = finished ? '#cbd5e1' : '#7dd3fc';
+      const approxWidth = Math.min(300, Math.max(150, text.length * 10 + (finished ? 72 : 56)));
+      const height = finished ? 66 : 58;
       return L.divIcon({
         className: 'territorio-area-label territorio-area-selected-balloon',
         html: `<div class="territorio-selected-balloon-root" style="
@@ -296,20 +304,20 @@ function AreaLabelMarker({
           font-family:system-ui,-apple-system,Segoe UI,sans-serif;
         ">
           <div style="
-            max-width:260px;
+            max-width:280px;
             padding:9px 16px 10px;
             border-radius:16px;
-            background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);
+            background:${bg};
             color:#fff;
             border:3px solid #fff;
             text-align:center;
             line-height:1.15;
-            box-shadow:0 6px 20px rgba(3,105,161,0.55), 0 0 0 3px rgba(14,165,233,0.35);
+            box-shadow:${glow};
           ">
             <div style="
               font-size:10px;
               font-weight:800;
-              letter-spacing:0.08em;
+              letter-spacing:0.06em;
               text-transform:uppercase;
               opacity:0.95;
               display:flex;
@@ -317,8 +325,8 @@ function AreaLabelMarker({
               justify-content:center;
               gap:4px;
             ">
-              <span style="display:inline-block;width:7px;height:7px;border-radius:9999px;background:#7dd3fc;box-shadow:0 0 0 2px rgba(125,211,252,0.4);"></span>
-              Área destacada
+              <span style="display:inline-block;width:7px;height:7px;border-radius:9999px;background:${dot};"></span>
+              ${escapeHtml(title)}
             </div>
             <div style="
               margin-top:3px;
@@ -327,20 +335,58 @@ function AreaLabelMarker({
               white-space:nowrap;
               overflow:hidden;
               text-overflow:ellipsis;
-              max-width:230px;
+              max-width:250px;
             ">${escapeHtml(text)}</div>
+            ${
+              finished
+                ? `<div style="margin-top:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9;">✓ Quadra concluída</div>`
+                : ''
+            }
           </div>
           <div style="
             width:0;height:0;
             border-left:11px solid transparent;
             border-right:11px solid transparent;
-            border-top:13px solid #0369a1;
+            border-top:13px solid ${bg};
             margin-top:-1px;
-            filter:drop-shadow(0 2px 2px rgba(3,105,161,0.3));
           "></div>
         </div>`,
         iconSize: [approxWidth, height + 14],
         iconAnchor: [approxWidth / 2, height + 14],
+      });
+    }
+
+    if (finished) {
+      // Finalizada sem seleção: pill cinza (como o card)
+      const approxWidth = Math.min(240, Math.max(48, text.length * 8.5 + 40));
+      const height = 28;
+      return L.divIcon({
+        className: 'territorio-area-label',
+        html: `<div style="
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          gap:4px;
+          max-width:240px;
+          padding:5px 12px;
+          border-radius:9999px;
+          background:#f1f5f9;
+          color:#64748b;
+          border:2px solid #94a3b8;
+          font-weight:800;
+          font-size:13px;
+          line-height:1.2;
+          box-shadow:0 2px 8px rgba(15,23,42,0.18);
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          pointer-events:none;
+          font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+          text-decoration:line-through;
+          text-decoration-color:#94a3b8;
+        "><span style="font-size:12px;text-decoration:none;">✓</span>${escapeHtml(text)}</div>`,
+        iconSize: [approxWidth, height],
+        iconAnchor: [approxWidth / 2, height / 2],
       });
     }
 
@@ -373,9 +419,16 @@ function AreaLabelMarker({
       iconSize: [approxWidth, height],
       iconAnchor: [approxWidth / 2, height / 2],
     });
-  }, [text, selected]);
+  }, [text, selected, finished]);
 
-  return <Marker position={position} icon={icon} interactive={false} zIndexOffset={selected ? 1200 : 0} />;
+  return (
+    <Marker
+      position={position}
+      icon={icon}
+      interactive={false}
+      zIndexOffset={selected ? 1200 : finished ? 200 : 0}
+    />
+  );
 }
 
 function escapeHtml(text: string) {
@@ -439,7 +492,14 @@ type TerritoryMapProps = {
   focusToken?: number;
   /** Clique em um polígono (modo leitura ou edição) */
   onAreaSelect?: (area: { id: string; label: string }) => void;
+  /** Nomes de quadras finalizadas (não em casa 100%) — cor/balão no mapa */
+  finishedKeys?: string[];
 };
+
+function areaIsFinished(areaLabel: string, finishedKeys: string[]) {
+  if (!finishedKeys.length) return false;
+  return finishedKeys.some((key) => areaMatchesBlock(areaLabel, key) || areaLabel === key);
+}
 
 export default function TerritoryMap({
   value,
@@ -452,6 +512,7 @@ export default function TerritoryMap({
   selectedKey = null,
   focusToken = 0,
   onAreaSelect,
+  finishedKeys = [],
 }: TerritoryMapProps) {
   const confirm = useConfirm();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
@@ -755,13 +816,37 @@ export default function TerritoryMap({
         {/* Chip flutuante: reforço visual fixo no canto (além do balão no centróide) */}
         {selected && !drawMode ? (
           <div className="pointer-events-none absolute left-3 top-3 z-[500] max-w-[min(100%-1.5rem,18rem)]">
-            <div className="territorio-map-selected-chip rounded-xl border-2 border-white bg-sky-600 px-3 py-2 text-white shadow-lg shadow-sky-900/35">
-              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-100">
-                <span className="territorio-map-selected-dot inline-block h-2 w-2 rounded-full bg-sky-200" />
-                Área destacada
-              </p>
-              <p className="truncate text-sm font-extrabold leading-tight">{selected.label || '—'}</p>
-            </div>
+            {(() => {
+              const selectedFinished = areaIsFinished(selected.label, finishedKeys);
+              return (
+                <div
+                  className={`territorio-map-selected-chip rounded-xl border-2 border-white px-3 py-2 text-white shadow-lg ${
+                    selectedFinished
+                      ? 'bg-slate-500 shadow-slate-800/30'
+                      : 'bg-sky-600 shadow-sky-900/35'
+                  }`}
+                >
+                  <p
+                    className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                      selectedFinished ? 'text-slate-100' : 'text-sky-100'
+                    }`}
+                  >
+                    <span
+                      className={`territorio-map-selected-dot inline-block h-2 w-2 rounded-full ${
+                        selectedFinished ? 'bg-slate-200' : 'bg-sky-200'
+                      }`}
+                    />
+                    {selectedFinished ? 'Finalizada · selecionada' : 'Área destacada'}
+                  </p>
+                  <p className="truncate text-sm font-extrabold leading-tight">{selected.label || '—'}</p>
+                  {selectedFinished ? (
+                    <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-100/95">
+                      ✓ Quadra concluída
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })()}
           </div>
         ) : null}
 
@@ -791,20 +876,59 @@ export default function TerritoryMap({
           {areas.map((area, index) => {
             const palette = AREA_COLORS[index % AREA_COLORS.length];
             const isSelected = selected != null && area.id === selected.id;
+            const isFinished = areaIsFinished(area.label, finishedKeys);
             // Com seleção ativa: área escolhida em destaque forte; demais “somem” (cinza tracejado)
             const dimOthers = Boolean(selected) && !isSelected;
+
+            // Finalizada = cinza do card (mesmo quando selecionada — não troca para ciano).
+            // Selecionada (em andamento) = ciano. Info de seleção da finalizada fica no balão/chip.
+            let color = palette.color;
+            let fillColor = palette.fill;
+            let fillOpacity = 0.35;
+            let weight = 3;
+            let opacity = 0.9;
+            let dashArray: string | undefined;
+            let className: string | undefined;
+
+            if (isFinished && (isSelected || !dimOthers)) {
+              // Mesmo cinza do card finalizado, com ou sem seleção
+              color = '#64748b';
+              fillColor = '#cbd5e1';
+              fillOpacity = isSelected ? 0.45 : 0.38;
+              weight = isSelected ? 5 : 2.5;
+              opacity = isSelected ? 1 : 0.85;
+              className = isSelected
+                ? 'territorio-polygon-finished-selected'
+                : 'territorio-polygon-finished';
+            } else if (isSelected) {
+              color = '#0369a1';
+              fillColor = '#0ea5e9';
+              fillOpacity = 0.62;
+              weight = 6;
+              opacity = 1;
+              className = 'territorio-polygon-selected';
+            } else if (dimOthers) {
+              color = '#94a3b8';
+              fillColor = '#cbd5e1';
+              fillOpacity = 0.12;
+              weight = 1.5;
+              opacity = 0.45;
+              dashArray = '5 7';
+              className = 'territorio-polygon-dim';
+            }
+
             return (
               <Polygon
                 key={area.id}
                 positions={area.points}
                 pathOptions={{
-                  color: isSelected ? '#0369a1' : dimOthers ? '#94a3b8' : palette.color,
-                  fillColor: isSelected ? '#0ea5e9' : dimOthers ? '#cbd5e1' : palette.fill,
-                  fillOpacity: isSelected ? 0.62 : dimOthers ? 0.12 : 0.35,
-                  weight: isSelected ? 6 : dimOthers ? 1.5 : 3,
-                  opacity: isSelected ? 1 : dimOthers ? 0.45 : 0.9,
-                  dashArray: isSelected ? undefined : dimOthers ? '5 7' : undefined,
-                  className: isSelected ? 'territorio-polygon-selected' : dimOthers ? 'territorio-polygon-dim' : undefined,
+                  color,
+                  fillColor,
+                  fillOpacity,
+                  weight,
+                  opacity,
+                  dashArray,
+                  className,
                 }}
                 eventHandlers={{
                   click: (e) => {
@@ -824,6 +948,7 @@ export default function TerritoryMap({
                 position={centroid(area.points)}
                 label={area.label || '?'}
                 selected={selected != null && area.id === selected.id}
+                finished={areaIsFinished(area.label, finishedKeys)}
               />
             ) : null,
           )}

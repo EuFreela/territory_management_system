@@ -139,13 +139,9 @@ export default function EditTerritoryPage() {
     setStreetName(block.street_name ?? '');
     setHouseNumbers((block.house_numbers ?? []).join(', '));
     setBlockError('');
-    // Destaca a quadra correspondente no mapa
+    // Destaca a quadra no mapa (sem rolar a página)
     setMapSelectedKey(name || null);
     setMapFocusToken((n) => n + 1);
-    // sobe até o mapa para ver o destaque, depois o formulário permanece abaixo
-    window.setTimeout(() => {
-      document.getElementById('territorio-mapa-edit')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
   }
 
   /** Clique na área do mapa → destaca / prepara formulário (sem rolar para não em casa) */
@@ -303,7 +299,8 @@ export default function EditTerritoryPage() {
             <div id="territorio-mapa-edit" className="scroll-mt-6">
               <label className="mb-2 block text-sm font-medium text-slate-700">Área do território no mapa</label>
               <p className="mb-2 text-xs text-slate-500">
-                Clique no card de não em casa abaixo para destacar a quadra no mapa (e o contrário).
+                Clique no card de não em casa ou na área do mapa para destacar a quadra (sem rolar a
+                página).
               </p>
               <TerritoryMap
                 value={geojson}
@@ -315,6 +312,15 @@ export default function EditTerritoryPage() {
                 selectedKey={mapSelectedKey}
                 focusToken={mapFocusToken}
                 onAreaSelect={onMapAreaSelect}
+                finishedKeys={blocks
+                  .filter((b) => {
+                    const total = b.house_numbers.length;
+                    const done = (b.completed_houses ?? []).filter((h) =>
+                      b.house_numbers.includes(h),
+                    ).length;
+                    return total > 0 && done >= total;
+                  })
+                  .map((b) => b.name)}
               />
             </div>
 
@@ -336,7 +342,7 @@ export default function EditTerritoryPage() {
           <p className="mb-4 text-sm text-slate-600">
             A <strong>quadra</strong> deve ser a mesma desenhada no mapa. Escolha no select, informe a{' '}
             <strong>rua</strong> e os <strong>números</strong>. Clique em um card para editar e destacar a
-            área no mapa.
+            área no mapa (sem subir a página).
           </p>
 
           {mapQuadraOptions.length === 0 ? (
@@ -495,6 +501,15 @@ export default function EditTerritoryPage() {
                 mapSelectedKey != null &&
                 (mapSelectedKey.trim().toLowerCase() === block.name.trim().toLowerCase() ||
                   areaMatchesBlock(mapSelectedKey, block.name));
+              const selected = isEditing || onMap;
+              // Finalizado + selecionado: base cinza de concluído + anel de seleção
+              const cardTone = selected
+                ? finished
+                  ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 opacity-100'
+                  : 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
+                : finished
+                  ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
+                  : 'border-amber-200 bg-amber-50 hover:border-amber-300';
               return (
                 <div
                   key={block.id}
@@ -507,22 +522,17 @@ export default function EditTerritoryPage() {
                       loadBlockForEdit(block);
                     }
                   }}
-                  className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-xl border p-4 text-left transition hover:shadow-md ${
-                    isEditing || onMap
-                      ? 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
-                      : finished
-                        ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
-                        : 'border-amber-200 bg-amber-50 hover:border-amber-300'
-                  }`}
+                  className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-xl border p-4 text-left transition hover:shadow-md ${cardTone}`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p
                         className={`text-xs font-medium uppercase tracking-wide ${
-                          finished && !isEditing ? 'text-slate-500' : 'text-amber-800'
+                          finished ? 'text-slate-500' : 'text-amber-800'
                         }`}
                       >
                         Quadra · clique para destacar no mapa
+                        {finished ? ' · finalizada' : ''}
                       </p>
                       {isEditing ? (
                         <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
@@ -535,7 +545,7 @@ export default function EditTerritoryPage() {
                         </span>
                       ) : null}
                       {finished ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
                           Finalizado
                         </span>
                       ) : (
@@ -543,10 +553,15 @@ export default function EditTerritoryPage() {
                           {done}/{total} feitos
                         </span>
                       )}
+                      {selected && finished ? (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
+                          Selecionada
+                        </span>
+                      ) : null}
                     </div>
                     <p
                       className={`text-2xl font-bold ${
-                        finished && !isEditing ? 'text-slate-500' : 'text-slate-900'
+                        finished ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-900'
                       }`}
                     >
                       {block.name}
