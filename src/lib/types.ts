@@ -56,3 +56,24 @@ export type CepLocation = {
   lng: number;
   label: string;
 };
+
+/** Designação de dirigente do serviço de campo */
+export type FieldAssignment = {
+  id: number;
+  service_date?: string | null;
+  weekday_label: string;
+  assignee_name: string;
+  period_label?: string | null;
+  is_fixed: number | boolean;
+  fixed_weekday?: number | null;
+  fixed_time?: string | null;
+  sort_order?: number;
+};
+
+export type FieldLeadersToday = {
+  date: string;
+  weekday: number;
+  weekday_label: string;
+  dated: FieldAssignment[];
+  fixed: FieldAssignment[];
+};
