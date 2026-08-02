@@ -38,6 +38,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {/* Seta flutuante em todas as rotas (login, dashboard, territórios, etc.) */}
       <ScrollToTop />
     </>
   );

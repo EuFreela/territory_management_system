@@ -480,4 +480,46 @@ router.delete('/:id/blocks/:blockId', requireAuth, async (req, res) => {
   res.json({ message: 'Registro removido com sucesso.' });
 });
 
+/** Apaga várias quadras de não em casa de uma vez */
+router.post('/:id/blocks/bulk-delete', requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const { id } = req.params;
+  const rawIds = (req.body as { ids?: unknown })?.ids;
+
+  if (!Array.isArray(rawIds) || rawIds.length === 0) {
+    res.status(400).json({ error: 'Informe ao menos uma quadra para apagar.' });
+    return;
+  }
+
+  const ids = [...new Set(rawIds.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0))];
+  if (ids.length === 0) {
+    res.status(400).json({ error: 'IDs inválidos.' });
+    return;
+  }
+
+  // Confirma que o território é do usuário
+  const [territoryRows] = await pool.execute(
+    'SELECT id FROM territories WHERE id = ? AND user_id = ?',
+    [id, user.id],
+  );
+  if ((territoryRows as Array<unknown>).length === 0) {
+    res.status(404).json({ error: 'Território não encontrado.' });
+    return;
+  }
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const [result] = await pool.execute(
+    `DELETE b FROM blocks b
+     INNER JOIN territories t ON t.id = b.territory_id
+     WHERE b.territory_id = ? AND t.user_id = ? AND b.id IN (${placeholders})`,
+    [id, user.id, ...ids],
+  );
+
+  const deleteResult = result as { affectedRows?: number };
+  res.json({
+    message: 'Quadras removidas com sucesso.',
+    deleted: deleteResult.affectedRows ?? 0,
+  });
+});
+
 export default router;
