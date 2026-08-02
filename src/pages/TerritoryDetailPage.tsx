@@ -10,7 +10,11 @@ import {
   IconTrash,
   IconUnlink,
 } from '@/components/Map/mapIcons';
-import TerritoryMap from '@/components/Map/TerritoryMap';
+import TerritoryMap, {
+  areaMatchesBlock,
+  findAreaForBlock,
+  parseGeoJsonToAreas,
+} from '@/components/Map/TerritoryMap';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import type { Block, CepLocation, Territory } from '@/lib/types';
@@ -23,6 +27,10 @@ export default function TerritoryDetailPage() {
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [error, setError] = useState('');
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
+  /** chave compartilhada mapa ↔ card (nome da quadra / rótulo da área) */
+  const [linkedKey, setLinkedKey] = useState<string | null>(null);
+  const [mapFocusToken, setMapFocusToken] = useState(0);
+  const [linkHint, setLinkHint] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +88,47 @@ export default function TerritoryDetailPage() {
     const done = (block.completed_houses ?? []).filter((h) => block.house_numbers.includes(h)).length;
     const finished = total > 0 && done >= total;
     return { total, done, finished };
+  }
+
+  function isBlockLinked(block: Block) {
+    if (!linkedKey) return false;
+    return areaMatchesBlock(linkedKey, block.name) || linkedKey === String(block.id);
+  }
+
+  /** Clique no polígono do mapa → destaca card (sem rolar a página) */
+  function onMapAreaSelect(area: { id: string; label: string }) {
+    setLinkedKey(area.label);
+    setMapFocusToken((n) => n + 1);
+    const blocks = territory?.blocks ?? [];
+    const match = blocks.find((b) => areaMatchesBlock(area.label, b.name));
+    if (match) {
+      setLinkHint('');
+    } else {
+      setLinkHint(
+        `Área “${area.label}” destacada no mapa — nenhum card de não em casa com esse nome.`,
+      );
+    }
+  }
+
+  /** Clique no card → destaca e foca a área da quadra no mapa */
+  function onBlockCardSelect(block: Block) {
+    const name = (block.name ?? '').trim();
+    setLinkedKey(name);
+    setMapFocusToken((n) => n + 1);
+
+    const areas = parseGeoJsonToAreas(territory?.geojson);
+    const mapArea = findAreaForBlock(areas, name);
+    if (mapArea) {
+      setLinkHint('');
+    } else {
+      setLinkHint(
+        `Nenhuma área no mapa com o nome “${name}”. Confira se a quadra no mapa tem o mesmo rótulo (ex.: ${name}).`,
+      );
+    }
+
+    window.setTimeout(() => {
+      document.getElementById('territorio-mapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
   }
 
   async function toggleHouse(block: Block, house: string) {
@@ -233,10 +282,38 @@ export default function TerritoryDetailPage() {
             </div>
           </div>
 
-          <div className="mb-2">
+          <div id="territorio-mapa" className="mb-2 scroll-mt-6">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
               Área no mapa
             </h2>
+            <p className="mb-2 text-xs text-slate-500">
+              Clique em uma área do mapa para destacá-la e marcar o card correspondente (sem sair do
+              mapa). Nos cards abaixo, o clique foca a área aqui no mapa.
+            </p>
+            {linkedKey ? (
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-900 ring-1 ring-sky-300">
+                  <span className="territorio-map-selected-dot inline-block h-2 w-2 rounded-full bg-sky-500" />
+                  Destacando: {linkedKey}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLinkedKey(null);
+                    setMapFocusToken(0);
+                    setLinkHint('');
+                  }}
+                  className="text-xs font-medium text-slate-600 underline hover:text-slate-900"
+                >
+                  Limpar destaque
+                </button>
+              </div>
+            ) : null}
+            {linkHint ? (
+              <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {linkHint}
+              </p>
+            ) : null}
             <TerritoryMap
               value={territory.geojson}
               centerLat={
@@ -251,6 +328,9 @@ export default function TerritoryDetailPage() {
               }
               cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
               editable={false}
+              selectedKey={linkedKey}
+              focusToken={mapFocusToken}
+              onAreaSelect={onMapAreaSelect}
             />
             {!hasArea ? (
               <p className="mt-2 text-sm text-amber-700">
@@ -263,41 +343,62 @@ export default function TerritoryDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm">
+        <div id="nao-em-casa-cards" className="scroll-mt-6 rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm">
           <h2 className="mb-1 text-lg font-bold tracking-wide text-amber-900">NÃO EM CASA</h2>
           <p className="mb-4 text-sm text-slate-600">
-            Toque nos números para marcar as casas já trabalhadas. Quando todos estiverem feitos, a quadra
-            fica finalizada.
+            Clique no card da quadra para destacar a área correspondente no mapa (cor + balão). Toque nos
+            números para marcar as casas já trabalhadas.
           </p>
           {territory.blocks && territory.blocks.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {territory.blocks.map((block) => {
                 const { done, total, finished } = blockProgress(block);
+                const linked = isBlockLinked(block);
                 return (
                   <div
                     key={block.id}
-                    className={`rounded-xl border p-4 shadow-sm transition ${
-                      finished
-                        ? 'border-slate-200 bg-slate-100/80 opacity-70'
-                        : 'border-amber-200 bg-amber-50'
+                    id={`block-card-${block.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onBlockCardSelect(block)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onBlockCardSelect(block);
+                      }
+                    }}
+                    className={`cursor-pointer rounded-xl border p-4 shadow-sm transition scroll-mt-6 ${
+                      linked
+                        ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-400 shadow-md shadow-sky-200/60'
+                        : finished
+                          ? 'border-slate-200 bg-slate-100/80 opacity-70 hover:opacity-100'
+                          : 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:shadow-md'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p
                           className={`text-xs font-medium uppercase tracking-wide ${
-                            finished ? 'text-slate-500' : 'text-amber-800'
+                            linked ? 'text-sky-700' : finished ? 'text-slate-500' : 'text-amber-800'
                           }`}
                         >
                           Quadra
                         </p>
                         <p
                           className={`text-3xl font-bold ${
-                            finished ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-900'
+                            finished && !linked
+                              ? 'text-slate-500 line-through decoration-slate-400'
+                              : 'text-slate-900'
                           }`}
                         >
                           {block.name}
                         </p>
+                        {linked ? (
+                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                            <span className="territorio-map-selected-dot inline-block h-1.5 w-1.5 rounded-full bg-sky-200" />
+                            Destacada no mapa
+                          </p>
+                        ) : null}
                       </div>
                       {finished ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">
@@ -314,7 +415,7 @@ export default function TerritoryDetailPage() {
                     {block.street_name ? (
                       <p
                         className={`mt-1 text-sm font-medium ${
-                          finished ? 'text-slate-500' : 'text-slate-800'
+                          finished && !linked ? 'text-slate-500' : 'text-slate-800'
                         }`}
                       >
                         {block.street_name}
@@ -331,7 +432,10 @@ export default function TerritoryDetailPage() {
                             key={house}
                             type="button"
                             disabled={busy}
-                            onClick={() => void toggleHouse(block, house)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void toggleHouse(block, house);
+                            }}
                             title={doneHouse ? 'Desmarcar (ainda pendente)' : 'Marcar como feito'}
                             className={`inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
                               doneHouse
@@ -361,7 +465,7 @@ export default function TerritoryDetailPage() {
             <p className="text-slate-600">Nenhum registro de não em casa.</p>
           )}
           <Link
-            to={`/territories/${id}/edit`}
+            to={`/territories/${id}/edit#nao-em-casa`}
             className="mt-4 inline-block text-sm font-medium text-amber-800 underline"
           >
             Gerenciar não em casa

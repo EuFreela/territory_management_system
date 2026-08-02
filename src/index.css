@@ -30,3 +30,72 @@ select {
   background: transparent !important;
   border: none !important;
 }
+
+.leaflet-div-icon.territorio-area-selected-balloon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Polígono selecionado: contorno “pulsante” para chamar atenção no mapa */
+.leaflet-interactive.territorio-polygon-selected {
+  animation: territorio-selected-pulse 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.85));
+}
+
+@keyframes territorio-selected-pulse {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    stroke-width: 6;
+  }
+  50% {
+    stroke-opacity: 0.75;
+    stroke-width: 8;
+  }
+}
+
+/* Chip flutuante + ponto indicador */
+.territorio-map-selected-chip {
+  animation: territorio-chip-in 0.25s ease-out;
+}
+
+@keyframes territorio-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.territorio-map-selected-dot {
+  animation: territorio-dot-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes territorio-dot-blink {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(186, 230, 253, 0.7);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 4px rgba(186, 230, 253, 0);
+  }
+}
+
+.territorio-selected-balloon-root {
+  animation: territorio-balloon-bob 2s ease-in-out infinite;
+}
+
+@keyframes territorio-balloon-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}

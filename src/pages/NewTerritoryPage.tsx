@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { IconArrowLeft, IconSave } from '@/components/Map/mapIcons';
+import { IconArrowLeft } from '@/components/Map/mapIcons';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
+import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
 import { api } from '@/lib/api';
 import type { CepLocation } from '@/lib/types';
 
@@ -127,15 +128,14 @@ export default function NewTerritoryPage() {
 
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-            <button
-              type="submit"
-              disabled={submitting || loadingMap}
-              title={submitting ? 'Salvando…' : 'Salvar território e área'}
-              aria-label={submitting ? 'Salvando…' : 'Salvar território e área'}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-700 disabled:opacity-70"
-            >
-              <IconSave className="h-6 w-6" />
-            </button>
+            <SaveActionBar>
+              <SaveButton
+                loading={submitting}
+                disabled={loadingMap}
+                label="Salvar território e área"
+                loadingLabel="Salvando…"
+              />
+            </SaveActionBar>
           </form>
         </div>
       </div>

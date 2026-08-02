@@ -136,6 +136,15 @@ export function IconArrowLeft({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+export function IconArrowUp({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
+}
+
 export function IconCheckCircle({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
