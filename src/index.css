@@ -36,10 +36,20 @@ select {
   border: none !important;
 }
 
-/* Polígono selecionado: contorno “pulsante” para chamar atenção no mapa */
+/* Polígono selecionado (em andamento): contorno ciano pulsante */
 .leaflet-interactive.territorio-polygon-selected {
   animation: territorio-selected-pulse 1.6s ease-in-out infinite;
   filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.85));
+}
+
+/* Finalizada selecionada: mantém cinza; só reforça o contorno slate */
+.leaflet-interactive.territorio-polygon-finished-selected {
+  filter: drop-shadow(0 0 5px rgba(100, 116, 139, 0.55));
+}
+
+/* Finalizada (sem seleção): cinza discreto, como o card */
+.leaflet-interactive.territorio-polygon-finished {
+  filter: none;
 }
 
 @keyframes territorio-selected-pulse {
