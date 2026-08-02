@@ -45,6 +45,23 @@ CREATE TABLE territory_images (
   FOREIGN KEY (territory_id) REFERENCES territories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Dirigentes do serviço de campo (designações por data ou dia fixo)
+CREATE TABLE IF NOT EXISTS field_assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  service_date DATE NULL,
+  weekday_label VARCHAR(40) NOT NULL,
+  assignee_name VARCHAR(180) NOT NULL,
+  period_label VARCHAR(80) NULL,
+  is_fixed TINYINT(1) DEFAULT 0,
+  fixed_weekday TINYINT NULL,              -- 0=Dom … 6=Sáb (JS)
+  fixed_time VARCHAR(10) NULL,              -- ex: 08:00
+  sort_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_service_date (service_date),
+  INDEX idx_fixed_weekday (fixed_weekday)
+) ENGINE=InnoDB;
+
 -- Senha padrão do admin: 123456 (mínimo 6 caracteres exigido pela API)
 INSERT INTO users (name, email, password_hash)
 VALUES ('Administrador', 'admin@campo.local', '$2b$10$KpSm9ser0EX5usgs2.1em.TpfvROSW8knZpTPosW2/VD8moPOG.Uy')

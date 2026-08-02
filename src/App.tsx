@@ -7,6 +7,7 @@ import TerritoriesPage from './pages/TerritoriesPage';
 import NewTerritoryPage from './pages/NewTerritoryPage';
 import TerritoryDetailPage from './pages/TerritoryDetailPage';
 import EditTerritoryPage from './pages/EditTerritoryPage';
+import FieldLeadersPage from './pages/FieldLeadersPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -26,6 +27,7 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dirigentes" element={<FieldLeadersPage />} />
         <Route path="/territories" element={<TerritoriesPage />} />
         <Route path="/territories/new" element={<NewTerritoryPage />} />
         <Route path="/territories/:id" element={<TerritoryDetailPage />} />

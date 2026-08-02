@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getMapConfig } from './lib/map-config.js';
 import authRoutes from './routes/auth.js';
+import fieldAssignmentRoutes from './routes/field-assignments.js';
 import territoryRoutes from './routes/territories.js';
 
 const app = express();
@@ -39,6 +40,7 @@ app.get('/api/config/map', async (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/territories', territoryRoutes);
+app.use('/api/field-assignments', fieldAssignmentRoutes);
 
 if (isProd) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));

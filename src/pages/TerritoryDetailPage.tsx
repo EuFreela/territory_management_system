@@ -4,6 +4,7 @@ import {
   IconArrowLeft,
   IconCheck,
   IconCheckCircle,
+  IconHome,
   IconPencil,
   IconStar,
   IconTrash,
@@ -215,11 +216,19 @@ export default function TerritoryDetailPage() {
               </button>
               <Link
                 to="/territories"
-                title="Voltar"
-                aria-label="Voltar"
+                title="Voltar à lista"
+                aria-label="Voltar à lista"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
               >
                 <IconArrowLeft className="h-5 w-5" />
+              </Link>
+              <Link
+                to="/dashboard"
+                title="Dashboard"
+                aria-label="Dashboard"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300 bg-white text-sky-700 hover:bg-sky-50"
+              >
+                <IconHome className="h-5 w-5" />
               </Link>
             </div>
           </div>
