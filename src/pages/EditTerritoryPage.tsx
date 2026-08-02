@@ -33,6 +33,9 @@ export default function EditTerritoryPage() {
   /** Destaque mapa ↔ card de não em casa */
   const [mapSelectedKey, setMapSelectedKey] = useState<string | null>(null);
   const [mapFocusToken, setMapFocusToken] = useState(0);
+  /** IDs selecionados para exclusão em massa */
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<number[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -237,11 +240,57 @@ export default function EditTerritoryPage() {
     try {
       await api(`/api/territories/${id}/blocks/${blockId}`, { method: 'DELETE' });
       setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      setBulkSelectedIds((prev) => prev.filter((x) => x !== blockId));
       if (editingBlockId === blockId) clearBlockForm();
     } catch (err) {
       setBlockError(err instanceof Error ? err.message : 'Erro ao remover.');
     }
   }
+
+  function toggleBulkSelect(blockId: number) {
+    setBulkSelectedIds((prev) =>
+      prev.includes(blockId) ? prev.filter((x) => x !== blockId) : [...prev, blockId],
+    );
+  }
+
+  function toggleSelectAllBlocks() {
+    if (bulkSelectedIds.length === blocks.length) {
+      setBulkSelectedIds([]);
+    } else {
+      setBulkSelectedIds(blocks.map((b) => b.id));
+    }
+  }
+
+  async function bulkDeleteSelected() {
+    if (!id || bulkSelectedIds.length === 0) return;
+    const count = bulkSelectedIds.length;
+    const ok = await confirm({
+      title: 'Apagar quadras selecionadas',
+      message: `${count} ${count === 1 ? 'quadra será apagada' : 'quadras serão apagadas'} do não em casa (rua e números). Essa ação não pode ser desfeita.`,
+      confirmLabel: count === 1 ? 'Apagar 1 quadra' : `Apagar ${count} quadras`,
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    setBulkBusy(true);
+    setBlockError('');
+    try {
+      await api(`/api/territories/${id}/blocks/bulk-delete`, {
+        method: 'POST',
+        body: JSON.stringify({ ids: bulkSelectedIds }),
+      });
+      const removed = new Set(bulkSelectedIds);
+      setBlocks((prev) => prev.filter((b) => !removed.has(b.id)));
+      if (editingBlockId != null && removed.has(editingBlockId)) clearBlockForm();
+      setBulkSelectedIds([]);
+    } catch (err) {
+      setBlockError(err instanceof Error ? err.message : 'Erro ao apagar em massa.');
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
 
   if (loading) {
     return <main className="flex min-h-screen items-center justify-center text-slate-600">Carregando…</main>;
@@ -490,6 +539,44 @@ export default function EditTerritoryPage() {
             </div>
           </form>
 
+          {blocks.length > 0 ? (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={bulkSelectedIds.length === blocks.length && blocks.length > 0}
+                  ref={(el) => {
+                    if (el) {
+                      el.indeterminate =
+                        bulkSelectedIds.length > 0 && bulkSelectedIds.length < blocks.length;
+                    }
+                  }}
+                  onChange={toggleSelectAllBlocks}
+                  className="h-4 w-4 rounded border-slate-300 text-amber-700 focus:ring-amber-500"
+                />
+                {bulkSelectedIds.length === 0
+                  ? 'Selecionar quadras'
+                  : bulkSelectedIds.length === blocks.length
+                    ? 'Todas selecionadas'
+                    : `${bulkSelectedIds.length} selecionada(s)`}
+              </label>
+
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={bulkBusy || bulkSelectedIds.length === 0}
+                  onClick={() => void bulkDeleteSelected()}
+                  title="Apagar quadras selecionadas"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <IconTrash className="h-4 w-4" />
+                  Apagar selecionadas
+                  {bulkSelectedIds.length > 0 ? ` (${bulkSelectedIds.length})` : ''}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="space-y-3">
             {blocks.map((block) => {
               const completed = block.completed_houses ?? [];
@@ -502,14 +589,17 @@ export default function EditTerritoryPage() {
                 (mapSelectedKey.trim().toLowerCase() === block.name.trim().toLowerCase() ||
                   areaMatchesBlock(mapSelectedKey, block.name));
               const selected = isEditing || onMap;
+              const inBulk = bulkSelectedIds.includes(block.id);
               // Finalizado + selecionado: base cinza de concluído + anel de seleção
-              const cardTone = selected
-                ? finished
-                  ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 opacity-100'
-                  : 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
-                : finished
-                  ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
-                  : 'border-amber-200 bg-amber-50 hover:border-amber-300';
+              const cardTone = inBulk
+                ? 'border-red-300 bg-red-50/80 ring-2 ring-red-200'
+                : selected
+                  ? finished
+                    ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 opacity-100'
+                    : 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
+                  : finished
+                    ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
+                    : 'border-amber-200 bg-amber-50 hover:border-amber-300';
               return (
                 <div
                   key={block.id}
@@ -524,72 +614,84 @@ export default function EditTerritoryPage() {
                   }}
                   className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-xl border p-4 text-left transition hover:shadow-md ${cardTone}`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={inBulk}
+                      onChange={() => toggleBulkSelect(block.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      title="Selecionar para apagar em massa"
+                      aria-label={`Selecionar quadra ${block.name}`}
+                      className="mt-1.5 h-4 w-4 shrink-0 rounded border-slate-300 text-red-600 focus:ring-red-400"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p
+                          className={`text-xs font-medium uppercase tracking-wide ${
+                            finished ? 'text-slate-500' : 'text-amber-800'
+                          }`}
+                        >
+                          Quadra · clique para destacar no mapa
+                          {finished ? ' · finalizada' : ''}
+                        </p>
+                        {isEditing ? (
+                          <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                            Em edição
+                          </span>
+                        ) : null}
+                        {onMap && !isEditing ? (
+                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
+                            No mapa
+                          </span>
+                        ) : null}
+                        {finished ? (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                            Finalizado
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
+                            {done}/{total} feitos
+                          </span>
+                        )}
+                        {selected && finished ? (
+                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
+                            Selecionada
+                          </span>
+                        ) : null}
+                      </div>
                       <p
-                        className={`text-xs font-medium uppercase tracking-wide ${
-                          finished ? 'text-slate-500' : 'text-amber-800'
+                        className={`text-2xl font-bold ${
+                          finished ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-900'
                         }`}
                       >
-                        Quadra · clique para destacar no mapa
-                        {finished ? ' · finalizada' : ''}
+                        {block.name}
                       </p>
-                      {isEditing ? (
-                        <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                          Em edição
-                        </span>
-                      ) : null}
-                      {onMap && !isEditing ? (
-                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
-                          No mapa
-                        </span>
-                      ) : null}
-                      {finished ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                          Finalizado
-                        </span>
+                      {block.street_name ? (
+                        <p className="mt-1 text-sm font-medium text-slate-800">
+                          Rua: <span className="font-normal text-slate-700">{block.street_name}</span>
+                        </p>
                       ) : (
-                        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
-                          {done}/{total} feitos
-                        </span>
+                        <p className="mt-1 text-xs text-slate-500">Sem rua informada</p>
                       )}
-                      {selected && finished ? (
-                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
-                          Selecionada
-                        </span>
-                      ) : null}
-                    </div>
-                    <p
-                      className={`text-2xl font-bold ${
-                        finished ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-900'
-                      }`}
-                    >
-                      {block.name}
-                    </p>
-                    {block.street_name ? (
-                      <p className="mt-1 text-sm font-medium text-slate-800">
-                        Rua: <span className="font-normal text-slate-700">{block.street_name}</span>
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-slate-500">Sem rua informada</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {block.house_numbers.map((item) => {
-                        const house = String(item);
-                        const isDone = completed.includes(house);
-                        return (
-                          <span
-                            key={house}
-                            className={`rounded-full px-2 py-1 text-xs font-medium ring-1 ${
-                              isDone
-                                ? 'bg-emerald-600 text-white ring-emerald-700 line-through'
-                                : 'bg-white text-slate-700 ring-amber-200'
-                            }`}
-                          >
-                            {house}
-                          </span>
-                        );
-                      })}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {block.house_numbers.map((item) => {
+                          const house = String(item);
+                          const isDone = completed.includes(house);
+                          return (
+                            <span
+                              key={house}
+                              className={`rounded-full px-2 py-1 text-xs font-medium ring-1 ${
+                                isDone
+                                  ? 'bg-emerald-600 text-white ring-emerald-700 line-through'
+                                  : 'bg-white text-slate-700 ring-amber-200'
+                              }`}
+                            >
+                              {house}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                   <button
