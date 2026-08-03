@@ -1,14 +1,28 @@
 import { z } from 'zod';
+import { validateStrongPassword } from './password.js';
+
+const strongPassword = z.string().superRefine((value, ctx) => {
+  const err = validateStrongPassword(value);
+  if (err) {
+    ctx.addIssue({ code: 'custom', message: err });
+  }
+});
 
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(150),
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: strongPassword,
 });
 
+/** Login: não aplica política forte (contas antigas), só não vazio */
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(1, 'Informe a senha').max(128),
+});
+
+export const changePasswordSchema = z.object({
+  current_password: z.string().min(1, 'Informe a senha atual').max(128),
+  new_password: strongPassword,
 });
 
 export const territorySchema = z.object({
