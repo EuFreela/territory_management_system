@@ -97,9 +97,12 @@ router.get('/dashboard', requireAuth, async (req, res) => {
      ORDER BY b.sort_order ASC, b.id ASC`,
     [user.id],
   );
-  const allBlocks = (allBlockRows as Array<Record<string, unknown>>).map(mapBlock);
+  const allBlocks = (allBlockRows as Array<Record<string, unknown>>).map((row) => ({
+    ...mapBlock(row),
+    territory_id: Number(row.territory_id),
+  }));
 
-  const blocksByTerritory = new Map<number, ReturnType<typeof mapBlock>[]>();
+  const blocksByTerritory = new Map<number, (typeof allBlocks)[number][]>();
   for (const block of allBlocks) {
     const tid = Number(block.territory_id);
     const list = blocksByTerritory.get(tid) ?? [];
@@ -107,7 +110,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     blocksByTerritory.set(tid, list);
   }
 
-  let dailyBlocks: ReturnType<typeof mapBlock>[] = [];
+  let dailyBlocks: (typeof allBlocks)[number][] = [];
   if (daily) {
     dailyBlocks = blocksByTerritory.get(Number(daily.id)) ?? [];
   }
