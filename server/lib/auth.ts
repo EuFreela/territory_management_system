@@ -57,9 +57,17 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
   }
 }
 
+/** Secure cookie só em HTTPS. Em HTTP (LAN/IP) o browser ignora o cookie e a API volta 401. */
+function cookieSecure() {
+  if (process.env.COOKIE_SECURE === 'true') return true;
+  if (process.env.COOKIE_SECURE === 'false') return false;
+  const appUrl = process.env.VITE_APP_URL || '';
+  return appUrl.startsWith('https://');
+}
+
 export const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: cookieSecure(),
   sameSite: 'lax' as const,
   path: '/',
   maxAge: 60 * 60 * 24 * 7 * 1000,
