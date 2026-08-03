@@ -46,7 +46,8 @@ if (isProd) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const dist = path.resolve(__dirname, '../dist');
   app.use(express.static(dist));
-  app.get('*', (_req, res) => {
+  // Express 5 / path-to-regexp: use named wildcard ( '*' sozinho quebra o boot )
+  app.get('/{*path}', (_req, res) => {
     res.sendFile(path.join(dist, 'index.html'));
   });
 }
