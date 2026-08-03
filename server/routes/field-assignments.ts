@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import pool from '../lib/db.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
+import { todayIsoInAppTz, weekdayForDateStr } from '../lib/timezone.js';
 
 const router = Router();
 
@@ -19,14 +20,6 @@ const assignmentSchema = z.object({
 const updateNameSchema = z.object({
   assignee_name: z.string().min(1, 'Nome do dirigente é obrigatório').max(180),
 });
-
-function todayIsoLocal() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 function weekdayLabelPt(day: number) {
   const labels = [
@@ -59,14 +52,15 @@ router.get('/', requireAuth, async (_req, res) => {
  * Retorna designação datada + fixa do dia da semana, se houver.
  */
 router.get('/today', requireAuth, async (req, res) => {
-  const dateStr = typeof req.query.date === 'string' && req.query.date ? req.query.date : todayIsoLocal();
-  const dateObj = new Date(`${dateStr}T12:00:00`);
-  if (Number.isNaN(dateObj.getTime())) {
+  // "Hoje" sempre no fuso Brasil (America/Sao_Paulo), não UTC do servidor
+  const dateStr =
+    typeof req.query.date === 'string' && req.query.date ? req.query.date : todayIsoInAppTz();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     res.status(400).json({ error: 'Data inválida.' });
     return;
   }
 
-  const weekday = dateObj.getDay();
+  const weekday = weekdayForDateStr(dateStr);
 
   const [datedRows] = await pool.execute(
     `SELECT * FROM field_assignments
