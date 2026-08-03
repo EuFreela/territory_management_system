@@ -10,7 +10,17 @@ import {
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
-import { IconCheck, IconLock, IconPencil, IconTag, IconTrash, IconUndo } from './mapIcons';
+import {
+  IconCheck,
+  IconCompress,
+  IconExpand,
+  IconFocusAreas,
+  IconLock,
+  IconPencil,
+  IconTag,
+  IconTrash,
+  IconUndo,
+} from './mapIcons';
 
 export type LatLng = [number, number];
 
@@ -217,6 +227,19 @@ function ScrollWheelOnHover({ enabled }: { enabled: boolean }) {
   return null;
 }
 
+/** Leaflet precisa recalcular o tamanho ao entrar/sair da tela cheia */
+function InvalidateSizeOn({ token }: { token: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (token <= 0) return;
+    const t = window.setTimeout(() => {
+      map.invalidateSize({ animate: false });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [token, map]);
+  return null;
+}
+
 /** Enquadra a área selecionada (quando vem do card ou clique) */
 function FocusOnSelected({
   area,
@@ -232,6 +255,67 @@ function FocusOnSelected({
     const bounds = L.latLngBounds(area.points.map(([lat, lng]) => L.latLng(lat, lng)));
     map.fitBounds(bounds, { padding: [48, 48], maxZoom: 18, animate: true });
   }, [area, focusToken, map]);
+
+  return null;
+}
+
+/**
+ * Reenquadra o mapa nas áreas (retângulos) — botão “voltar ao início”
+ * quando o usuário se perde movendo o mapa. Só reage ao clique (token).
+ */
+function FitToAreasOn({
+  token,
+  areas,
+  draftPoints,
+  centerLat,
+  centerLng,
+}: {
+  token: number;
+  areas: MapArea[];
+  draftPoints: LatLng[];
+  centerLat?: number | null;
+  centerLng?: number | null;
+}) {
+  const map = useMap();
+  const areasRef = useRef(areas);
+  const draftRef = useRef(draftPoints);
+  const centerRef = useRef({ centerLat, centerLng });
+  areasRef.current = areas;
+  draftRef.current = draftPoints;
+  centerRef.current = { centerLat, centerLng };
+
+  useEffect(() => {
+    if (token <= 0) return;
+
+    const allPoints: LatLng[] = [
+      ...areasRef.current.flatMap((a) => a.points),
+      ...draftRef.current,
+    ];
+
+    if (allPoints.length >= 2) {
+      const bounds = L.latLngBounds(allPoints.map(([lat, lng]) => L.latLng(lat, lng)));
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17, animate: true });
+      return;
+    }
+
+    if (allPoints.length === 1) {
+      map.setView(allPoints[0], 16, { animate: true });
+      return;
+    }
+
+    const { centerLat: lat, centerLng: lng } = centerRef.current;
+    if (
+      lat != null &&
+      lng != null &&
+      Number.isFinite(Number(lat)) &&
+      Number.isFinite(Number(lng))
+    ) {
+      map.setView([Number(lat), Number(lng)], 15, { animate: true });
+      return;
+    }
+
+    map.setView(DEFAULT_CENTER, 5, { animate: true });
+  }, [token, map]);
 
   return null;
 }
@@ -522,9 +606,46 @@ export default function TerritoryMap({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [seedGeoJson, setSeedGeoJson] = useState<string | null>(() => value ?? null);
   const [mapHovered, setMapHovered] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  /** Incrementa a cada toggle de tela cheia para forçar invalidateSize no Leaflet */
+  const [sizeToken, setSizeToken] = useState(0);
+  /** Incrementa ao clicar em “voltar às áreas” */
+  const [fitAreasToken, setFitAreasToken] = useState(0);
 
   const drawingLocally = useRef(false);
   const seededFromServer = useRef(Boolean(value && parseGeoJsonToAreas(value).length > 0));
+
+  function toggleFullscreen() {
+    setIsFullscreen((prev) => !prev);
+    setSizeToken((t) => t + 1);
+  }
+
+  function fitToAreas() {
+    setFitAreasToken((t) => t + 1);
+  }
+
+  // Esc sai da tela cheia; trava scroll do body enquanto fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      // Deixa o modal de confirmação (ou outro dialog) tratar o Esc primeiro
+      if (document.querySelector('[role="alertdialog"], [aria-modal="true"]')) return;
+      e.preventDefault();
+      setIsFullscreen(false);
+      setSizeToken((t) => t + 1);
+    };
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     if (drawingLocally.current || seededFromServer.current) return;
@@ -685,10 +806,20 @@ export default function TerritoryMap({
   }
 
   return (
-    <div className="space-y-3">
+    <div
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-[9000] flex flex-col gap-3 bg-slate-100 p-3 sm:p-4'
+          : 'space-y-3'
+      }
+    >
       {/* Toolbar de ícones */}
       {editable ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+        <div
+          className={`flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 ${
+            isFullscreen ? 'shrink-0 shadow-sm' : ''
+          }`}
+        >
           <ToolButton
             title="Mapa travado — só navegar / zoom (não desenha)"
             active={!drawMode}
@@ -753,7 +884,11 @@ export default function TerritoryMap({
 
       {/* Nome da área — acima do mapa para não precisar rolar “através” do zoom */}
       {editable && areas.length > 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <div
+          className={`rounded-xl border border-slate-200 bg-white p-3 ${
+            isFullscreen ? 'max-h-40 shrink-0 overflow-y-auto shadow-sm' : ''
+          }`}
+        >
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
             <IconTag className="h-4 w-4 text-sky-600" />
             Nome / texto da área no mapa
@@ -807,9 +942,9 @@ export default function TerritoryMap({
       ) : null}
 
       <div
-        className={`relative ${heightClass} w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
-          drawMode ? 'ring-2 ring-sky-400' : selected ? 'ring-2 ring-sky-300' : ''
-        }`}
+        className={`relative w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
+          isFullscreen ? 'min-h-0 flex-1' : heightClass
+        } ${drawMode ? 'ring-2 ring-sky-400' : selected ? 'ring-2 ring-sky-300' : ''}`}
         onMouseEnter={() => setMapHovered(true)}
         onMouseLeave={() => setMapHovered(false)}
       >
@@ -850,13 +985,44 @@ export default function TerritoryMap({
           </div>
         ) : null}
 
+        {/* Controles do mapa (canto superior direito) */}
+        <div className="absolute right-3 top-3 z-[500] flex flex-col gap-2">
+          <button
+            type="button"
+            title={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Tela cheia'}
+            aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+            aria-pressed={isFullscreen}
+            onClick={toggleFullscreen}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-md transition hover:bg-slate-50"
+          >
+            {isFullscreen ? <IconCompress /> : <IconExpand />}
+          </button>
+          <button
+            type="button"
+            title="Voltar ao início — enquadrar as áreas do mapa"
+            aria-label="Voltar ao início e enquadrar as áreas"
+            onClick={fitToAreas}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-md transition hover:bg-slate-50"
+          >
+            <IconFocusAreas />
+          </button>
+        </div>
+
         <MapContainer
           center={mapStartCenter}
           zoom={mapStartZoom}
           scrollWheelZoom={false}
           className="h-full w-full"
         >
-          <ScrollWheelOnHover enabled={mapHovered} />
+          <ScrollWheelOnHover enabled={mapHovered || isFullscreen} />
+          <InvalidateSizeOn token={sizeToken} />
+          <FitToAreasOn
+            token={fitAreasToken}
+            areas={areas}
+            draftPoints={draftPoints}
+            centerLat={centerLat}
+            centerLng={centerLng}
+          />
           <FocusOnSelected area={selected} focusToken={focusToken} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -985,22 +1151,26 @@ export default function TerritoryMap({
         </MapContainer>
       </div>
 
-      {editable ? (
-        <p className={`text-sm font-medium ${areaReady ? 'text-emerald-700' : 'text-amber-700'}`}>
-          {areaReady
-            ? `✓ ${areas.length} área(s) pronta(s) para salvar`
-            : '⚠ Ative o lápis, desenhe um contorno (3+ pontos) e conclua com ✓'}
-        </p>
-      ) : (
-        <p className="text-sm text-slate-600">
-          {areaReady
-            ? `${areas.length} área(s) no território.`
-            : 'Este território ainda não tem área definida.'}
-        </p>
-      )}
+      {!isFullscreen ? (
+        <>
+          {editable ? (
+            <p className={`text-sm font-medium ${areaReady ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {areaReady
+                ? `✓ ${areas.length} área(s) pronta(s) para salvar`
+                : '⚠ Ative o lápis, desenhe um contorno (3+ pontos) e conclua com ✓'}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-600">
+              {areaReady
+                ? `${areas.length} área(s) no território.`
+                : 'Este território ainda não tem área definida.'}
+            </p>
+          )}
 
-      {cepLabel && editable ? (
-        <p className="text-xs text-slate-500">Base do mapa (CEP): {cepLabel}</p>
+          {cepLabel && editable ? (
+            <p className="text-xs text-slate-500">Base do mapa (CEP): {cepLabel}</p>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
