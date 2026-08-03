@@ -22,12 +22,31 @@ function formatDateBr(iso: string | null | undefined) {
   return `${d}/${m}/${y}`;
 }
 
+/** Hoje no fuso de São Paulo/Brasília (independente do fuso do servidor) */
 function todayIsoLocal() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function weekdaySaoPaulo() {
+  const short = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    weekday: 'short',
+  }).format(new Date());
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[short] ?? 0;
 }
 
 function isTodayRow(row: FieldAssignment, today: string, weekday: number) {
@@ -135,7 +154,7 @@ export default function FieldLeadersPage() {
   );
 
   const today = useMemo(() => todayIsoLocal(), []);
-  const todayWeekday = useMemo(() => new Date().getDay(), []);
+  const todayWeekday = useMemo(() => weekdaySaoPaulo(), []);
 
   function startEdit(row: FieldAssignment) {
     setEditingId(row.id);
