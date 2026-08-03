@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Request } from 'express';
 
@@ -13,10 +14,47 @@ export type TokenPayload = {
   name: string;
 };
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const DEV_FALLBACK = 'dev-secret-change-me';
+
+function resolveJwtSecret() {
+  const fromEnv = (process.env.JWT_SECRET || '').trim();
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (isProd && (!fromEnv || fromEnv === DEV_FALLBACK || fromEnv.length < 32)) {
+    throw new Error(
+      '[auth] JWT_SECRET ausente ou fraco em produção (mín. 32 caracteres, não use o valor de dev).',
+    );
+  }
+
+  if (!fromEnv || fromEnv === DEV_FALLBACK) {
+    console.warn(
+      '[auth] JWT_SECRET não definido ou inseguro — usando fallback só para desenvolvimento.',
+    );
+    return DEV_FALLBACK;
+  }
+
+  return fromEnv;
+}
+
+export const JWT_SECRET = resolveJwtSecret();
+
+/** Duração da sessão (cookie + JWT). Padrão 12h; override com JWT_EXPIRES (ex.: 7d, 1h). */
+export const JWT_EXPIRES = process.env.JWT_EXPIRES?.trim() || '12h';
 
 function getSecretKey() {
   return new TextEncoder().encode(JWT_SECRET);
+}
+
+function sessionMaxAgeMs() {
+  // cookie maxAge em ms — alinhado com 12h padrão
+  const raw = JWT_EXPIRES.toLowerCase();
+  const m = raw.match(/^(\d+)([smhd])$/);
+  if (!m) return 12 * 60 * 60 * 1000;
+  const n = Number(m[1]);
+  const unit = m[2];
+  const mult =
+    unit === 's' ? 1000 : unit === 'm' ? 60_000 : unit === 'h' ? 3_600_000 : 86_400_000;
+  return n * mult;
 }
 
 export async function signToken(user: AuthUser) {
@@ -27,12 +65,15 @@ export async function signToken(user: AuthUser) {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setJti(randomBytes(16).toString('hex'))
+    .setExpirationTime(JWT_EXPIRES)
     .sign(getSecretKey());
 }
 
 export async function verifyToken(token: string) {
-  const { payload } = await jwtVerify(token, getSecretKey());
+  const { payload } = await jwtVerify(token, getSecretKey(), {
+    algorithms: ['HS256'],
+  });
 
   return {
     userId: Number(payload.userId),
@@ -47,6 +88,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
 
   try {
     const payload = await verifyToken(token);
+    if (!payload.userId || !payload.email) return null;
     return {
       id: payload.userId,
       email: payload.email,
@@ -57,7 +99,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
   }
 }
 
-/** Secure cookie só em HTTPS. Em HTTP (LAN/IP) o browser ignora o cookie e a API volta 401. */
+/** Secure cookie só em HTTPS. Em HTTP (LAN) o browser ignora Secure. */
 function cookieSecure() {
   if (process.env.COOKIE_SECURE === 'true') return true;
   if (process.env.COOKIE_SECURE === 'false') return false;
@@ -68,7 +110,8 @@ function cookieSecure() {
 export const cookieOptions = {
   httpOnly: true,
   secure: cookieSecure(),
+  // Lax: envia em navegação top-level same-site; mitiga CSRF básico em POST cross-site
   sameSite: 'lax' as const,
   path: '/',
-  maxAge: 60 * 60 * 24 * 7 * 1000,
+  maxAge: sessionMaxAgeMs(),
 };

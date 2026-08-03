@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
 
@@ -21,12 +21,18 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const data = await api<{ user: AuthUser }>('/api/auth/login', {
+      const data = await api<{ user: AuthUser; password_is_weak?: boolean }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
       setUser(data.user);
-      navigate('/dashboard', { replace: true });
+      if (data.password_is_weak) {
+        sessionStorage.setItem('campo_must_change_password', '1');
+        navigate('/change-password', { replace: true });
+      } else {
+        sessionStorage.removeItem('campo_must_change_password');
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer login.');
       setSubmitting(false);
@@ -80,11 +86,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-600">
-          Não tem conta?{' '}
-          <Link to="/register" className="font-medium text-sky-700">
-            Cadastre-se
-          </Link>
+        <p className="mt-4 text-center text-xs text-slate-500">
+          Acesso restrito. Contas são criadas pelo administrador.
         </p>
       </div>
     </main>

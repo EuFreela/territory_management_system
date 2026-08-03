@@ -2,13 +2,13 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ui/ScrollToTop';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import TerritoriesPage from './pages/TerritoriesPage';
 import NewTerritoryPage from './pages/NewTerritoryPage';
 import TerritoryDetailPage from './pages/TerritoryDetailPage';
 import EditTerritoryPage from './pages/EditTerritoryPage';
 import FieldLeadersPage from './pages/FieldLeadersPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -25,9 +25,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
 
         <Route element={<ProtectedRoute />}>
+          <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dirigentes" element={<FieldLeadersPage />} />
           <Route path="/territories" element={<TerritoriesPage />} />
