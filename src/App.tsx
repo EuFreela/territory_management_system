@@ -12,6 +12,7 @@ import EditTerritoryPage from './pages/EditTerritoryPage';
 import FieldLeadersPage from './pages/FieldLeadersPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import UsersPage from './pages/UsersPage';
+import AboutPage from './pages/AboutPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -68,6 +69,7 @@ export default function App() {
               </RequirePermission>
             }
           />
+          <Route path="/sobre" element={<AboutPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

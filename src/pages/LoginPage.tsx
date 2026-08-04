@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { IconMoon, IconSun } from '@/components/Map/mapIcons';
+import { IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
@@ -43,86 +43,97 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-apple-bg px-5">
-      {/* fundo sutil */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,113,227,0.08),_transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(10,132,255,0.14),_transparent_55%)]"
-      />
+    <main className="relative flex min-h-screen flex-col bg-apple-bg">
+      <header className="flex h-14 shrink-0 items-center justify-end border-b border-apple-line bg-apple-surface/75 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          data-tooltip-side="bottom"
+          aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          className="app-icon-btn"
+        >
+          {theme === 'dark' ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+        </button>
+      </header>
 
-      <button
-        type="button"
-        onClick={toggleTheme}
-        data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-        data-tooltip-side="bottom"
-        aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-        className="app-icon-btn absolute right-4 top-4 z-10 sm:right-6 sm:top-6"
-      >
-        {theme === 'dark' ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
-      </button>
+      <div className="flex flex-1 items-center justify-center px-5 py-10 sm:py-14">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-8 text-center">
+            <img
+              src="/logo.webp"
+              alt="CAMPO"
+              width={72}
+              height={72}
+              className="mx-auto mb-5 h-[72px] w-[72px] rounded-[18px] object-cover shadow-card ring-1 ring-black/[0.06] dark:ring-white/[0.08]"
+            />
+            <h1 className="app-title">CAMPO</h1>
+            <p className="app-subtitle">Congregação Alpinópolis</p>
+          </div>
 
-      <div className="relative w-full max-w-[400px]">
-        <div className="mb-8 text-center">
-          <img
-            src="/logo.webp"
-            alt="Campo"
-            width={72}
-            height={72}
-            className="mx-auto mb-4 h-[72px] w-[72px] rounded-[18px] object-cover shadow-card ring-1 ring-black/[0.06] dark:ring-white/[0.08]"
-          />
-          <h1 className="text-[28px] font-semibold tracking-tightish text-apple-ink">Campo</h1>
-          <p className="mt-1 text-[15px] text-apple-secondary">Territórios de campo</p>
-        </div>
+          <div className="app-card-pad sm:p-7">
+            <h2 className="mb-1 text-[17px] font-semibold tracking-tightish text-apple-ink">
+              Entrar
+            </h2>
+            <p className="mb-6 text-[14px] leading-relaxed text-apple-secondary">
+              Use o email e a senha fornecidos pelo administrador.
+            </p>
 
-        <div className="rounded-apple-xl border border-apple-line bg-apple-surface/90 p-7 shadow-card backdrop-blur-sm sm:p-8">
-          <h2 className="mb-6 text-center text-[17px] font-semibold text-apple-ink">Entrar</h2>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="app-label">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="app-input"
+                  required
+                  disabled={submitting}
+                  autoComplete="username"
+                  placeholder="seu@email.com"
+                />
+              </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="app-label">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="app-input"
-                required
+              <div>
+                <label htmlFor="password" className="app-label">
+                  Senha
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="app-input"
+                  required
+                  disabled={submitting}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error ? (
+                <p className="rounded-apple border border-apple-red/25 bg-apple-red/10 px-3.5 py-2.5 text-[13px] text-apple-red">
+                  {error}
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
                 disabled={submitting}
-                autoComplete="username"
-              />
-            </div>
+                className="app-btn-primary mt-1 h-11 w-full disabled:opacity-60"
+              >
+                <IconLogIn className="h-4 w-4" />
+                {submitting ? 'Entrando…' : 'Continuar'}
+              </button>
+            </form>
+          </div>
 
-            <div>
-              <label htmlFor="password" className="app-label">
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="app-input"
-                required
-                disabled={submitting}
-                autoComplete="current-password"
-              />
-            </div>
-
-            {error ? (
-              <p className="rounded-apple bg-red-50 px-3 py-2 text-[13px] text-apple-red">{error}</p>
-            ) : null}
-
-            <button type="submit" disabled={submitting} className="app-btn-primary w-full">
-              {submitting ? 'Entrando…' : 'Continuar'}
-            </button>
-          </form>
+          <p className="mt-6 text-center text-[12px] leading-relaxed text-apple-tertiary">
+            Acesso restrito. Contas são criadas pelo administrador.
+          </p>
         </div>
-
-        <p className="mt-6 text-center text-[12px] leading-relaxed text-apple-tertiary">
-          Acesso restrito. Contas são criadas pelo administrador.
-        </p>
       </div>
     </main>
   );

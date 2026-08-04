@@ -4,9 +4,11 @@ import {
   ROLE_ADMIN,
   SCOPES,
   isScope,
+  normalizeThemePreference,
   type RbacUser,
   type RoleInfo,
   type Scope,
+  type ThemePreference,
 } from './rbac.js';
 
 type UserRow = {
@@ -16,7 +18,23 @@ type UserRow = {
   role_id: number | null;
   role_slug: string | null;
   role_name: string | null;
+  theme_preference?: string | null;
 };
+
+async function selectUserWithRbac(userId: number, withTheme: boolean): Promise<UserRow | null> {
+  const themeCol = withTheme ? ', u.theme_preference' : '';
+  const [rows] = await pool.execute(
+    `SELECT u.id, u.name, u.email, u.role_id${themeCol},
+            r.slug AS role_slug, r.name AS role_name
+     FROM users u
+     LEFT JOIN roles r ON r.id = u.role_id
+     WHERE u.id = ?
+     LIMIT 1`,
+    [userId],
+  );
+  const list = rows as UserRow[];
+  return list[0] ?? null;
+}
 
 /**
  * Carrega usuário com papel e permissões (fonte da verdade no banco).
@@ -24,49 +42,76 @@ type UserRow = {
  */
 export async function loadRbacUserById(userId: number): Promise<RbacUser | null> {
   try {
-    const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.role_id,
-              r.slug AS role_slug, r.name AS role_name
-       FROM users u
-       LEFT JOIN roles r ON r.id = u.role_id
-       WHERE u.id = ?
-       LIMIT 1`,
-      [userId],
-    );
-    const list = rows as UserRow[];
-    const row = list[0];
+    const row = await selectUserWithRbac(userId, true);
     if (!row) return null;
-
     return await buildRbacUser(row);
   } catch (err) {
-    // Banco sem migração RBAC: tenta só users
     const msg = err instanceof Error ? err.message : String(err);
-    if (!/roles|role_id|Unknown column/i.test(msg)) throw err;
 
-    const [rows] = await pool.execute(
-      'SELECT id, name, email FROM users WHERE id = ? LIMIT 1',
-      [userId],
-    );
-    const list = rows as Array<{ id: number; name: string; email: string }>;
-    const row = list[0];
-    if (!row) return null;
+    // Coluna theme ainda não migrada: carrega RBAC sem ela
+    if (/theme_preference/i.test(msg)) {
+      try {
+        const row = await selectUserWithRbac(userId, false);
+        if (!row) return null;
+        return await buildRbacUser({ ...row, theme_preference: 'light' });
+      } catch (inner) {
+        const innerMsg = inner instanceof Error ? inner.message : String(inner);
+        if (!/roles|role_id|Unknown column/i.test(innerMsg)) throw inner;
+      }
+    } else if (!/roles|role_id|Unknown column/i.test(msg)) {
+      throw err;
+    }
 
-    // Sem RBAC: mantém acesso total (comportamento antigo) até migrar
-    return {
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      role: { id: 0, slug: ROLE_ADMIN, name: 'Administrador' },
-      permissions: [...SCOPES],
-      isAdmin: true,
-    };
+    // Banco sem migração RBAC
+    try {
+      const [rows] = await pool.execute(
+        'SELECT id, name, email, theme_preference FROM users WHERE id = ? LIMIT 1',
+        [userId],
+      );
+      const list = rows as Array<{
+        id: number;
+        name: string;
+        email: string;
+        theme_preference?: string | null;
+      }>;
+      const row = list[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: { id: 0, slug: ROLE_ADMIN, name: 'Administrador' },
+        permissions: [...SCOPES],
+        isAdmin: true,
+        theme_preference: normalizeThemePreference(row.theme_preference),
+      };
+    } catch {
+      const [rows] = await pool.execute(
+        'SELECT id, name, email FROM users WHERE id = ? LIMIT 1',
+        [userId],
+      );
+      const list = rows as Array<{ id: number; name: string; email: string }>;
+      const row = list[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: { id: 0, slug: ROLE_ADMIN, name: 'Administrador' },
+        permissions: [...SCOPES],
+        isAdmin: true,
+        theme_preference: 'light' as ThemePreference,
+      };
+    }
   }
 }
 
 export async function loadRbacUserByEmail(email: string): Promise<RbacUser | null> {
   try {
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.role_id,
+      `SELECT u.id, u.name, u.email, u.role_id, u.theme_preference,
               r.slug AS role_slug, r.name AS role_name
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
@@ -78,7 +123,27 @@ export async function loadRbacUserByEmail(email: string): Promise<RbacUser | nul
     const row = list[0];
     if (!row) return null;
     return await buildRbacUser(row);
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/theme_preference/i.test(msg)) {
+      try {
+        const [rows] = await pool.execute(
+          `SELECT u.id, u.name, u.email, u.role_id,
+                  r.slug AS role_slug, r.name AS role_name
+           FROM users u
+           LEFT JOIN roles r ON r.id = u.role_id
+           WHERE u.email = ?
+           LIMIT 1`,
+          [email.toLowerCase()],
+        );
+        const list = rows as UserRow[];
+        const row = list[0];
+        if (!row) return null;
+        return await buildRbacUser({ ...row, theme_preference: 'light' });
+      } catch {
+        return null;
+      }
+    }
     return null;
   }
 }
@@ -105,11 +170,9 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
         .map((p) => p.permission)
         .filter(isScope);
     } catch {
-      // fallback: mapa estático do slug
       permissions = DEFAULT_ROLE_PERMISSIONS[role.slug] ?? [];
     }
 
-    // se admin sem linhas na tabela, usa tudo
     if (permissions.length === 0 && DEFAULT_ROLE_PERMISSIONS[role.slug]) {
       permissions = [...DEFAULT_ROLE_PERMISSIONS[role.slug]];
     }
@@ -122,5 +185,6 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
     role,
     permissions,
     isAdmin,
+    theme_preference: normalizeThemePreference(row.theme_preference),
   };
 }

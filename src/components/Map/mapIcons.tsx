@@ -182,6 +182,25 @@ export function IconX({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+export function IconInfo({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </svg>
+  );
+}
+
 export function IconSun({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg
@@ -234,6 +253,25 @@ export function IconMap({ className = 'h-5 w-5' }: IconProps) {
       <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
       <path d="M9 3v15" />
       <path d="M15 6v15" />
+    </svg>
+  );
+}
+
+export function IconLogIn({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="M10 17l5-5-5-5" />
+      <path d="M15 12H3" />
     </svg>
   );
 }

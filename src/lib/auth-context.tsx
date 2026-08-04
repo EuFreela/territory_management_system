@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
-import { can, type AuthUserWithRbac, type Scope } from './permissions';
+import { can, type AuthUserWithRbac, type Scope, type ThemePreference } from './permissions';
 
 export type AuthUser = AuthUserWithRbac;
+export type { ThemePreference };
 
 type AuthContextValue = {
   user: AuthUser | null;

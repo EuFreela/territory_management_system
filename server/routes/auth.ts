@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import pool from '../lib/db.js';
 import { cookieOptions, getUserFromRequest, signToken } from '../lib/auth.js';
 import { loadRbacUserById } from '../lib/load-user.js';
 import { isStrongPassword } from '../lib/password.js';
+import { normalizeThemePreference } from '../lib/rbac.js';
 import { changePasswordSchema, loginSchema } from '../lib/validations.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -77,6 +79,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       role: null,
       permissions: [],
       isAdmin: false,
+      theme_preference: 'light' as const,
     };
 
     res.json({
@@ -102,6 +105,47 @@ router.get('/me', async (req, res) => {
     return;
   }
   res.json(user);
+});
+
+const themeSchema = z.object({
+  theme: z.enum(['light', 'dark']),
+});
+
+/** Preferência de tema (light/dark) salva no usuário logado */
+router.put('/theme', requireAuth, async (req, res) => {
+  try {
+    const parsed = themeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Tema inválido.' });
+      return;
+    }
+
+    const authUser = (req as AuthedRequest).user;
+    const theme = normalizeThemePreference(parsed.data.theme);
+
+    try {
+      await pool.execute('UPDATE users SET theme_preference = ? WHERE id = ?', [theme, authUser.id]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/theme_preference|Unknown column/i.test(msg)) {
+        res.status(503).json({
+          error: 'Preferência de tema ainda não migrada. Rode: npm run migrate:theme',
+        });
+        return;
+      }
+      throw err;
+    }
+
+    const user = (await loadRbacUserById(authUser.id)) ?? {
+      ...authUser,
+      theme_preference: theme,
+    };
+
+    res.json({ message: 'Tema atualizado.', theme, user });
+  } catch (error) {
+    console.error('[auth/theme]', error);
+    res.status(500).json({ error: 'Erro ao salvar tema.' });
+  }
 });
 
 /** Trocar senha (autenticado) — força política forte na nova senha */

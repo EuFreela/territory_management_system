@@ -17,6 +17,8 @@ export type RoleInfo = {
   name: string;
 };
 
+export type ThemePreference = 'light' | 'dark';
+
 export type AuthUserWithRbac = {
   id: number;
   email: string;
@@ -24,6 +26,8 @@ export type AuthUserWithRbac = {
   role?: RoleInfo | null;
   permissions?: Scope[] | string[];
   isAdmin?: boolean;
+  /** Preferência salva no usuário (banco) */
+  theme_preference?: ThemePreference | null;
 };
 
 export function can(user: AuthUserWithRbac | null | undefined, scope: Scope): boolean {
