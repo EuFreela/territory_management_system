@@ -1084,12 +1084,12 @@ export default function TerritoryMap({
       <div ref={addressBoxRef} className={`relative w-full ${isFullscreen ? 'shrink-0' : ''}`}>
         <form
           onSubmit={(e) => void searchAddress(e)}
-          className="flex overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
+          className="flex overflow-hidden rounded-xl border border-apple-line bg-apple-surface shadow-soft"
         >
           <label htmlFor="map-address-search" className="sr-only">
             Buscar endereço no mapa
           </label>
-          <span className="pointer-events-none flex items-center pl-3 text-slate-400">
+          <span className="pointer-events-none flex items-center pl-3 text-apple-tertiary">
             <IconSearch className="h-5 w-5" />
           </span>
           <input
@@ -1104,7 +1104,7 @@ export default function TerritoryMap({
               if (addressHits.length > 1) setAddressOpen(true);
             }}
             placeholder="Buscar rua, bairro, cidade ou CEP…"
-            className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-apple-ink outline-none placeholder:text-apple-tertiary"
             autoComplete="off"
             disabled={addressSearching}
           />
@@ -1120,7 +1120,7 @@ export default function TerritoryMap({
                 setAddressError('');
                 setSearchPin(null);
               }}
-              className="inline-flex h-10 w-9 shrink-0 items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+              className="inline-flex h-10 w-9 shrink-0 items-center justify-center text-apple-tertiary hover:bg-apple-fill hover:text-apple-ink"
             >
               <IconX className="h-4 w-4" />
             </button>
@@ -1130,7 +1130,7 @@ export default function TerritoryMap({
             data-tooltip="Buscar endereço"
             aria-label="Buscar endereço"
             disabled={addressSearching}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-slate-200 bg-sky-600 px-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-apple-line bg-apple-blue px-3 text-sm font-semibold text-white hover:bg-apple-blue-hover disabled:opacity-60"
           >
             <IconSearch className="h-4 w-4" />
             <span className="hidden sm:inline">{addressSearching ? 'Buscando…' : 'Buscar'}</span>
@@ -1138,21 +1138,21 @@ export default function TerritoryMap({
         </form>
 
         {addressError ? (
-          <p className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+          <p className="mt-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-200">
             {addressError}
           </p>
         ) : null}
 
         {addressOpen && addressHits.length > 0 ? (
-          <ul className="absolute left-0 right-0 z-[30] mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+          <ul className="absolute left-0 right-0 z-[30] mt-1 max-h-52 overflow-y-auto rounded-xl border border-apple-line bg-apple-surface py-1 shadow-float">
             {addressHits.map((hit, index) => (
               <li key={`${hit.lat}-${hit.lng}-${index}`}>
                 <button
                   type="button"
                   onClick={() => goToAddress(hit)}
-                  className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-900"
+                  className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs text-apple-ink hover:bg-apple-blue/10 hover:text-apple-blue"
                 >
-                  <IconSearch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <IconSearch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apple-tertiary" />
                   <span className="line-clamp-2">{hit.label}</span>
                 </button>
               </li>
@@ -1161,16 +1161,16 @@ export default function TerritoryMap({
         ) : null}
 
         {searchPin && !addressOpen ? (
-          <p className="mt-1.5 truncate rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] font-medium text-sky-900">
+          <p className="mt-1.5 truncate rounded-lg border border-apple-blue/25 bg-apple-blue/10 px-2.5 py-1.5 text-[11px] font-medium text-apple-blue">
             📍 {searchPin.label}
           </p>
         ) : null}
       </div>
 
       <div
-        className={`relative w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
+        className={`relative w-full overflow-hidden rounded-xl border border-apple-line bg-apple-surface ${
           isFullscreen ? 'min-h-0 flex-1' : heightClass
-        } ${drawMode ? 'ring-2 ring-sky-400' : selected ? 'ring-2 ring-sky-300' : ''}`}
+        } ${drawMode ? 'ring-2 ring-apple-blue/60' : selected ? 'ring-2 ring-apple-blue/40' : ''}`}
         onMouseEnter={() => setMapHovered(true)}
         onMouseLeave={() => setMapHovered(false)}
       >
@@ -1220,7 +1220,7 @@ export default function TerritoryMap({
             aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             aria-pressed={isFullscreen}
             onClick={toggleFullscreen}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-md transition hover:bg-slate-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
           >
             {isFullscreen ? <IconCompress /> : <IconExpand />}
           </button>
@@ -1230,7 +1230,7 @@ export default function TerritoryMap({
             data-tooltip-side="left"
             aria-label="Voltar ao início e enquadrar as áreas"
             onClick={fitToAreas}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-md transition hover:bg-slate-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
           >
             <IconFocusAreas />
           </button>
@@ -1241,7 +1241,7 @@ export default function TerritoryMap({
               data-tooltip-side="left"
               aria-label="Limpar destaque da área"
               onClick={clearSelection}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300 bg-sky-50 text-sky-800 shadow-md transition hover:bg-sky-100"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-blue/30 bg-apple-blue/10 text-apple-blue shadow-md transition hover:bg-apple-blue/15"
             >
               <IconX />
             </button>
@@ -1399,13 +1399,19 @@ export default function TerritoryMap({
       {!isFullscreen ? (
         <>
           {editable ? (
-            <p className={`text-sm font-medium ${areaReady ? 'text-emerald-700' : 'text-amber-700'}`}>
+            <p
+              className={`text-sm font-medium ${
+                areaReady
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : 'text-amber-700 dark:text-amber-300'
+              }`}
+            >
               {areaReady
                 ? `✓ ${areas.length} área(s) pronta(s) para salvar`
                 : '⚠ Ative o lápis, desenhe um contorno (3+ pontos) e conclua com ✓'}
             </p>
           ) : (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-apple-secondary">
               {areaReady
                 ? `${areas.length} área(s) no território.`
                 : 'Este território ainda não tem área definida.'}
@@ -1413,7 +1419,7 @@ export default function TerritoryMap({
           )}
 
           {cepLabel && editable ? (
-            <p className="text-xs text-slate-500">Base do mapa (CEP): {cepLabel}</p>
+            <p className="text-xs text-apple-tertiary">Base do mapa (CEP): {cepLabel}</p>
           ) : null}
         </>
       ) : null}
