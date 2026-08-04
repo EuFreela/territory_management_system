@@ -17,9 +17,11 @@ import {
   IconFocusAreas,
   IconLock,
   IconPencil,
+  IconRedo,
   IconTag,
   IconTrash,
   IconUndo,
+  IconX,
 } from './mapIcons';
 
 export type LatLng = [number, number];
@@ -576,6 +578,8 @@ type TerritoryMapProps = {
   focusToken?: number;
   /** Clique em um polígono (modo leitura ou edição) */
   onAreaSelect?: (area: { id: string; label: string }) => void;
+  /** Limpa o destaque (seleção) — botão dentro do mapa */
+  onClearSelection?: () => void;
   /** Nomes de quadras finalizadas (não em casa 100%) — cor/balão no mapa */
   finishedKeys?: string[];
 };
@@ -596,11 +600,16 @@ export default function TerritoryMap({
   selectedKey = null,
   focusToken = 0,
   onAreaSelect,
+  onClearSelection,
   finishedKeys = [],
 }: TerritoryMapProps) {
   const confirm = useConfirm();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
   const [draftPoints, setDraftPoints] = useState<LatLng[]>([]);
+  /** Pilha de refazer (ordem LIFO: ponto do rascunho ou área removida) */
+  const [redoStack, setRedoStack] = useState<
+    Array<{ type: 'point'; point: LatLng } | { type: 'area'; area: MapArea }>
+  >([]);
   /** false = mapa travado (só navegar); true = desenhar */
   const [drawMode, setDrawMode] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -622,6 +631,11 @@ export default function TerritoryMap({
 
   function fitToAreas() {
     setFitAreasToken((t) => t + 1);
+  }
+
+  function clearSelection() {
+    setSelectedId(null);
+    onClearSelection?.();
   }
 
   // Esc sai da tela cheia; trava scroll do body enquanto fullscreen
@@ -723,26 +737,49 @@ export default function TerritoryMap({
     // se estava no meio de um desenho incompleto, descarta rascunho
     if (draftPoints.length > 0 && draftPoints.length < 3) {
       setDraftPoints([]);
+      setRedoStack([]);
     }
   }
 
   function addPoint(point: LatLng) {
     if (!editable || !drawMode) return;
     setDraftPoints((prev) => [...prev, point]);
+    // nova ação invalida o refazer
+    setRedoStack([]);
   }
 
   function undoPoint() {
     if (!editable) return;
     if (draftPoints.length > 0) {
+      const removed = draftPoints[draftPoints.length - 1];
       setDraftPoints((prev) => prev.slice(0, -1));
+      setRedoStack((prev) => [...prev, { type: 'point', point: removed }]);
       return;
     }
-    // sem rascunho: remove última área
+    // sem rascunho: remove última área (pode refazer)
     if (areas.length > 0) {
+      const removed = areas[areas.length - 1];
       const next = areas.slice(0, -1);
       emit(next);
       setSelectedId(next[next.length - 1]?.id ?? null);
+      setRedoStack((prev) => [...prev, { type: 'area', area: removed }]);
     }
+  }
+
+  function redoPoint() {
+    if (!editable || redoStack.length === 0) return;
+    const entry = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+
+    if (entry.type === 'point') {
+      setDraftPoints((prev) => [...prev, entry.point]);
+      if (!drawMode) setDrawMode(true);
+      return;
+    }
+
+    const next = [...areas, entry.area];
+    emit(next);
+    setSelectedId(entry.area.id);
   }
 
   function finishArea() {
@@ -756,6 +793,7 @@ export default function TerritoryMap({
     const next = [...areas, area];
     emit(next);
     setDraftPoints([]);
+    setRedoStack([]);
     setSelectedId(area.id);
     setDrawMode(false);
   }
@@ -775,6 +813,7 @@ export default function TerritoryMap({
     if (!ok) return;
 
     setDraftPoints([]);
+    setRedoStack([]);
     setSelectedId(null);
     emit([]);
     setDrawMode(false);
@@ -803,6 +842,7 @@ export default function TerritoryMap({
     const next = areas.filter((a) => a.id !== selectedId);
     emit(next);
     setSelectedId(next[0]?.id ?? null);
+    setRedoStack([]);
   }
 
   return (
@@ -851,6 +891,14 @@ export default function TerritoryMap({
             onClick={undoPoint}
           >
             <IconUndo className="h-5 w-5" />
+          </ToolButton>
+
+          <ToolButton
+            title="Refazer último ponto (ou última área desfeita)"
+            disabled={redoStack.length === 0}
+            onClick={redoPoint}
+          >
+            <IconRedo className="h-5 w-5" />
           </ToolButton>
 
           <ToolButton
@@ -1006,6 +1054,17 @@ export default function TerritoryMap({
           >
             <IconFocusAreas />
           </button>
+          {selected && !drawMode ? (
+            <button
+              type="button"
+              title="Limpar destaque"
+              aria-label="Limpar destaque da área"
+              onClick={clearSelection}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300 bg-sky-50 text-sky-800 shadow-md transition hover:bg-sky-100"
+            >
+              <IconX />
+            </button>
+          ) : null}
         </div>
 
         <MapContainer

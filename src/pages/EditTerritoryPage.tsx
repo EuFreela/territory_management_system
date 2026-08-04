@@ -361,6 +361,10 @@ export default function EditTerritoryPage() {
                 selectedKey={mapSelectedKey}
                 focusToken={mapFocusToken}
                 onAreaSelect={onMapAreaSelect}
+                onClearSelection={() => {
+                  setMapSelectedKey(null);
+                  setMapFocusToken(0);
+                }}
                 finishedKeys={blocks
                   .filter((b) => {
                     const total = b.house_numbers.length;
