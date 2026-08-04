@@ -8,12 +8,6 @@ const strongPassword = z.string().superRefine((value, ctx) => {
   }
 });
 
-export const registerSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(150),
-  email: z.string().email('Email inválido'),
-  password: strongPassword,
-});
-
 /** Login: não aplica política forte (contas antigas), só não vazio */
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
