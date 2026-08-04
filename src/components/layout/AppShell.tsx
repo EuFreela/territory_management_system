@@ -184,7 +184,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-apple-bg">
-      <header className="sticky top-0 z-[40] border-b border-apple-line bg-apple-surface/75 backdrop-blur-xl backdrop-saturate-150">
+      <header className="sticky top-0 z-[100] border-b border-apple-line bg-apple-surface/75 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-6">
             {logo}
@@ -318,7 +318,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile drawer */}
       {mobileOpen ? (
-        <div className="fixed inset-0 z-[50] md:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[110] md:hidden" role="dialog" aria-modal="true">
           <button
             type="button"
             className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
