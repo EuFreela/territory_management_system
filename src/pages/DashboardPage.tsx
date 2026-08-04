@@ -585,14 +585,20 @@ export default function DashboardPage() {
                         {' · '}
                       </>
                     ) : null}
-                    {item.unfinished_blocks}{' '}
-                    {item.unfinished_blocks === 1 ? 'quadra pendente' : 'quadras pendentes'}
-                    {item.pending_houses > 0 ? (
-                      <>
-                        {' · '}
-                        {item.pending_houses} {item.pending_houses === 1 ? 'casa' : 'casas'}
-                      </>
-                    ) : null}
+                    {(() => {
+                      const quadras = item.unfinished_quadras ?? item.unfinished_blocks;
+                      const ruas = item.unfinished_streets ?? item.unfinished_blocks;
+                      const casas = item.open_house_numbers ?? item.pending_houses;
+                      const parts: string[] = [];
+                      parts.push(
+                        `${quadras} ${quadras === 1 ? 'quadra' : 'quadras'}`,
+                      );
+                      parts.push(`${ruas} ${ruas === 1 ? 'rua' : 'ruas'}`);
+                      if (casas > 0) {
+                        parts.push(`${casas} ${casas === 1 ? 'casa' : 'casas'}`);
+                      }
+                      return parts.join(' · ');
+                    })()}
                   </p>
                 </div>
                 <span className="shrink-0 text-[13px] font-medium text-apple-blue">Continuar</span>

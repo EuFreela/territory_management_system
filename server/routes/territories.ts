@@ -128,16 +128,27 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
       const openBlocks = blocks.filter((b) => !b.is_finished);
       if (openBlocks.length === 0) return null;
 
+      // Quadra = name (várias ruas = vários blocks com o mesmo name)
+      const unfinishedQuadras = new Set(
+        openBlocks.map((b) => String((b as { name?: string }).name ?? '').trim().toLowerCase()),
+      );
       const pendingHouses = openBlocks.reduce(
         (sum, b) => sum + Math.max(0, (b.total as number) - (b.done_count as number)),
         0,
       );
+      const pendingHouseNumbers = openBlocks.reduce((sum, b) => sum + (b.total as number), 0);
 
       return {
         ...t,
+        /** @deprecated use unfinished_streets — contagem de registros/ruas abertas */
         unfinished_blocks: openBlocks.length,
+        unfinished_streets: openBlocks.length,
+        unfinished_quadras: unfinishedQuadras.size,
         total_blocks: blocks.length,
+        total_streets: blocks.length,
         pending_houses: pendingHouses,
+        /** total de números de casa nas ruas ainda incompletas */
+        open_house_numbers: pendingHouseNumbers,
         blocks: openBlocks,
       };
     })

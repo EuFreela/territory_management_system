@@ -34,9 +34,17 @@ export type Block = {
 };
 
 export type UnfinishedTerritory = Territory & {
+  /** Registros de rua ainda incompletos (legado: unfinished_blocks) */
   unfinished_blocks: number;
+  unfinished_streets?: number;
+  /** Quadras distintas com ao menos uma rua incompleta */
+  unfinished_quadras?: number;
   total_blocks: number;
+  total_streets?: number;
+  /** Casas ainda não marcadas (pendentes) */
   pending_houses: number;
+  /** Total de números de casa nas ruas incompletas */
+  open_house_numbers?: number;
   blocks?: Block[];
 };
 
