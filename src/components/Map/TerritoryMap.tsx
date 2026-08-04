@@ -8,8 +8,9 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
+import { api } from '@/lib/api';
 import {
   IconCheck,
   IconCompress,
@@ -18,6 +19,7 @@ import {
   IconLock,
   IconPencil,
   IconRedo,
+  IconSearch,
   IconTag,
   IconTrash,
   IconUndo,
@@ -322,6 +324,26 @@ function FitToAreasOn({
   return null;
 }
 
+/** Voa até o endereço encontrado na busca */
+function FlyToSearchResult({
+  result,
+  token,
+}: {
+  result: { lat: number; lng: number; label: string } | null;
+  token: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (token <= 0 || !result) return;
+    map.flyTo([result.lat, result.lng], 17, { animate: true, duration: 0.8 });
+  }, [token, result, map]);
+
+  return null;
+}
+
+type AddressHit = { lat: number; lng: number; label: string };
+
 function InitialMapView({
   centerLat,
   centerLng,
@@ -621,8 +643,18 @@ export default function TerritoryMap({
   /** Incrementa ao clicar em “voltar às áreas” */
   const [fitAreasToken, setFitAreasToken] = useState(0);
 
+  /** Busca por endereço no mapa */
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressHits, setAddressHits] = useState<AddressHit[]>([]);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const [addressSearching, setAddressSearching] = useState(false);
+  const [addressError, setAddressError] = useState('');
+  const [searchPin, setSearchPin] = useState<AddressHit | null>(null);
+  const [searchFlyToken, setSearchFlyToken] = useState(0);
+
   const drawingLocally = useRef(false);
   const seededFromServer = useRef(Boolean(value && parseGeoJsonToAreas(value).length > 0));
+  const addressBoxRef = useRef<HTMLDivElement>(null);
 
   function toggleFullscreen() {
     setIsFullscreen((prev) => !prev);
@@ -637,6 +669,65 @@ export default function TerritoryMap({
     setSelectedId(null);
     onClearSelection?.();
   }
+
+  function goToAddress(hit: AddressHit) {
+    setSearchPin(hit);
+    setAddressQuery(hit.label);
+    setAddressHits([]);
+    setAddressOpen(false);
+    setAddressError('');
+    setSearchFlyToken((t) => t + 1);
+  }
+
+  async function searchAddress(event?: FormEvent) {
+    event?.preventDefault();
+    const q = addressQuery.trim();
+    if (q.length < 3) {
+      setAddressError('Digite ao menos 3 caracteres (rua, bairro, cidade ou CEP).');
+      setAddressHits([]);
+      setAddressOpen(false);
+      return;
+    }
+
+    setAddressSearching(true);
+    setAddressError('');
+    try {
+      const data = await api<{ results: AddressHit[] }>(
+        `/api/config/geocode?q=${encodeURIComponent(q)}`,
+      );
+      const results = data.results ?? [];
+      if (results.length === 0) {
+        setAddressHits([]);
+        setAddressOpen(false);
+        setAddressError('Nenhum endereço encontrado. Tente outra busca.');
+        return;
+      }
+      if (results.length === 1) {
+        goToAddress(results[0]);
+        return;
+      }
+      setAddressHits(results);
+      setAddressOpen(true);
+    } catch (err) {
+      setAddressHits([]);
+      setAddressOpen(false);
+      setAddressError(err instanceof Error ? err.message : 'Erro ao buscar endereço.');
+    } finally {
+      setAddressSearching(false);
+    }
+  }
+
+  // Fecha lista de sugestões ao clicar fora
+  useEffect(() => {
+    if (!addressOpen) return;
+    function onDoc(e: MouseEvent) {
+      if (!addressBoxRef.current?.contains(e.target as Node)) {
+        setAddressOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [addressOpen]);
 
   // Esc sai da tela cheia; trava scroll do body enquanto fullscreen
   useEffect(() => {
@@ -989,6 +1080,93 @@ export default function TerritoryMap({
         </div>
       ) : null}
 
+      {/* Busca por endereço — acima do mapa */}
+      <div ref={addressBoxRef} className={`relative w-full ${isFullscreen ? 'shrink-0' : ''}`}>
+        <form
+          onSubmit={(e) => void searchAddress(e)}
+          className="flex overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
+        >
+          <label htmlFor="map-address-search" className="sr-only">
+            Buscar endereço no mapa
+          </label>
+          <span className="pointer-events-none flex items-center pl-3 text-slate-400">
+            <IconSearch className="h-5 w-5" />
+          </span>
+          <input
+            id="map-address-search"
+            type="search"
+            value={addressQuery}
+            onChange={(e) => {
+              setAddressQuery(e.target.value);
+              setAddressError('');
+            }}
+            onFocus={() => {
+              if (addressHits.length > 1) setAddressOpen(true);
+            }}
+            placeholder="Buscar rua, bairro, cidade ou CEP…"
+            className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            autoComplete="off"
+            disabled={addressSearching}
+          />
+          {searchPin || addressQuery ? (
+            <button
+              type="button"
+              title="Limpar busca"
+              aria-label="Limpar busca"
+              onClick={() => {
+                setAddressQuery('');
+                setAddressHits([]);
+                setAddressOpen(false);
+                setAddressError('');
+                setSearchPin(null);
+              }}
+              className="inline-flex h-10 w-9 shrink-0 items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            >
+              <IconX className="h-4 w-4" />
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            title="Buscar endereço"
+            aria-label="Buscar endereço"
+            disabled={addressSearching}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-slate-200 bg-sky-600 px-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+          >
+            <IconSearch className="h-4 w-4" />
+            <span className="hidden sm:inline">{addressSearching ? 'Buscando…' : 'Buscar'}</span>
+          </button>
+        </form>
+
+        {addressError ? (
+          <p className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+            {addressError}
+          </p>
+        ) : null}
+
+        {addressOpen && addressHits.length > 0 ? (
+          <ul className="absolute left-0 right-0 z-[30] mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+            {addressHits.map((hit, index) => (
+              <li key={`${hit.lat}-${hit.lng}-${index}`}>
+                <button
+                  type="button"
+                  onClick={() => goToAddress(hit)}
+                  className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-900"
+                >
+                  <IconSearch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <span className="line-clamp-2">{hit.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {searchPin && !addressOpen ? (
+          <p className="mt-1.5 truncate rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] font-medium text-sky-900">
+            📍 {searchPin.label}
+          </p>
+        ) : null}
+      </div>
+
       <div
         className={`relative w-full overflow-hidden rounded-xl border border-slate-200 bg-white ${
           isFullscreen ? 'min-h-0 flex-1' : heightClass
@@ -1082,6 +1260,7 @@ export default function TerritoryMap({
             centerLat={centerLat}
             centerLng={centerLng}
           />
+          <FlyToSearchResult result={searchPin} token={searchFlyToken} />
           <FocusOnSelected area={selected} focusToken={focusToken} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -1094,8 +1273,12 @@ export default function TerritoryMap({
             seedGeoJson={seedGeoJson}
           />
 
-          {cepCenter && areas.length === 0 && draftPoints.length === 0 ? (
+          {cepCenter && areas.length === 0 && draftPoints.length === 0 && !searchPin ? (
             <Marker position={cepCenter} title={cepLabel ?? 'CEP do sistema'} />
+          ) : null}
+
+          {searchPin ? (
+            <Marker position={[searchPin.lat, searchPin.lng]} title={searchPin.label} />
           ) : null}
 
           {areas.map((area, index) => {

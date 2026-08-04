@@ -23,28 +23,67 @@ export function isValidCep(cep: string) {
   return onlyDigits(cep).length === 8;
 }
 
+export type GeocodeResult = {
+  lat: number;
+  lng: number;
+  label: string;
+};
+
 async function geocodeWithNominatim(query: string): Promise<{ lat: number; lng: number } | null> {
+  const results = await searchAddressNominatim(query, 1);
+  if (!results[0]) return null;
+  return { lat: results[0].lat, lng: results[0].lng };
+}
+
+/**
+ * Busca endereço no OpenStreetMap (Nominatim) — Brasil.
+ * Uso: localizar ponto no mapa a partir de texto livre / rua / CEP.
+ */
+export async function searchAddressNominatim(
+  query: string,
+  limit = 5,
+): Promise<GeocodeResult[]> {
+  const q = query.trim();
+  if (q.length < 3) {
+    throw new Error('Digite ao menos 3 caracteres para buscar.');
+  }
+
   const url = new URL('https://nominatim.openstreetmap.org/search');
-  url.searchParams.set('q', query);
+  url.searchParams.set('q', q);
   url.searchParams.set('format', 'json');
-  url.searchParams.set('limit', '1');
+  url.searchParams.set('limit', String(Math.min(10, Math.max(1, limit))));
   url.searchParams.set('countrycodes', 'br');
+  url.searchParams.set('addressdetails', '0');
 
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'CampoTerritorios/2.0 (local-dev)',
+      Accept: 'application/json',
     },
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    throw new Error('Não foi possível buscar o endereço agora. Tente de novo em instantes.');
+  }
 
-  const data = (await response.json()) as Array<{ lat: string; lon: string }>;
-  if (!data[0]) return null;
+  const data = (await response.json()) as Array<{
+    lat: string;
+    lon: string;
+    display_name?: string;
+  }>;
 
-  return {
-    lat: Number(data[0].lat),
-    lng: Number(data[0].lon),
-  };
+  return data
+    .map((item) => {
+      const lat = Number(item.lat);
+      const lng = Number(item.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return {
+        lat,
+        lng,
+        label: String(item.display_name ?? q).trim(),
+      } satisfies GeocodeResult;
+    })
+    .filter(Boolean) as GeocodeResult[];
 }
 
 /**
