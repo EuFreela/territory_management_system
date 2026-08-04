@@ -129,8 +129,25 @@ export default function TerritoryDetailPage() {
 
   async function toggleHouse(block: Block, house: string) {
     if (!id) return;
+    const currentlyDone = isHouseDone(block, house);
+    const done = !currentlyDone;
+
+    // Desmarcar (voltar ao normal) exige confirmação — marcar como feito é imediato
+    if (currentlyDone) {
+      const street = block.street_name?.trim();
+      const ok = await confirm({
+        title: 'Desmarcar casa como pendente?',
+        message: street
+          ? `A casa nº ${house} (${street}) voltará ao estado normal (ainda não feita). Deseja continuar?`
+          : `A casa nº ${house} voltará ao estado normal (ainda não feita). Deseja continuar?`,
+        confirmLabel: 'Sim, desmarcar',
+        cancelLabel: 'Cancelar',
+        tone: 'warning',
+      });
+      if (!ok) return;
+    }
+
     const key = `${block.id}:${house}`;
-    const done = !isHouseDone(block, house);
     setTogglingKey(key);
 
     // otimista
@@ -284,27 +301,9 @@ export default function TerritoryDetailPage() {
             </h2>
             <p className="mb-2 text-xs text-slate-500">
               Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
-              correspondente. A página não rola sozinha — suba ou desça quando quiser.
+              correspondente. A página não rola sozinha — suba ou desça quando quiser. Use o botão
+              ✕ no mapa para limpar o destaque.
             </p>
-            {linkedKey ? (
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-900 ring-1 ring-sky-300">
-                  <span className="territorio-map-selected-dot inline-block h-2 w-2 rounded-full bg-sky-500" />
-                  Destacando: {linkedKey}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLinkedKey(null);
-                    setMapFocusToken(0);
-                    setLinkHint('');
-                  }}
-                  className="text-xs font-medium text-slate-600 underline hover:text-slate-900"
-                >
-                  Limpar destaque
-                </button>
-              </div>
-            ) : null}
             {linkHint ? (
               <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                 {linkHint}
@@ -327,6 +326,11 @@ export default function TerritoryDetailPage() {
               selectedKey={linkedKey}
               focusToken={mapFocusToken}
               onAreaSelect={onMapAreaSelect}
+              onClearSelection={() => {
+                setLinkedKey(null);
+                setMapFocusToken(0);
+                setLinkHint('');
+              }}
               finishedKeys={(territory.blocks ?? [])
                 .filter((b) => blockProgress(b).finished)
                 .map((b) => b.name)}
@@ -449,7 +453,11 @@ export default function TerritoryDetailPage() {
                               e.stopPropagation();
                               void toggleHouse(block, house);
                             }}
-                            title={doneHouse ? 'Desmarcar (ainda pendente)' : 'Marcar como feito'}
+                            title={
+                              doneHouse
+                                ? 'Clique para desmarcar (pede confirmação)'
+                                : 'Marcar como feito'
+                            }
                             className={`inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
                               doneHouse
                                 ? 'bg-emerald-600 text-white line-through decoration-white/70 shadow-sm'

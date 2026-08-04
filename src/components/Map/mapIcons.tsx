@@ -49,6 +49,25 @@ export function IconUndo({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+/** Seta curva de refazer (espelho do desfazer) */
+export function IconRedo({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M15 13 20 8l-5-5" />
+      <path d="M20 8h-9a6 6 0 0 0 0 12h3" />
+    </svg>
+  );
+}
+
 export function IconTrash({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
