@@ -17,11 +17,7 @@ import { useAuth } from './lib/auth-context';
 function HomeRedirect() {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-apple-bg text-[15px] text-apple-secondary">
-        Carregando…
-      </div>
-    );
+    return <div className="min-h-screen bg-apple-bg" />;
   }
   return <Navigate to={user ? '/dashboard' : '/login'} replace />;
 }

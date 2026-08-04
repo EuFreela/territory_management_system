@@ -1,4 +1,4 @@
-import {
+﻿import {
   MapContainer,
   TileLayer,
   Polygon,
@@ -573,7 +573,7 @@ function ToolButton({
   return (
     <button
       type="button"
-      title={title}
+      data-tooltip={title}
       aria-label={title}
       disabled={disabled}
       onClick={onClick}
@@ -1065,7 +1065,7 @@ export default function TerritoryMap({
               <button
                 type="button"
                 onClick={() => void removeSelected()}
-                title="Remover área"
+                data-tooltip="Remover área"
                 aria-label="Remover área"
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
               >
@@ -1111,7 +1111,7 @@ export default function TerritoryMap({
           {searchPin || addressQuery ? (
             <button
               type="button"
-              title="Limpar busca"
+              data-tooltip="Limpar busca"
               aria-label="Limpar busca"
               onClick={() => {
                 setAddressQuery('');
@@ -1127,7 +1127,7 @@ export default function TerritoryMap({
           ) : null}
           <button
             type="submit"
-            title="Buscar endereço"
+            data-tooltip="Buscar endereço"
             aria-label="Buscar endereço"
             disabled={addressSearching}
             className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-slate-200 bg-sky-600 px-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
@@ -1215,7 +1215,8 @@ export default function TerritoryMap({
         <div className="absolute right-3 top-3 z-[500] flex flex-col gap-2">
           <button
             type="button"
-            title={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Tela cheia'}
+            data-tooltip={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Tela cheia'}
+            data-tooltip-side="left"
             aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             aria-pressed={isFullscreen}
             onClick={toggleFullscreen}
@@ -1225,7 +1226,8 @@ export default function TerritoryMap({
           </button>
           <button
             type="button"
-            title="Voltar ao início — enquadrar as áreas do mapa"
+            data-tooltip="Voltar ao início — enquadrar as áreas do mapa"
+            data-tooltip-side="left"
             aria-label="Voltar ao início e enquadrar as áreas"
             onClick={fitToAreas}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 shadow-md transition hover:bg-slate-50"
@@ -1235,7 +1237,8 @@ export default function TerritoryMap({
           {selected && !drawMode ? (
             <button
               type="button"
-              title="Limpar destaque"
+              data-tooltip="Limpar destaque"
+              data-tooltip-side="left"
               aria-label="Limpar destaque da área"
               onClick={clearSelection}
               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300 bg-sky-50 text-sky-800 shadow-md transition hover:bg-sky-100"

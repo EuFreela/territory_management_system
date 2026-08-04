@@ -17,9 +17,7 @@ export default function RequirePermission({
   const { user, loading, can } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-slate-600">Carregando…</div>
-    );
+    return <div className="min-h-screen bg-apple-bg" />;
   }
 
   if (!user) {

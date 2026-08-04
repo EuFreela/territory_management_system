@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IconArrowLeft, IconPlus, IconSave, IconTrash, IconX } from '@/components/Map/mapIcons';
 import TerritoryMap, {
@@ -293,7 +293,11 @@ export default function EditTerritoryPage() {
 
 
   if (loading) {
-    return <main className="flex min-h-screen items-center justify-center text-slate-600">Carregando…</main>;
+    return (
+      <main className="app-page">
+        <p className="text-[15px] text-apple-secondary">Carregando…</p>
+      </main>
+    );
   }
 
   return (
@@ -303,7 +307,7 @@ export default function EditTerritoryPage() {
         <div className="app-card-pad">
           <Link
             to={`/territories/${id}`}
-            title="Voltar"
+            data-tooltip="Voltar"
             aria-label="Voltar"
             className="app-icon-btn"
           >
@@ -591,7 +595,7 @@ export default function EditTerritoryPage() {
                       onChange={() => toggleBulkSelect(block.id)}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
-                      title="Selecionar para apagar em massa"
+                      data-tooltip="Selecionar para apagar em massa"
                       aria-label={`Selecionar quadra ${block.name}`}
                       className="mt-1.5 h-4 w-4 shrink-0 rounded border-[#d2d2d7] text-[#ff3b30] focus:ring-[#ff3b30]/30"
                     />
@@ -687,7 +691,7 @@ export default function EditTerritoryPage() {
                       e.stopPropagation();
                       void removeBlock(block.id);
                     }}
-                    title="Remover"
+                    data-tooltip="Remover"
                     aria-label="Remover"
                     className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#ff3b30] transition hover:bg-[#fff5f5]"
                   >

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+﻿import { FormEvent, useEffect, useState } from 'react';
 import { IconPlus, IconTrash, IconUsers } from '@/components/Map/mapIcons';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
@@ -253,7 +253,7 @@ export default function UsersPage() {
                       onChange={(e) => void onChangeRole(u.id, Number(e.target.value))}
                       className="rounded-lg border border-apple-line bg-apple-surface px-2 py-1.5 text-sm text-apple-ink"
                       disabled={me?.id === u.id && u.role?.slug === 'admin'}
-                      title="Alterar papel"
+                      data-tooltip="Alterar papel"
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -263,7 +263,7 @@ export default function UsersPage() {
                     </select>
                     <button
                       type="button"
-                      title="Excluir"
+                      data-tooltip="Excluir"
                       aria-label="Excluir"
                       disabled={me?.id === u.id}
                       onClick={() => void onDelete(u)}
