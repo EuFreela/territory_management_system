@@ -65,7 +65,7 @@ function periodHintForTime(time: string) {
 
 /** Mesmas larguras em todas as tabelas (uma debaixo da outra) */
 const TABLE_CLASS = 'w-full table-fixed text-left text-sm';
-const TH_CLASS = 'px-4 py-3 text-xs font-medium uppercase tracking-wide text-slate-500';
+const TH_CLASS = 'px-4 py-3 text-xs font-medium uppercase tracking-wide text-apple-tertiary';
 const TD_CLASS = 'px-4 py-3 align-middle';
 
 function ScheduleTimeBadge({
@@ -77,15 +77,15 @@ function ScheduleTimeBadge({
 }) {
   const label = formatScheduleTime(value);
   if (muted) {
-    return <span className="text-sm font-medium text-slate-400">{label}</span>;
+    return <span className="text-sm font-medium text-apple-tertiary">{label}</span>;
   }
   const period = periodHintForTime(label);
   const tone =
     period === 'Noite' || label === 'Noite' || label === '18:00'
-      ? 'bg-indigo-100 text-indigo-800'
+      ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
       : period === 'Manhã' || label === 'Manhã' || label === '09:00' || label === '08:00'
-        ? 'bg-amber-100 text-amber-900'
-        : 'bg-slate-100 text-slate-700';
+        ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300'
+        : 'bg-apple-fill text-apple-ink';
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${tone}`}>
       {label}
@@ -107,7 +107,7 @@ function AssignmentTableColgroup() {
 function AssignmentTableHead() {
   return (
     <thead>
-      <tr className="border-b border-slate-100">
+      <tr className="border-b border-apple-line bg-apple-fill">
         <th className={`${TH_CLASS} text-left`}>Dia</th>
         <th className={`${TH_CLASS} text-left`}>Horário</th>
         <th className={`${TH_CLASS} text-left`}>Designado</th>
@@ -430,7 +430,7 @@ export default function FieldLeadersPage() {
         </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {loading ? <p className="text-slate-600">Carregando…</p> : null}
+        {loading ? <p className="text-apple-secondary">Carregando…</p> : null}
 
         {/* Busca */}
         <div>
@@ -438,7 +438,7 @@ export default function FieldLeadersPage() {
             Buscar designação
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-apple-tertiary">
               <IconSearch className="h-5 w-5" />
             </span>
             <input
@@ -452,7 +452,7 @@ export default function FieldLeadersPage() {
             />
           </div>
           {!loading && rows.length > 0 ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-apple-tertiary">
               {query.trim()
                 ? `${filteredRows.length} de ${rows.length} designação(ões)`
                 : `${rows.length} designação(ões)`}
@@ -541,7 +541,7 @@ export default function FieldLeadersPage() {
         </section>
 
         {!loading && rows.length > 0 && filteredRows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+          <div className="app-empty text-apple-secondary">
             Nenhuma designação encontrada para “{query.trim()}”.
           </div>
         ) : null}
@@ -556,11 +556,11 @@ export default function FieldLeadersPage() {
                   className={`border-b px-5 py-3.5 ${
                     card.hasToday
                       ? 'border-apple-blue/15 bg-apple-blue/[0.06]'
-                      : 'border-apple-line bg-apple-fill/80'
+                      : 'border-apple-line bg-apple-fill'
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-bold text-slate-900">{group.label}</h2>
+                    <h2 className="text-lg font-bold text-apple-ink">{group.label}</h2>
                     {card.hasToday ? (
                       <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                         Hoje
@@ -568,11 +568,11 @@ export default function FieldLeadersPage() {
                     ) : null}
                   </div>
                   {group.label === 'Sábado' ? (
-                    <p className="text-xs font-medium text-amber-800">Manhã · início 08:00</p>
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-300">Manhã · início 08:00</p>
                   ) : group.label === 'Domingo' ? (
-                    <p className="text-xs font-medium text-amber-800">Manhã · início 09:00</p>
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-300">Manhã · início 09:00</p>
                   ) : isEveningWeekday(group.label) ? (
-                    <p className="text-xs font-medium text-indigo-700">Campo à noite · início 18:00</p>
+                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Campo à noite · início 18:00</p>
                   ) : null}
                 </div>
                 <div className="w-full">
@@ -586,21 +586,21 @@ export default function FieldLeadersPage() {
                         return (
                           <tr
                             key={row.id}
-                            className={`border-b border-slate-50 last:border-0 transition ${
+                            className={`border-b border-apple-line last:border-0 transition ${
                               isToday
-                                ? 'bg-sky-50 ring-2 ring-inset ring-sky-400'
+                                ? 'bg-sky-50 ring-2 ring-inset ring-sky-400 dark:bg-sky-500/15 dark:ring-sky-500'
                                 : isPast
-                                  ? 'bg-slate-100/70 text-slate-400 opacity-60'
+                                  ? 'bg-apple-fill text-apple-tertiary opacity-60'
                                   : ''
                             }`}
                           >
                             <td
                               className={`${TD_CLASS} font-medium ${
-                                isPast ? 'text-slate-400' : 'text-slate-800'
+                                isPast ? 'text-apple-tertiary' : 'text-apple-ink'
                               }`}
                             >
                               <span className="inline-flex flex-wrap items-center gap-2">
-                                <span className={isPast ? 'line-through decoration-slate-300' : ''}>
+                                <span className={isPast ? 'line-through decoration-apple-tertiary' : ''}>
                                   {formatDateBr(row.service_date)}
                                 </span>
                                 {isToday ? (
@@ -609,7 +609,7 @@ export default function FieldLeadersPage() {
                                   </span>
                                 ) : null}
                                 {isPast ? (
-                                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  <span className="rounded-full bg-apple-fill px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-apple-tertiary">
                                     Finalizado
                                   </span>
                                 ) : null}
@@ -624,7 +624,7 @@ export default function FieldLeadersPage() {
                                   <input
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
-                                    className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-1.5"
+                                    className="app-input min-w-0 flex-1 !rounded-lg !px-2 !py-1.5"
                                     autoFocus
                                   />
                                   <button
@@ -642,7 +642,7 @@ export default function FieldLeadersPage() {
                                     onClick={() => setEditingId(null)}
                                     title="Cancelar"
                                     aria-label="Cancelar"
-                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
                                   >
                                     <IconX className="h-4 w-4" />
                                   </button>
@@ -651,12 +651,12 @@ export default function FieldLeadersPage() {
                                 <button
                                   type="button"
                                   onClick={() => startEdit(row)}
-                                  className={`truncate font-semibold hover:text-sky-700 ${
+                                  className={`truncate font-semibold hover:text-apple-blue ${
                                     isToday
-                                      ? 'text-sky-900'
+                                      ? 'text-sky-900 dark:text-sky-300'
                                       : isPast
-                                        ? 'text-slate-400'
-                                        : 'text-slate-900'
+                                        ? 'text-apple-tertiary'
+                                        : 'text-apple-ink'
                                   }`}
                                   title="Clique para editar"
                                 >
@@ -670,10 +670,10 @@ export default function FieldLeadersPage() {
                                 onClick={() => void removeRow(row.id)}
                                 title="Remover"
                                 aria-label="Remover"
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-red-50 ${
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
                                   isPast
-                                    ? 'border-slate-200 text-slate-400'
-                                    : 'border-red-200 text-red-700'
+                                    ? 'border-apple-line text-apple-tertiary'
+                                    : 'border-apple-red/25 text-apple-red hover:bg-apple-red/10'
                                 }`}
                               >
                                 <IconTrash className="h-4 w-4" />
@@ -700,14 +700,14 @@ export default function FieldLeadersPage() {
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900">Dias fixos</h2>
+                  <h2 className="text-lg font-bold text-apple-ink">Dias fixos</h2>
                   {card.hasToday ? (
                     <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                       Hoje
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs text-slate-600">Manhã — horário e dirigente fixos</p>
+                <p className="text-xs text-apple-secondary">Manhã — horário e dirigente fixos</p>
               </div>
               <div className="w-full">
                 <table className={TABLE_CLASS}>
@@ -716,7 +716,7 @@ export default function FieldLeadersPage() {
                   <tbody>
                     {fixedRows.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-apple-tertiary">
                           Nenhum dia fixo neste filtro.
                         </td>
                       </tr>
@@ -726,11 +726,13 @@ export default function FieldLeadersPage() {
                       return (
                         <tr
                           key={row.id}
-                          className={`border-b border-slate-50 last:border-0 ${
-                            isToday ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-400' : ''
+                          className={`border-b border-apple-line last:border-0 ${
+                            isToday
+                              ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-400 dark:bg-emerald-500/15 dark:ring-emerald-500'
+                              : ''
                           }`}
                         >
-                          <td className={`${TD_CLASS} font-medium text-slate-800`}>
+                          <td className={`${TD_CLASS} font-medium text-apple-ink`}>
                             <span className="inline-flex flex-wrap items-center gap-2">
                               {row.weekday_label}
                               {isToday ? (
@@ -749,7 +751,7 @@ export default function FieldLeadersPage() {
                                 <input
                                   value={editName}
                                   onChange={(e) => setEditName(e.target.value)}
-                                  className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-1.5"
+                                  className="app-input min-w-0 flex-1 !rounded-lg !px-2 !py-1.5"
                                   autoFocus
                                 />
                                 <button
@@ -767,7 +769,7 @@ export default function FieldLeadersPage() {
                                   onClick={() => setEditingId(null)}
                                   title="Cancelar"
                                   aria-label="Cancelar"
-                                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50"
+                                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
                                 >
                                   <IconX className="h-4 w-4" />
                                 </button>
@@ -776,8 +778,10 @@ export default function FieldLeadersPage() {
                               <button
                                 type="button"
                                 onClick={() => startEdit(row)}
-                                className={`truncate font-semibold hover:text-sky-700 ${
-                                  isToday ? 'text-emerald-900' : 'text-slate-900'
+                                className={`truncate font-semibold hover:text-apple-blue ${
+                                  isToday
+                                    ? 'text-emerald-900 dark:text-emerald-300'
+                                    : 'text-apple-ink'
                                 }`}
                                 title="Clique para editar"
                               >
@@ -791,7 +795,7 @@ export default function FieldLeadersPage() {
                               onClick={() => void removeRow(row.id)}
                               title="Remover"
                               aria-label="Remover"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-700 hover:bg-red-50"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 text-apple-red hover:bg-apple-red/10"
                             >
                               <IconTrash className="h-4 w-4" />
                             </button>

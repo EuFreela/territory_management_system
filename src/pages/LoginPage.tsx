@@ -1,10 +1,13 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { IconMoon, IconSun } from '@/components/Map/mapIcons';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 
 export default function LoginPage() {
   const { user, loading, setUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,19 +47,33 @@ export default function LoginPage() {
       {/* fundo sutil */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,113,227,0.08),_transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(0,113,227,0.08),_transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(10,132,255,0.14),_transparent_55%)]"
       />
+
+      <button
+        type="button"
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+        className="app-icon-btn absolute right-4 top-4 z-10 sm:right-6 sm:top-6"
+      >
+        {theme === 'dark' ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+      </button>
 
       <div className="relative w-full max-w-[400px]">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[16px] bg-apple-ink text-xl font-semibold text-white shadow-card">
-            C
-          </div>
+          <img
+            src="/logo.webp"
+            alt="Campo"
+            width={72}
+            height={72}
+            className="mx-auto mb-4 h-[72px] w-[72px] rounded-[18px] object-cover shadow-card ring-1 ring-black/[0.06] dark:ring-white/[0.08]"
+          />
           <h1 className="text-[28px] font-semibold tracking-tightish text-apple-ink">Campo</h1>
           <p className="mt-1 text-[15px] text-apple-secondary">Territórios de campo</p>
         </div>
 
-        <div className="rounded-apple-xl border border-apple-line bg-white/90 p-7 shadow-card backdrop-blur-sm sm:p-8">
+        <div className="rounded-apple-xl border border-apple-line bg-apple-surface/90 p-7 shadow-card backdrop-blur-sm sm:p-8">
           <h2 className="mb-6 text-center text-[17px] font-semibold text-apple-ink">Entrar</h2>
 
           <form onSubmit={onSubmit} className="space-y-4">

@@ -404,7 +404,7 @@ export default function EditTerritoryPage() {
             className={`mb-6 space-y-4 rounded-apple-lg border p-4 sm:p-5 ${
               editingBlockId != null
                 ? 'border-apple-blue/25 bg-apple-blue/[0.04]'
-                : 'border-apple-line bg-apple-fill/40'
+                : 'border-apple-line bg-apple-fill'
             }`}
           >
             {editingBlockId != null ? (
@@ -507,7 +507,7 @@ export default function EditTerritoryPage() {
           </form>
 
           {blocks.length > 0 ? (
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-apple border border-apple-line bg-apple-fill/50 px-3.5 py-2.5">
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-apple border border-apple-line bg-apple-fill px-3.5 py-2.5">
               <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] font-medium text-apple-secondary">
                 <input
                   type="checkbox"

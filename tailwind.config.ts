@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -19,25 +20,25 @@ const config: Config = {
       },
       colors: {
         apple: {
-          bg: '#f5f5f7',
-          surface: '#ffffff',
-          ink: '#1d1d1f',
-          secondary: '#6e6e73',
-          tertiary: '#86868b',
-          line: 'rgba(0, 0, 0, 0.08)',
-          blue: '#0071e3',
-          'blue-hover': '#0077ed',
-          green: '#34c759',
-          orange: '#ff9f0a',
-          red: '#ff3b30',
-          fill: 'rgba(0, 0, 0, 0.04)',
+          bg: 'rgb(var(--apple-bg) / <alpha-value>)',
+          surface: 'rgb(var(--apple-surface) / <alpha-value>)',
+          ink: 'rgb(var(--apple-ink) / <alpha-value>)',
+          secondary: 'rgb(var(--apple-secondary) / <alpha-value>)',
+          tertiary: 'rgb(var(--apple-tertiary) / <alpha-value>)',
+          line: 'var(--apple-line)',
+          blue: 'rgb(var(--apple-blue) / <alpha-value>)',
+          'blue-hover': 'rgb(var(--apple-blue-hover) / <alpha-value>)',
+          green: 'rgb(var(--apple-green) / <alpha-value>)',
+          orange: 'rgb(var(--apple-orange) / <alpha-value>)',
+          red: 'rgb(var(--apple-red) / <alpha-value>)',
+          fill: 'var(--apple-fill)',
         },
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
-        card: '0 2px 8px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)',
-        nav: '0 1px 0 rgba(0,0,0,0.06)',
-        float: '0 8px 30px rgba(0,0,0,0.12)',
+        soft: 'var(--shadow-soft)',
+        card: 'var(--shadow-card)',
+        nav: 'var(--shadow-nav)',
+        float: 'var(--shadow-float)',
       },
       borderRadius: {
         apple: '12px',

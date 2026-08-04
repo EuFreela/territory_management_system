@@ -135,7 +135,7 @@ export default function UsersPage() {
         </div>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-lg border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-sm text-apple-red">
             {error}
           </p>
         ) : null}
@@ -208,13 +208,16 @@ export default function UsersPage() {
           <h2 className="mb-3 text-[17px] font-semibold tracking-tightish text-apple-ink">Papéis</h2>
           <ul className="space-y-2 text-sm">
             {roles.map((r) => (
-              <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                <p className="font-semibold text-slate-900">
+              <li
+                key={r.id}
+                className="rounded-lg border border-apple-line bg-apple-fill px-3 py-2"
+              >
+                <p className="font-semibold text-apple-ink">
                   {r.name}{' '}
-                  <span className="font-mono text-xs font-normal text-slate-500">{r.slug}</span>
+                  <span className="font-mono text-xs font-normal text-apple-tertiary">{r.slug}</span>
                 </p>
-                {r.description ? <p className="text-slate-600">{r.description}</p> : null}
-                <p className="mt-1 font-mono text-xs text-slate-500">
+                {r.description ? <p className="text-apple-secondary">{r.description}</p> : null}
+                <p className="mt-1 font-mono text-xs text-apple-tertiary">
                   {r.permissions?.join(', ') || '—'}
                 </p>
               </li>
@@ -225,30 +228,30 @@ export default function UsersPage() {
         <section className="app-card-pad">
           <h2 className="mb-3 text-[17px] font-semibold tracking-tightish text-apple-ink">Usuários</h2>
           {loading ? (
-            <p className="text-slate-600">Carregando…</p>
+            <p className="text-apple-secondary">Carregando…</p>
           ) : users.length === 0 ? (
-            <p className="text-slate-600">Nenhum usuário.</p>
+            <p className="text-apple-secondary">Nenhum usuário.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-apple-line">
               {users.map((u) => (
                 <li
                   key={u.id}
                   className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                 >
                   <div>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-apple-ink">
                       {u.name}
                       {me?.id === u.id ? (
-                        <span className="ml-2 text-xs font-medium text-sky-700">(você)</span>
+                        <span className="ml-2 text-xs font-medium text-apple-blue">(você)</span>
                       ) : null}
                     </p>
-                    <p className="text-sm text-slate-600">{u.email}</p>
+                    <p className="text-sm text-apple-secondary">{u.email}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
                       value={u.role_id ?? ''}
                       onChange={(e) => void onChangeRole(u.id, Number(e.target.value))}
-                      className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                      className="rounded-lg border border-apple-line bg-apple-surface px-2 py-1.5 text-sm text-apple-ink"
                       disabled={me?.id === u.id && u.role?.slug === 'admin'}
                       title="Alterar papel"
                     >
@@ -264,7 +267,7 @@ export default function UsersPage() {
                       aria-label="Excluir"
                       disabled={me?.id === u.id}
                       onClick={() => void onDelete(u)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-40"
                     >
                       <IconTrash className="h-4 w-4" />
                     </button>

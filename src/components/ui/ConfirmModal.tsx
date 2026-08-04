@@ -100,7 +100,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             aria-modal="true"
             aria-labelledby="confirm-modal-title"
             aria-describedby="confirm-modal-desc"
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-apple-xl border border-apple-line bg-white shadow-float"
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-apple-xl border border-apple-line bg-apple-surface shadow-float"
           >
             <div
               className={`h-1 w-full ${
