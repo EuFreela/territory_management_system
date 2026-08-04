@@ -51,21 +51,15 @@ export default function NewTerritoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <Link
-            to="/territories"
-            title="Voltar"
-            aria-label="Voltar"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-          >
-            <IconArrowLeft className="h-5 w-5" />
+    <main className="app-page space-y-6">
+      <div className="space-y-6">
+        <div className="app-card-pad">
+          <Link to="/territories" title="Voltar" aria-label="Voltar" className="app-icon-btn">
+            <IconArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">Cartão de mapa de território</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Preencha a localidade e o número, desenhe a área no mapa e salve. Só a área desenhada será
-            gravada.
+          <h1 className="app-title mt-4">Novo território</h1>
+          <p className="app-subtitle">
+            Preencha a localidade e o número, desenhe a área no mapa e salve.
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-5">

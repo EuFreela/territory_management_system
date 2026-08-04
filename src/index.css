@@ -4,12 +4,24 @@
 
 :root {
   color-scheme: light;
+  --apple-bg: #f5f5f7;
+  --apple-ink: #1d1d1f;
+  --apple-blue: #0071e3;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  @apply bg-slate-100 text-slate-800 antialiased;
-  margin: 0;
-  min-height: 100vh;
+  @apply m-0 min-h-screen bg-apple-bg font-sans text-apple-ink antialiased;
+  letter-spacing: -0.011em;
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.18);
 }
 
 input,
@@ -19,10 +31,139 @@ select {
   font: inherit;
 }
 
+/* —— Componentes de UI (estilo Apple) —— */
+@layer components {
+  .app-page {
+    @apply mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10;
+  }
+
+  .app-page-wide {
+    @apply mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10;
+  }
+
+  .app-title {
+    @apply text-[1.75rem] font-semibold tracking-tightish text-apple-ink sm:text-[2rem];
+  }
+
+  .app-subtitle {
+    @apply mt-1 text-[15px] leading-relaxed text-apple-secondary;
+  }
+
+  .app-section-title {
+    @apply text-[13px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary;
+  }
+
+  .app-card {
+    @apply rounded-apple-lg border border-apple-line bg-apple-surface shadow-soft;
+  }
+
+  .app-card-pad {
+    @apply app-card p-5 sm:p-6;
+  }
+
+  .app-btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium transition
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-btn:focus-visible {
+    --tw-ring-color: rgba(0, 113, 227, 0.4);
+  }
+
+  .app-btn-primary {
+    @apply app-btn bg-apple-blue text-white hover:bg-apple-blue-hover;
+  }
+
+  .app-btn-primary:active,
+  .app-btn-secondary:active,
+  .app-btn-danger:active {
+    transform: scale(0.98);
+  }
+
+  .app-btn-secondary {
+    @apply app-btn border border-apple-line bg-white text-apple-ink hover:bg-apple-fill;
+  }
+
+  .app-btn-ghost {
+    @apply app-btn border border-transparent bg-transparent text-apple-blue;
+  }
+
+  .app-btn-ghost:hover {
+    background-color: rgba(0, 113, 227, 0.1);
+  }
+
+  .app-btn-danger {
+    @apply app-btn border border-red-200 bg-white text-apple-red hover:bg-red-50;
+  }
+
+  .app-icon-btn {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-apple-line
+      bg-white text-apple-ink shadow-soft transition hover:bg-apple-fill
+      focus-visible:outline-none focus-visible:ring-2;
+  }
+
+  .app-icon-btn:active {
+    transform: scale(0.97);
+  }
+
+  .app-icon-btn:focus-visible {
+    --tw-ring-color: rgba(0, 113, 227, 0.35);
+  }
+
+  .app-input {
+    @apply w-full rounded-apple border border-apple-line bg-white px-3.5 py-2.5 text-[15px] text-apple-ink
+      shadow-soft outline-none transition placeholder:text-apple-tertiary;
+  }
+
+  .app-input:focus {
+    border-color: rgba(0, 113, 227, 0.5);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+  }
+
+  .app-label {
+    @apply mb-1.5 block text-[13px] font-medium text-apple-secondary;
+  }
+
+  .app-link {
+    @apply font-medium text-apple-blue transition hover:underline;
+  }
+
+  .app-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide;
+  }
+
+  .app-badge-blue {
+    @apply app-badge text-apple-blue;
+    background-color: rgba(0, 113, 227, 0.1);
+  }
+
+  .app-badge-gray {
+    @apply app-badge text-apple-secondary;
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .app-badge-green {
+    @apply app-badge text-emerald-700;
+    background-color: rgba(16, 185, 129, 0.12);
+  }
+
+  .app-badge-amber {
+    @apply app-badge text-amber-800;
+    background-color: rgba(245, 158, 11, 0.12);
+  }
+
+  .app-empty {
+    @apply rounded-apple-lg border border-dashed border-apple-line px-5 py-10 text-center;
+    background-color: rgba(255, 255, 255, 0.6);
+  }
+}
+
 .leaflet-container {
   width: 100%;
   height: 100%;
   z-index: 0;
+  font-family: inherit;
 }
 
 /* Labels das áreas no mapa (evita quadrado branco padrão do Leaflet) */
@@ -36,18 +177,15 @@ select {
   border: none !important;
 }
 
-/* Polígono selecionado (em andamento): contorno ciano pulsante */
 .leaflet-interactive.territorio-polygon-selected {
   animation: territorio-selected-pulse 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.85));
+  filter: drop-shadow(0 0 6px rgba(0, 113, 227, 0.55));
 }
 
-/* Finalizada selecionada: mantém cinza; só reforça o contorno slate */
 .leaflet-interactive.territorio-polygon-finished-selected {
-  filter: drop-shadow(0 0 5px rgba(100, 116, 139, 0.55));
+  filter: drop-shadow(0 0 5px rgba(100, 116, 139, 0.45));
 }
 
-/* Finalizada (sem seleção): cinza discreto, como o card */
 .leaflet-interactive.territorio-polygon-finished {
   filter: none;
 }
@@ -64,7 +202,6 @@ select {
   }
 }
 
-/* Chip flutuante + ponto indicador */
 .territorio-map-selected-chip {
   animation: territorio-chip-in 0.25s ease-out;
 }
@@ -88,11 +225,11 @@ select {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(186, 230, 253, 0.7);
+    box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.35);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 4px rgba(186, 230, 253, 0);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0);
   }
 }
 

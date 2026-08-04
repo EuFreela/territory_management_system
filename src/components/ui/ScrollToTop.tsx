@@ -54,13 +54,13 @@ export default function ScrollToTop() {
       title="Voltar ao topo"
       aria-label="Voltar ao topo"
       tabIndex={visible ? 0 : -1}
-      className={`fixed bottom-5 right-5 z-[9999] inline-flex h-12 w-12 items-center justify-center rounded-full bg-sky-600 text-white shadow-lg shadow-sky-900/25 transition-all duration-200 hover:bg-sky-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 active:scale-95 sm:bottom-6 sm:right-6 ${
+      className={`fixed bottom-5 right-5 z-[9999] inline-flex h-11 w-11 items-center justify-center rounded-full border border-apple-line bg-white/90 text-apple-ink shadow-float backdrop-blur-md transition-all duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue/35 active:scale-95 sm:bottom-6 sm:right-6 ${
         visible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0'
       }`}
     >
-      <IconArrowUp className="h-5 w-5" />
+      <IconArrowUp className="h-4 w-4" />
     </button>
   );
 }

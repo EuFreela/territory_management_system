@@ -72,10 +72,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const tone = pending?.options.tone ?? 'default';
   const confirmBtnClass =
     tone === 'danger'
-      ? 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-400'
+      ? 'bg-apple-red hover:bg-red-600 focus-visible:ring-red-400'
       : tone === 'warning'
-        ? 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-400'
-        : 'bg-sky-600 hover:bg-sky-700 focus-visible:ring-sky-400';
+        ? 'bg-apple-orange hover:bg-amber-600 focus-visible:ring-amber-400'
+        : 'bg-apple-blue hover:bg-apple-blue-hover focus-visible:ring-apple-blue/40';
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>
@@ -100,11 +100,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             aria-modal="true"
             aria-labelledby="confirm-modal-title"
             aria-describedby="confirm-modal-desc"
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20"
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-apple-xl border border-apple-line bg-white shadow-float"
           >
             <div
-              className={`h-1.5 w-full ${
-                tone === 'danger' ? 'bg-red-500' : tone === 'warning' ? 'bg-amber-500' : 'bg-sky-500'
+              className={`h-1 w-full ${
+                tone === 'danger'
+                  ? 'bg-apple-red'
+                  : tone === 'warning'
+                    ? 'bg-apple-orange'
+                    : 'bg-apple-blue'
               }`}
             />
 
@@ -113,10 +117,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 <div
                   className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                     tone === 'danger'
-                      ? 'bg-red-50 text-red-600'
+                      ? 'bg-red-50 text-apple-red'
                       : tone === 'warning'
                         ? 'bg-amber-50 text-amber-700'
-                        : 'bg-sky-50 text-sky-700'
+                        : 'bg-apple-blue/10 text-apple-blue'
                   }`}
                 >
                   {tone === 'danger' ? (
@@ -135,28 +139,30 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h2 id="confirm-modal-title" className="text-lg font-bold text-slate-900">
+                  <h2
+                    id="confirm-modal-title"
+                    className="text-[17px] font-semibold tracking-tightish text-apple-ink"
+                  >
                     {pending.options.title}
                   </h2>
-                  <p id="confirm-modal-desc" className="mt-1.5 text-sm leading-relaxed text-slate-600">
+                  <p
+                    id="confirm-modal-desc"
+                    className="mt-1.5 text-[14px] leading-relaxed text-apple-secondary"
+                  >
                     {pending.options.message}
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => close(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                >
+                <button type="button" onClick={() => close(false)} className="app-btn-secondary">
                   {pending.options.cancelLabel}
                 </button>
                 <button
                   ref={confirmBtnRef}
                   type="button"
                   onClick={() => close(true)}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${confirmBtnClass}`}
+                  className={`app-btn text-white ${confirmBtnClass}`}
                 >
                   {pending.options.confirmLabel}
                 </button>
