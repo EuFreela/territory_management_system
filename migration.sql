@@ -48,6 +48,7 @@ CREATE TABLE blocks (
   territory_id INT NOT NULL,
   name VARCHAR(100) NOT NULL,                 -- Número da quadra (ex: 1, 2, A)
   street_name VARCHAR(180) NULL,              -- Nome da rua
+  description VARCHAR(500) NULL,              -- Nota informativa (só exibição no card)
   house_numbers JSON NOT NULL,                -- Casas "não em casa": ["101","103"]
   completed_houses JSON NULL,                 -- Casas já trabalhadas no checklist
   sort_order INT DEFAULT 0,

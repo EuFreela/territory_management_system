@@ -514,29 +514,57 @@ router.post('/:id/blocks', requireAuth, requirePermission('block:manage'), async
     return;
   }
 
-  const { name, street_name, house_numbers, sort_order } = parsed.data;
+  const { name, street_name, description, house_numbers, sort_order } = parsed.data;
 
-  const [result] = await pool.execute(
-    `INSERT INTO blocks (territory_id, name, street_name, house_numbers, completed_houses, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      id,
-      name.trim(),
-      street_name.trim(),
-      JSON.stringify(house_numbers.map(String)),
-      JSON.stringify([]),
-      sort_order ?? 0,
-    ],
-  );
+  try {
+    const [result] = await pool.execute(
+      `INSERT INTO blocks (territory_id, name, street_name, description, house_numbers, completed_houses, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        name.trim(),
+        street_name.trim(),
+        description ?? null,
+        JSON.stringify(house_numbers.map(String)),
+        JSON.stringify([]),
+        sort_order ?? 0,
+      ],
+    );
 
-  const insertResult = result as { insertId: number };
-  res.status(201).json({
-    id: insertResult.insertId,
-    message: 'Registro de não em casa adicionado com sucesso.',
-  });
+    const insertResult = result as { insertId: number };
+    res.status(201).json({
+      id: insertResult.insertId,
+      message: 'Registro de não em casa adicionado com sucesso.',
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // coluna description ainda não migrada
+    if (/description|Unknown column/i.test(msg)) {
+      const [result] = await pool.execute(
+        `INSERT INTO blocks (territory_id, name, street_name, house_numbers, completed_houses, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          name.trim(),
+          street_name.trim(),
+          JSON.stringify(house_numbers.map(String)),
+          JSON.stringify([]),
+          sort_order ?? 0,
+        ],
+      );
+      const insertResult = result as { insertId: number };
+      res.status(201).json({
+        id: insertResult.insertId,
+        message:
+          'Registro adicionado (sem descrição — rode npm run migrate:block-description para habilitar).',
+      });
+      return;
+    }
+    throw err;
+  }
 });
 
-/** Atualiza quadra / rua / números (edição do formulário) */
+/** Atualiza quadra / rua / números / descrição (edição do formulário) */
 router.put(
   '/:id/blocks/:blockId',
   requireAuth,
@@ -551,7 +579,7 @@ router.put(
       return;
     }
 
-    const { name, street_name, house_numbers, sort_order } = parsed.data;
+    const { name, street_name, description, house_numbers, sort_order } = parsed.data;
     const houses = house_numbers.map(String);
 
     const [rows] = await pool.execute(
@@ -569,19 +597,41 @@ router.put(
     const prevCompleted = parseHouseNumbers(block.completed_houses);
     const completed = prevCompleted.filter((h) => houses.includes(h));
 
-    await pool.execute(
-      `UPDATE blocks
-       SET name = ?, street_name = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
-       WHERE id = ?`,
-      [
-        name.trim(),
-        street_name.trim(),
-        JSON.stringify(houses),
-        JSON.stringify(completed),
-        sort_order ?? null,
-        blockId,
-      ],
-    );
+    try {
+      await pool.execute(
+        `UPDATE blocks
+         SET name = ?, street_name = ?, description = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
+         WHERE id = ?`,
+        [
+          name.trim(),
+          street_name.trim(),
+          description ?? null,
+          JSON.stringify(houses),
+          JSON.stringify(completed),
+          sort_order ?? null,
+          blockId,
+        ],
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/description|Unknown column/i.test(msg)) {
+        await pool.execute(
+          `UPDATE blocks
+           SET name = ?, street_name = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
+           WHERE id = ?`,
+          [
+            name.trim(),
+            street_name.trim(),
+            JSON.stringify(houses),
+            JSON.stringify(completed),
+            sort_order ?? null,
+            blockId,
+          ],
+        );
+      } else {
+        throw err;
+      }
+    }
 
     const [updatedRows] = await pool.execute('SELECT * FROM blocks WHERE id = ?', [blockId]);
     res.json(mapBlock((updatedRows as Array<Record<string, unknown>>)[0]));
