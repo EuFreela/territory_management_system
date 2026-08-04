@@ -21,9 +21,11 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [unlinking, setUnlinking] = useState(false);
   const [finishing, setFinishing] = useState(false);
-  /** Modal finalizar: território + pessoas no campo */
+  /** Modal finalizar: território + pessoas + dirigente (se houver mais de um) */
   const [finishModalId, setFinishModalId] = useState<number | null>(null);
   const [finishPeople, setFinishPeople] = useState('1');
+  /** id de field_assignments — vazio = não escolhido */
+  const [finishLeaderId, setFinishLeaderId] = useState('');
   const [finishModalError, setFinishModalError] = useState('');
 
   const [editingLeaderId, setEditingLeaderId] = useState<number | null>(null);
@@ -73,16 +75,20 @@ export default function DashboardPage() {
     setFinishModalId(territoryId);
     setFinishPeople('1');
     setFinishModalError('');
+    const todayLeaders = [...(leaders?.dated ?? []), ...(leaders?.fixed ?? [])];
+    // um só: pré-seleciona; vários: usuário escolhe; nenhum: sem campo
+    setFinishLeaderId(todayLeaders.length === 1 ? String(todayLeaders[0].id) : '');
   }
 
   function closeFinishModal() {
     if (finishing) return;
     setFinishModalId(null);
     setFinishPeople('1');
+    setFinishLeaderId('');
     setFinishModalError('');
   }
 
-  /** Finaliza: grava no histórico (com pessoas), desvincula do dia e vai para Finalizados */
+  /** Finaliza: grava no histórico (com pessoas e dirigente), desvincula do dia e vai para Finalizados */
   async function confirmFinishDaily() {
     if (finishModalId == null) return;
     const people = Number(finishPeople);
@@ -91,18 +97,34 @@ export default function DashboardPage() {
       return;
     }
 
+    const todayLeaders = [...(leaders?.dated ?? []), ...(leaders?.fixed ?? [])];
+    if (todayLeaders.length > 1 && !finishLeaderId) {
+      setFinishModalError('Selecione o dirigente deste horário.');
+      return;
+    }
+
     setFinishing(true);
     setFinishModalError('');
     setError('');
     try {
+      const body: { people_count: number; assignment_id?: number } = {
+        people_count: Math.floor(people),
+      };
+      if (finishLeaderId) {
+        body.assignment_id = Number(finishLeaderId);
+      }
       await api(`/api/territories/${finishModalId}/finish`, {
         method: 'POST',
-        body: JSON.stringify({ people_count: Math.floor(people) }),
+        body: JSON.stringify(body),
       });
       setFinishModalId(null);
+      setFinishPeople('1');
+      setFinishLeaderId('');
+      await load();
       navigate('/territories/finalizados');
     } catch (err) {
       setFinishModalError(err instanceof Error ? err.message : 'Erro ao finalizar território.');
+    } finally {
       setFinishing(false);
     }
   }
@@ -149,6 +171,7 @@ export default function DashboardPage() {
   const { daily, unfinished = [] } = data;
   const datedLeaders = leaders?.dated ?? [];
   const fixedLeaders = leaders?.fixed ?? [];
+  const finishLeaderOptions = [...datedLeaders, ...fixedLeaders];
 
   return (
     <main className="app-page-wide">
@@ -159,7 +182,9 @@ export default function DashboardPage() {
       </header>
 
       {error ? (
-        <p className="mb-6 rounded-apple bg-red-50 px-3 py-2 text-[13px] text-apple-red">{error}</p>
+        <p className="mb-6 rounded-apple border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">
+          {error}
+        </p>
       ) : null}
 
       {/* Território do dia */}
@@ -185,22 +210,31 @@ export default function DashboardPage() {
               </div>
               <p className="mt-1.5 text-[13px] text-apple-tertiary">
                 {daily.is_finished
-                  ? 'Checklist concluído — use Finalizar para enviar ao histórico'
-                  : 'Toque para abrir mapa, áreas e não em casa'}
+                  ? 'Checklist concluído — use Finalizar para registrar no histórico'
+                  : 'Toque para abrir mapa e checklist · Finalizar exige todas as casas marcadas'}
               </p>
             </Link>
 
             <div className="flex items-center gap-2">
-              {daily.is_finished && can('territory:set_daily') ? (
+              {can('territory:set_daily') ? (
                 <button
                   type="button"
-                  disabled={finishing || unlinking}
+                  disabled={finishing || unlinking || !daily.is_finished}
                   onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  data-tooltip="Finalizar território do dia e enviar para Finalizados"
+                  data-tooltip={
+                    daily.is_finished
+                      ? 'Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia'
+                      : 'Conclua todas as casas do “não em casa” para liberar Finalizar'
+                  }
                   aria-label="Finalizar território do dia"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#34c759] px-3.5 text-[13px] font-semibold text-white shadow-soft transition hover:bg-[#2db84d] active:scale-[0.97] disabled:opacity-50"
+                  className={[
+                    'inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition active:scale-[0.97]',
+                    daily.is_finished
+                      ? 'bg-emerald-600 text-white shadow-soft hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400'
+                      : 'cursor-not-allowed border border-apple-line bg-apple-fill text-apple-secondary',
+                  ].join(' ')}
                 >
-                  <IconCheckCircle className="h-4 w-4" />
+                  <IconCheckCircle className="h-4 w-4 shrink-0" />
                   <span className="hidden sm:inline">Finalizar</span>
                 </button>
               ) : null}
@@ -382,7 +416,7 @@ export default function DashboardPage() {
           <button
             type="button"
             aria-label="Fechar"
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] dark:bg-black/55"
             onClick={closeFinishModal}
             disabled={finishing}
           />
@@ -390,57 +424,111 @@ export default function DashboardPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="finish-modal-title"
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-[22px] border border-black/[0.06] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18)]"
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-[22px] border border-apple-line bg-apple-surface shadow-float"
           >
-            <div className="h-1 w-full bg-[#34c759]" />
+            <div className="h-1 w-full bg-apple-green" />
             <div className="px-6 pb-6 pt-5">
-              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-[#34c759]/[0.12] text-[#248a3d]">
+              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-apple-green/15 text-apple-green">
                 <IconCheckCircle className="h-5 w-5" />
               </div>
               <h2
                 id="finish-modal-title"
-                className="mt-3 text-[17px] font-semibold tracking-tight text-[#1d1d1f]"
+                className="mt-3 text-[17px] font-semibold tracking-tightish text-apple-ink"
               >
                 Finalizar território do dia?
               </h2>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-[#6e6e73]">
-                O território será registrado em Finalizados, desvinculado do dia e você irá para a
-                lista de finalizados.
+              <p className="mt-1.5 text-[14px] leading-relaxed text-apple-secondary">
+                Será gravado em <span className="font-medium text-apple-ink">Finalizados</span> (dia,
+                horário, dirigente, pessoas e quem registrou), o território sai do dia e você vai
+                para a lista de finalizados.
               </p>
 
-              <div className="mt-5">
-                <label htmlFor="finish-people" className="app-label">
-                  Pessoas no campo
-                </label>
-                <input
-                  id="finish-people"
-                  type="number"
-                  min={1}
-                  max={999}
-                  step={1}
-                  inputMode="numeric"
-                  value={finishPeople}
-                  onChange={(e) => {
-                    setFinishPeople(e.target.value);
-                    setFinishModalError('');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      void confirmFinishDaily();
-                    }
-                  }}
-                  className="app-input"
-                  autoFocus
-                  disabled={finishing}
-                />
-                <p className="mt-1.5 text-[12px] text-[#86868b]">
-                  Informe quantas pessoas participaram do campo hoje.
-                </p>
+              <div className="mt-5 space-y-4">
+                {finishLeaderOptions.length > 1 ? (
+                  <div>
+                    <label htmlFor="finish-leader" className="app-label">
+                      Dirigente
+                    </label>
+                    <select
+                      id="finish-leader"
+                      value={finishLeaderId}
+                      onChange={(e) => {
+                        setFinishLeaderId(e.target.value);
+                        setFinishModalError('');
+                      }}
+                      className="app-input"
+                      disabled={finishing}
+                      required
+                      autoFocus
+                    >
+                      <option value="">Selecione o dirigente…</option>
+                      {finishLeaderOptions.map((row) => {
+                        const kind = row.is_fixed ? 'Fixo' : 'Designado';
+                        const time = row.fixed_time?.trim();
+                        const label = time
+                          ? `${row.assignee_name} · ${time} (${kind})`
+                          : `${row.assignee_name} (${kind})`;
+                        return (
+                          <option key={row.id} value={row.id}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <p className="mt-1.5 text-[12px] text-apple-tertiary">
+                      Há mais de um dirigente hoje — escolha quem dirigiu este território.
+                    </p>
+                  </div>
+                ) : finishLeaderOptions.length === 1 ? (
+                  <div className="rounded-apple border border-apple-line bg-apple-fill px-3.5 py-2.5">
+                    <p className="text-[12px] font-medium text-apple-secondary">Dirigente</p>
+                    <p className="mt-0.5 text-[15px] font-semibold text-apple-ink">
+                      {finishLeaderOptions[0].assignee_name}
+                      {finishLeaderOptions[0].fixed_time?.trim()
+                        ? ` · ${finishLeaderOptions[0].fixed_time}`
+                        : ''}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="rounded-apple border border-apple-line bg-apple-fill px-3.5 py-2.5 text-[13px] text-apple-secondary">
+                    Nenhum dirigente na escala de hoje — o histórico ficará sem dirigente.
+                  </p>
+                )}
+
+                <div>
+                  <label htmlFor="finish-people" className="app-label">
+                    Pessoas no campo
+                  </label>
+                  <input
+                    id="finish-people"
+                    type="number"
+                    min={1}
+                    max={999}
+                    step={1}
+                    inputMode="numeric"
+                    value={finishPeople}
+                    onChange={(e) => {
+                      setFinishPeople(e.target.value);
+                      setFinishModalError('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void confirmFinishDaily();
+                      }
+                    }}
+                    className="app-input"
+                    autoFocus={finishLeaderOptions.length <= 1}
+                    disabled={finishing}
+                  />
+                  <p className="mt-1.5 text-[12px] text-apple-tertiary">
+                    Informe quantas pessoas participaram do campo neste horário.
+                  </p>
+                </div>
               </div>
 
               {finishModalError ? (
-                <p className="mt-3 rounded-[12px] bg-red-50 px-3 py-2 text-[13px] text-[#ff3b30]">
+                <p className="mt-3 rounded-[12px] border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">
                   {finishModalError}
                 </p>
               ) : null}
@@ -458,7 +546,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => void confirmFinishDaily()}
                   disabled={finishing}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#34c759] px-4 text-[14px] font-medium text-white transition hover:bg-[#2db84d] disabled:opacity-50"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                 >
                   <IconCheckCircle className="h-4 w-4" />
                   {finishing ? 'Finalizando…' : 'Finalizar'}

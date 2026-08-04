@@ -32,13 +32,72 @@ export async function isTerritoryFullyFinished(territoryId: number | string): Pr
   return list.every(blockIsFinished);
 }
 
+export type TodayLeaderOption = {
+  id: number;
+  assignee_name: string;
+  fixed_time: string | null;
+  kind: 'dated' | 'fixed';
+  /** Rótulo para UI: "Fabio · 18:00" */
+  label: string;
+};
+
 export type RecordFinishOptions = {
   /** Número de pessoas no campo (obrigatório ao Finalizar no dashboard) */
   peopleCount?: number | null;
   /** Usuário da sessão que realizou a finalização */
   finishedByUserId?: number | null;
   finishedByName?: string | null;
+  /**
+   * Dirigente escolhido (field_assignments.id).
+   * Obrigatório quando há mais de um dirigente no dia.
+   */
+  assignmentId?: number | null;
 };
+
+/** Lista dirigentes de hoje (datados + fixos), ordenados. */
+export async function listTodayLeaders(): Promise<TodayLeaderOption[]> {
+  const fieldDate = todayIsoInAppTz();
+  const weekday = weekdayForDateStr(fieldDate);
+
+  const [dated] = await pool.execute(
+    `SELECT id, assignee_name, fixed_time FROM field_assignments
+     WHERE is_fixed = 0 AND service_date = ?
+     ORDER BY sort_order ASC, id ASC`,
+    [fieldDate],
+  );
+  const [fixed] = await pool.execute(
+    `SELECT id, assignee_name, fixed_time FROM field_assignments
+     WHERE is_fixed = 1 AND fixed_weekday = ?
+     ORDER BY sort_order ASC, id ASC`,
+    [weekday],
+  );
+
+  const mapRow = (
+    row: { id: number; assignee_name: string; fixed_time: string | null },
+    kind: 'dated' | 'fixed',
+  ): TodayLeaderOption => {
+    const name = String(row.assignee_name ?? '').trim() || '—';
+    const time = row.fixed_time?.trim() || null;
+    const kindLabel = kind === 'fixed' ? 'Fixo' : 'Designado';
+    const label = time ? `${name} · ${time} (${kindLabel})` : `${name} (${kindLabel})`;
+    return {
+      id: Number(row.id),
+      assignee_name: name,
+      fixed_time: time,
+      kind,
+      label,
+    };
+  };
+
+  return [
+    ...(dated as Array<{ id: number; assignee_name: string; fixed_time: string | null }>).map((r) =>
+      mapRow(r, 'dated'),
+    ),
+    ...(fixed as Array<{ id: number; assignee_name: string; fixed_time: string | null }>).map((r) =>
+      mapRow(r, 'fixed'),
+    ),
+  ];
+}
 
 /**
  * Sempre insere uma nova linha no histórico (não substitui).
@@ -56,7 +115,6 @@ export async function recordTerritoryFinished(
   if (!territory) return false;
 
   const fieldDate = todayIsoInAppTz();
-  const weekday = weekdayForDateStr(fieldDate);
   const peopleCount =
     options.peopleCount != null && Number.isFinite(options.peopleCount)
       ? Math.max(0, Math.floor(Number(options.peopleCount)))
@@ -67,32 +125,23 @@ export async function recordTerritoryFinished(
       : null;
   const finishedByName = options.finishedByName?.trim() || null;
 
-  // Dirigentes do dia (datados + fixos)
-  const [dated] = await pool.execute(
-    `SELECT assignee_name, fixed_time FROM field_assignments
-     WHERE is_fixed = 0 AND service_date = ?
-     ORDER BY sort_order ASC, id ASC`,
-    [fieldDate],
-  );
-  const [fixed] = await pool.execute(
-    `SELECT assignee_name, fixed_time FROM field_assignments
-     WHERE is_fixed = 1 AND fixed_weekday = ?
-     ORDER BY sort_order ASC, id ASC`,
-    [weekday],
-  );
+  const leaders = await listTodayLeaders();
+  let leaderName: string | null = null;
+  let fieldTime: string | null = null;
 
-  const leaders = [
-    ...(dated as Array<{ assignee_name: string; fixed_time: string | null }>),
-    ...(fixed as Array<{ assignee_name: string; fixed_time: string | null }>),
-  ];
-
-  const leaderName =
-    leaders
-      .map((l) => l.assignee_name?.trim())
-      .filter(Boolean)
-      .join(', ') || null;
-
-  const fieldTime = leaders.map((l) => l.fixed_time?.trim()).find((t) => t) || null;
+  if (options.assignmentId != null && Number.isFinite(Number(options.assignmentId))) {
+    const chosen = leaders.find((l) => l.id === Number(options.assignmentId));
+    if (!chosen) {
+      throw new Error('DIRIGENTE_INVALIDO');
+    }
+    leaderName = chosen.assignee_name;
+    fieldTime = chosen.fixed_time;
+  } else if (leaders.length === 1) {
+    leaderName = leaders[0].assignee_name;
+    fieldTime = leaders[0].fixed_time;
+  } else if (leaders.length > 1) {
+    throw new Error('DIRIGENTE_OBRIGATORIO');
+  }
 
   try {
     await pool.execute(
@@ -115,6 +164,7 @@ export async function recordTerritoryFinished(
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (msg === 'DIRIGENTE_OBRIGATORIO' || msg === 'DIRIGENTE_INVALIDO') throw err;
     if (/territory_finish_history|doesn't exist|Unknown table/i.test(msg)) {
       console.warn('[finish-history] tabela ausente — rode npm run migrate:finish-history');
       return false;
