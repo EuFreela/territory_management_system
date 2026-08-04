@@ -256,10 +256,10 @@ export default function DashboardPage() {
               {datedLeaders.map((row) => (
                 <div
                   key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple bg-apple-fill px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple border border-apple-line bg-apple-fill px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] text-apple-tertiary">
+                    <p className="text-[12px] font-medium text-apple-secondary">
                       Designado ({row.weekday_label}
                       {row.fixed_time ? ` · ${row.fixed_time}` : ''})
                     </p>
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                           onClick={() => startEditLeader(row)}
                           data-tooltip="Editar dirigente"
                           aria-label="Editar dirigente"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-white hover:text-apple-ink"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-secondary transition hover:bg-apple-line hover:text-apple-ink"
                         >
                           <IconPencil className="h-3.5 w-3.5" />
                         </button>
@@ -314,10 +314,10 @@ export default function DashboardPage() {
               {fixedLeaders.map((row) => (
                 <div
                   key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple border border-emerald-500/15 bg-emerald-500/[0.06] px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple border border-apple-green/35 bg-apple-green/10 px-4 py-3 dark:border-apple-green/40 dark:bg-apple-green/15"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] text-emerald-800/80">
+                    <p className="text-[12px] font-semibold text-emerald-700 dark:text-emerald-300">
                       Fixo · {row.weekday_label}
                       {row.fixed_time ? ` · ${row.fixed_time}` : ''}
                     </p>
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                           onClick={() => startEditLeader(row)}
                           data-tooltip="Editar dirigente"
                           aria-label="Editar dirigente"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-white hover:text-apple-ink"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-secondary transition hover:bg-apple-line hover:text-apple-ink"
                         >
                           <IconPencil className="h-3.5 w-3.5" />
                         </button>

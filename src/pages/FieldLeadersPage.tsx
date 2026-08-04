@@ -695,8 +695,8 @@ export default function FieldLeadersPage() {
               <div
                 className={`border-b px-5 py-3.5 ${
                   card.hasToday
-                    ? 'border-emerald-500/20 bg-emerald-500/[0.08]'
-                    : 'border-apple-line bg-emerald-500/[0.05]'
+                    ? 'border-apple-green/40 bg-apple-green/15'
+                    : 'border-apple-line bg-apple-green/10'
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -707,7 +707,9 @@ export default function FieldLeadersPage() {
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs text-apple-secondary">Manhã — horário e dirigente fixos</p>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  Manhã — horário e dirigente fixos
+                </p>
               </div>
               <div className="w-full">
                 <table className={TABLE_CLASS}>
