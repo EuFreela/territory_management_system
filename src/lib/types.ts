@@ -48,9 +48,24 @@ export type DashboardData = {
     isAdmin?: boolean;
   };
   territories: Territory[];
-  daily: (Territory & { blocks: Block[] }) | null;
+  daily: (Territory & { blocks: Block[]; is_finished?: boolean }) | null;
   /** Territórios com ao menos uma quadra de "não em casa" ainda incompleta */
   unfinished?: UnfinishedTerritory[];
+};
+
+/** Entrada do histórico de territórios finalizados */
+export type FinishedTerritoryHistory = {
+  id: number;
+  territory_id?: number | null;
+  territory_name: string;
+  territory_number?: string | null;
+  field_date: string;
+  field_time?: string | null;
+  leader_name?: string | null;
+  people_count?: number | null;
+  finished_by_user_id?: number | null;
+  finished_by_name?: string | null;
+  finished_at?: string;
 };
 
 export type CepLocation = {
