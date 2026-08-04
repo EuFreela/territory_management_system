@@ -415,7 +415,8 @@ router.post(
       return;
     }
 
-    const rawPeople = (req.body as { people_count?: unknown })?.people_count;
+    const body = req.body as { people_count?: unknown; assignment_id?: unknown };
+    const rawPeople = body?.people_count;
     const peopleCount = Number(rawPeople);
     if (!Number.isFinite(peopleCount) || peopleCount < 1 || peopleCount > 999) {
       res.status(400).json({
@@ -433,6 +434,16 @@ router.post(
       return;
     }
 
+    let assignmentId: number | null = null;
+    if (body?.assignment_id != null && body.assignment_id !== '') {
+      const n = Number(body.assignment_id);
+      if (!Number.isFinite(n) || n < 1) {
+        res.status(400).json({ error: 'Dirigente inválido.' });
+        return;
+      }
+      assignmentId = Math.floor(n);
+    }
+
     const authUser = (req as AuthedRequest).user;
 
     try {
@@ -440,8 +451,20 @@ router.post(
         peopleCount: Math.floor(peopleCount),
         finishedByUserId: authUser.id,
         finishedByName: authUser.name,
+        assignmentId,
       });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === 'DIRIGENTE_OBRIGATORIO') {
+        res.status(400).json({
+          error: 'Há mais de um dirigente hoje. Selecione qual dirigiu este território.',
+        });
+        return;
+      }
+      if (msg === 'DIRIGENTE_INVALIDO') {
+        res.status(400).json({ error: 'Dirigente selecionado não é válido para hoje.' });
+        return;
+      }
       console.error('[finish]', err);
       res.status(500).json({ error: 'Erro ao registrar no histórico de finalizados.' });
       return;
