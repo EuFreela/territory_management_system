@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import pool from '../lib/db.js';
-import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 import { todayIsoInAppTz, weekdayForDateStr } from '../lib/timezone.js';
 
 const router = Router();
@@ -195,8 +195,5 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
   res.json({ message: 'Designação removida.' });
 });
-
-// silencia unused import se AuthedRequest não usado diretamente
-void (null as unknown as AuthedRequest);
 
 export default router;

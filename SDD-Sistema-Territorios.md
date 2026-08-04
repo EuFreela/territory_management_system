@@ -187,7 +187,8 @@ CREATE TABLE territory_images (
 
 ### Arquivo de migração
 - Schema completo: `migration.sql`
-- Incrementais (se DB antigo): `scripts/add-cep-columns.js`, `add-block-street.js`, `add-completed-houses.js`
+- RBAC (se DB antigo): `npm run migrate:rbac` (`scripts/migrate-rbac.js`)
+- Seed dirigentes (opcional): `scripts/setup-field-leaders.js`
 
 ---
 

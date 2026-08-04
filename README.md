@@ -85,7 +85,17 @@ Crie o schema com a migração:
 mysql -u root -p < migration.sql
 ```
 
-Se o banco já existir e faltar colunas mais novas, rode os scripts em `scripts/` (ex.: `add-cep-columns.js`, `add-block-street.js`, `add-completed-houses.js`).
+Se o banco já existir e faltar RBAC (papéis/permissões):
+
+```bash
+npm run migrate:rbac
+```
+
+Opcional — seed da escala de dirigentes:
+
+```bash
+node scripts/setup-field-leaders.js
+```
 
 ### 4. Rodar em desenvolvimento
 
@@ -108,13 +118,14 @@ npm start
 
 ## Scripts
 
-| Comando            | Descrição                          |
-|--------------------|------------------------------------|
-| `npm run dev`      | Frontend + API em paralelo         |
-| `npm run dev:web`  | Só Vite                            |
-| `npm run dev:server` | Só API                           |
-| `npm run build`    | Build frontend + compile server    |
-| `npm start`        | Sobe API servindo o `dist`         |
+| Comando              | Descrição                          |
+|----------------------|------------------------------------|
+| `npm run dev`        | Frontend + API em paralelo         |
+| `npm run dev:web`    | Só Vite                            |
+| `npm run dev:server` | Só API                             |
+| `npm run build`      | Build frontend + compile server    |
+| `npm start`          | Sobe API servindo o `dist`         |
+| `npm run migrate:rbac` | Migração RBAC (roles/permissões) |
 
 ---
 
