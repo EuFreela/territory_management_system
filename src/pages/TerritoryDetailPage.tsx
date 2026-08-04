@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   IconArrowLeft,
@@ -209,7 +209,11 @@ export default function TerritoryDetailPage() {
   }
 
   if (!territory) {
-    return <main className="flex min-h-screen items-center justify-center text-slate-600">Carregando…</main>;
+    return (
+      <main className="app-page">
+        <p className="text-[15px] text-apple-secondary">Carregando…</p>
+      </main>
+    );
   }
 
   const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
@@ -246,7 +250,7 @@ export default function TerritoryDetailPage() {
                   <button
                     type="button"
                     onClick={() => void setDaily()}
-                    title="Marcar do dia"
+                    data-tooltip="Marcar do dia"
                     aria-label="Marcar do dia"
                     className="app-icon-btn text-amber-600"
                   >
@@ -256,7 +260,7 @@ export default function TerritoryDetailPage() {
                   <button
                     type="button"
                     onClick={() => void unlinkDaily()}
-                    title="Desvincular do dia"
+                    data-tooltip="Desvincular do dia"
                     aria-label="Desvincular do dia"
                     className="app-icon-btn"
                   >
@@ -267,7 +271,7 @@ export default function TerritoryDetailPage() {
               {can('territory:update') || can('block:manage') ? (
                 <Link
                   to={`/territories/${id}/edit`}
-                  title="Editar área"
+                  data-tooltip="Editar área"
                   aria-label="Editar área"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90"
                 >
@@ -278,7 +282,7 @@ export default function TerritoryDetailPage() {
                 <button
                   type="button"
                   onClick={() => void onDelete()}
-                  title="Excluir território"
+                  data-tooltip="Excluir território"
                   aria-label="Excluir território"
                   className="app-icon-btn text-apple-red"
                 >
@@ -287,7 +291,7 @@ export default function TerritoryDetailPage() {
               ) : null}
               <Link
                 to="/territories"
-                title="Voltar à lista"
+                data-tooltip="Voltar à lista"
                 aria-label="Voltar à lista"
                 className="app-icon-btn"
               >
@@ -295,7 +299,7 @@ export default function TerritoryDetailPage() {
               </Link>
               <Link
                 to="/dashboard"
-                title="Início"
+                data-tooltip="Início"
                 aria-label="Início"
                 className="app-icon-btn"
               >
@@ -483,7 +487,7 @@ export default function TerritoryDetailPage() {
                               e.stopPropagation();
                               void toggleHouse(block, house);
                             }}
-                            title={
+                            data-tooltip={
                               !can('block:manage')
                                 ? 'Sem permissão para alterar checklist'
                                 : doneHouse

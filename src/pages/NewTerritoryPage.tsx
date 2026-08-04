@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+﻿import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { IconArrowLeft } from '@/components/Map/mapIcons';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
@@ -54,7 +54,7 @@ export default function NewTerritoryPage() {
     <main className="app-page space-y-6">
       <div className="space-y-6">
         <div className="app-card-pad">
-          <Link to="/territories" title="Voltar" aria-label="Voltar" className="app-icon-btn">
+          <Link to="/territories" data-tooltip="Voltar" aria-label="Voltar" className="app-icon-btn">
             <IconArrowLeft className="h-4 w-4" />
           </Link>
           <h1 className="app-title mt-4">Novo território</h1>

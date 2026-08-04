@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   IconEye,
   IconPencil,
+  IconPlus,
   IconSearch,
   IconStar,
   IconUnlink,
@@ -88,8 +89,14 @@ export default function TerritoriesPage() {
           </div>
 
           {can('territory:create') ? (
-            <Link to="/territories/new" className="app-btn-primary">
-              Novo território
+            <Link
+              to="/territories/new"
+              data-tooltip="Novo território"
+              data-tooltip-side="bottom"
+              aria-label="Novo território"
+              className="app-icon-btn-ink"
+            >
+              <IconPlus className="h-4 w-4" />
             </Link>
           ) : null}
         </div>
@@ -164,7 +171,7 @@ export default function TerritoriesPage() {
                       <button
                         type="button"
                         onClick={() => void setDaily(territory.id)}
-                        title="Marcar do dia"
+                        data-tooltip="Marcar do dia"
                         aria-label="Marcar do dia"
                         className="app-icon-btn text-amber-600"
                       >
@@ -174,7 +181,7 @@ export default function TerritoriesPage() {
                       <button
                         type="button"
                         onClick={() => void unlinkDaily(territory.id)}
-                        title="Desvincular do dia"
+                        data-tooltip="Desvincular do dia"
                         aria-label="Desvincular do dia"
                         className="app-icon-btn"
                       >
@@ -184,7 +191,7 @@ export default function TerritoriesPage() {
                   ) : null}
                   <Link
                     to={`/territories/${territory.id}`}
-                    title="Ver cartão"
+                    data-tooltip="Ver cartão"
                     aria-label="Ver cartão"
                     className="app-icon-btn"
                   >
@@ -193,7 +200,7 @@ export default function TerritoriesPage() {
                   {can('territory:update') || can('block:manage') ? (
                     <Link
                       to={`/territories/${territory.id}/edit`}
-                      title="Editar área"
+                      data-tooltip="Editar área"
                       aria-label="Editar área"
                       className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90 active:scale-[0.97]"
                     >

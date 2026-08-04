@@ -53,7 +53,8 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={toggleTheme}
-        title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        data-tooltip-side="bottom"
         aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
         className="app-icon-btn absolute right-4 top-4 z-10 sm:right-6 sm:top-6"
       >

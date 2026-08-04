@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   IconCheckCircle,
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={finishing || unlinking}
                   onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  title="Finalizar território do dia e enviar para Finalizados"
+                  data-tooltip="Finalizar território do dia e enviar para Finalizados"
                   aria-label="Finalizar território do dia"
                   className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#34c759] px-3.5 text-[13px] font-semibold text-white shadow-soft transition hover:bg-[#2db84d] active:scale-[0.97] disabled:opacity-50"
                 >
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={unlinking || finishing}
                   onClick={(e) => void unlinkDaily(e, daily.id)}
-                  title="Desvincular território do dia"
+                  data-tooltip="Desvincular território do dia"
                   aria-label="Desvincular território do dia"
                   className="app-icon-btn disabled:opacity-50"
                 >
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                           type="button"
                           disabled={savingLeader}
                           onClick={() => void saveLeaderName()}
-                          title="Salvar"
+                          data-tooltip="Salvar"
                           aria-label="Salvar"
                           className="app-icon-btn bg-apple-blue text-white hover:bg-apple-blue-hover"
                         >
@@ -284,7 +284,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => setEditingLeaderId(null)}
-                          title="Cancelar"
+                          data-tooltip="Cancelar"
                           aria-label="Cancelar"
                           className="app-icon-btn"
                         >
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => startEditLeader(row)}
-                          title="Editar dirigente"
+                          data-tooltip="Editar dirigente"
                           aria-label="Editar dirigente"
                           className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-white hover:text-apple-ink"
                         >
@@ -333,7 +333,7 @@ export default function DashboardPage() {
                           type="button"
                           disabled={savingLeader}
                           onClick={() => void saveLeaderName()}
-                          title="Salvar"
+                          data-tooltip="Salvar"
                           aria-label="Salvar"
                           className="app-icon-btn bg-apple-blue text-white hover:bg-apple-blue-hover"
                         >
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => setEditingLeaderId(null)}
-                          title="Cancelar"
+                          data-tooltip="Cancelar"
                           aria-label="Cancelar"
                           className="app-icon-btn"
                         >
@@ -357,7 +357,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => startEditLeader(row)}
-                          title="Editar dirigente"
+                          data-tooltip="Editar dirigente"
                           aria-label="Editar dirigente"
                           className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-white hover:text-apple-ink"
                         >

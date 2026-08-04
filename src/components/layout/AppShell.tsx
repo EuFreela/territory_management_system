@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+﻿import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -256,7 +256,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              data-tooltip-side="bottom"
               aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
               className="app-icon-btn"
             >
@@ -270,7 +271,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => void onLogout()}
-              title="Sair"
+              data-tooltip="Sair"
+              data-tooltip-side="bottom"
               aria-label="Sair"
               className="app-icon-btn hidden sm:inline-flex"
             >

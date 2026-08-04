@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { IconArrowUp } from '@/components/Map/mapIcons';
 
@@ -51,7 +51,8 @@ export default function ScrollToTop() {
     <button
       type="button"
       onClick={goTop}
-      title="Voltar ao topo"
+      data-tooltip="Voltar ao topo"
+      data-tooltip-side="left"
       aria-label="Voltar ao topo"
       tabIndex={visible ? 0 : -1}
       className={`fixed bottom-5 right-5 z-[9999] inline-flex h-11 w-11 items-center justify-center rounded-full border border-apple-line bg-apple-surface/90 text-apple-ink shadow-float backdrop-blur-md transition-all duration-200 hover:bg-apple-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue/35 active:scale-95 sm:bottom-6 sm:right-6 ${

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   IconPlus,
   IconSave,
@@ -530,7 +530,7 @@ export default function FieldLeadersPage() {
               <button
                 type="submit"
                 disabled={adding}
-                title="Adicionar"
+                data-tooltip="Adicionar"
                 aria-label="Adicionar"
                 className="app-btn-primary h-11 w-11 !rounded-full !px-0 disabled:opacity-60"
               >
@@ -631,7 +631,7 @@ export default function FieldLeadersPage() {
                                     type="button"
                                     disabled={savingId === row.id}
                                     onClick={() => void saveName(row.id)}
-                                    title="Salvar"
+                                    data-tooltip="Salvar"
                                     aria-label="Salvar"
                                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white"
                                   >
@@ -640,7 +640,7 @@ export default function FieldLeadersPage() {
                                   <button
                                     type="button"
                                     onClick={() => setEditingId(null)}
-                                    title="Cancelar"
+                                    data-tooltip="Cancelar"
                                     aria-label="Cancelar"
                                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
                                   >
@@ -658,7 +658,7 @@ export default function FieldLeadersPage() {
                                         ? 'text-apple-tertiary'
                                         : 'text-apple-ink'
                                   }`}
-                                  title="Clique para editar"
+                                  data-tooltip="Clique para editar"
                                 >
                                   {row.assignee_name}
                                 </button>
@@ -668,7 +668,7 @@ export default function FieldLeadersPage() {
                               <button
                                 type="button"
                                 onClick={() => void removeRow(row.id)}
-                                title="Remover"
+                                data-tooltip="Remover"
                                 aria-label="Remover"
                                 className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
                                   isPast
@@ -758,7 +758,7 @@ export default function FieldLeadersPage() {
                                   type="button"
                                   disabled={savingId === row.id}
                                   onClick={() => void saveName(row.id)}
-                                  title="Salvar"
+                                  data-tooltip="Salvar"
                                   aria-label="Salvar"
                                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white"
                                 >
@@ -767,7 +767,7 @@ export default function FieldLeadersPage() {
                                 <button
                                   type="button"
                                   onClick={() => setEditingId(null)}
-                                  title="Cancelar"
+                                  data-tooltip="Cancelar"
                                   aria-label="Cancelar"
                                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
                                 >
@@ -783,7 +783,7 @@ export default function FieldLeadersPage() {
                                     ? 'text-emerald-900 dark:text-emerald-300'
                                     : 'text-apple-ink'
                                 }`}
-                                title="Clique para editar"
+                                data-tooltip="Clique para editar"
                               >
                                 {row.assignee_name}
                               </button>
@@ -793,7 +793,7 @@ export default function FieldLeadersPage() {
                             <button
                               type="button"
                               onClick={() => void removeRow(row.id)}
-                              title="Remover"
+                              data-tooltip="Remover"
                               aria-label="Remover"
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 text-apple-red hover:bg-apple-red/10"
                             >

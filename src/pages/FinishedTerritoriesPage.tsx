@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IconCheckCircle, IconMap, IconSearch, IconTrash } from '@/components/Map/mapIcons';
 import { useConfirm } from '@/components/ui/ConfirmModal';
@@ -219,7 +219,7 @@ export default function FinishedTerritoriesPage() {
                         {row.territory_id ? (
                           <Link
                             to={`/territories/${row.territory_id}`}
-                            title={`Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
+                            data-tooltip={`Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
                             aria-label={`Abrir território ${row.territory_name}`}
                             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
                           >
@@ -227,7 +227,7 @@ export default function FinishedTerritoriesPage() {
                           </Link>
                         ) : (
                           <span
-                            title={`${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
+                            data-tooltip={`${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
                             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
                           >
                             <IconMap className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function FinishedTerritoriesPage() {
                           type="button"
                           disabled={deletingId === row.id}
                           onClick={() => void removeHistoryRow(row)}
-                          title="Remover do histórico"
+                          data-tooltip="Remover do histórico"
                           aria-label="Remover do histórico"
                           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-50"
                         >

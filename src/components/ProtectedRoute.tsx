@@ -7,14 +7,7 @@ export default function ProtectedRoute() {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-apple-bg">
-        <div className="text-center">
-          <div className="mx-auto mb-3 h-8 w-8 animate-pulse rounded-full bg-apple-ink/10" />
-          <p className="text-[15px] text-apple-secondary">Carregando…</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-apple-bg" />;
   }
 
   if (!user) {
