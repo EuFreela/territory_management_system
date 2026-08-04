@@ -3,6 +3,7 @@ import pool from '../lib/db.js';
 import { getMapConfig } from '../lib/map-config.js';
 import { territorySchema, blockSchema, toggleHouseSchema } from '../lib/validations.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
+import { requirePermission } from '../middleware/requirePermission.js';
 
 const router = Router();
 
@@ -27,7 +28,6 @@ function isValidTerritoryGeoJson(geojson: string): boolean {
       if (Array.isArray(ring)) rings.push(ring);
     }
 
-    // anel fechado: mínimo 4 posições (3 pontos + fechamento)
     return rings.some((ring) => ring.length >= 4);
   } catch {
     return false;
@@ -64,38 +64,37 @@ function mapBlock(row: Record<string, unknown>) {
   };
 }
 
-router.get('/', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const [rows] = await pool.execute(
-    'SELECT * FROM territories WHERE user_id = ? ORDER BY created_at DESC',
-    [user.id],
-  );
+/** Territórios são compartilhados (congregação); RBAC controla o que cada papel pode fazer. */
+async function findTerritory(id: string | number) {
+  const [rows] = await pool.execute('SELECT * FROM territories WHERE id = ?', [String(id)]);
+  return (rows as Array<Record<string, unknown>>)[0] ?? null;
+}
+
+function paramId(value: string | string[]): string {
+  return Array.isArray(value) ? String(value[0]) : String(value);
+}
+
+router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
+  const [rows] = await pool.execute('SELECT * FROM territories ORDER BY created_at DESC');
   res.json(rows);
 });
 
-router.get('/dashboard', requireAuth, async (req, res) => {
+router.get('/dashboard', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const user = (req as AuthedRequest).user;
 
-  const [territories] = await pool.execute(
-    'SELECT * FROM territories WHERE user_id = ? ORDER BY created_at DESC',
-    [user.id],
-  );
+  const [territories] = await pool.execute('SELECT * FROM territories ORDER BY created_at DESC');
   const territoryList = territories as Array<Record<string, unknown>>;
 
   const [dailyRows] = await pool.execute(
-    'SELECT * FROM territories WHERE user_id = ? AND is_daily = 1 LIMIT 1',
-    [user.id],
+    'SELECT * FROM territories WHERE is_daily = 1 LIMIT 1',
   );
   const dailyList = dailyRows as Array<Record<string, unknown>>;
   const daily = dailyList[0] ?? null;
 
-  // Todas as quadras do usuário (para progresso e lista "Não finalizados")
   const [allBlockRows] = await pool.execute(
     `SELECT b.* FROM blocks b
      INNER JOIN territories t ON t.id = b.territory_id
-     WHERE t.user_id = ?
      ORDER BY b.sort_order ASC, b.id ASC`,
-    [user.id],
   );
   const allBlocks = (allBlockRows as Array<Record<string, unknown>>).map((row) => ({
     ...mapBlock(row),
@@ -115,7 +114,6 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     dailyBlocks = blocksByTerritory.get(Number(daily.id)) ?? [];
   }
 
-  // Territórios com pelo menos uma quadra ainda não finalizada no checklist
   const unfinished = territoryList
     .map((t) => {
       const blocks = blocksByTerritory.get(Number(t.id)) ?? [];
@@ -138,14 +136,21 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     .filter(Boolean);
 
   res.json({
-    user,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions,
+      isAdmin: user.isAdmin,
+    },
     territories: territoryList,
     daily: daily ? { ...daily, blocks: dailyBlocks } : null,
     unfinished,
   });
 });
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requirePermission('territory:create'), async (req, res) => {
   const user = (req as AuthedRequest).user;
   const parsed = territorySchema.safeParse(req.body);
 
@@ -156,7 +161,6 @@ router.post('/', requireAuth, async (req, res) => {
 
   const { name, number, geojson, is_daily } = parsed.data;
 
-  // Valida FeatureCollection ou Feature/Polygon com pelo menos um anel válido
   if (!isValidTerritoryGeoJson(geojson)) {
     res.status(400).json({
       error: 'Área inválida. Desenhe ao menos um contorno no mapa (mínimo 3 pontos).',
@@ -175,7 +179,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   if (is_daily) {
-    await pool.execute('UPDATE territories SET is_daily = 0 WHERE user_id = ?', [user.id]);
+    await pool.execute('UPDATE territories SET is_daily = 0');
   }
 
   const [result] = await pool.execute(
@@ -204,14 +208,11 @@ router.post('/', requireAuth, async (req, res) => {
   });
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
+router.get('/:id', requireAuth, requirePermission('territory:read'), async (req, res) => {
+  const id = paramId(req.params.id);
+  const territory = await findTerritory(id);
 
-  const [rows] = await pool.execute('SELECT * FROM territories WHERE id = ? AND user_id = ?', [id, user.id]);
-  const territories = rows as Array<Record<string, unknown>>;
-
-  if (!territories[0]) {
+  if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
   }
@@ -223,16 +224,21 @@ router.get('/:id', requireAuth, async (req, res) => {
 
   const blocks = (blockRows as Array<Record<string, unknown>>).map(mapBlock);
 
-  res.json({ ...territories[0], blocks });
+  res.json({ ...territory, blocks });
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
+router.put('/:id', requireAuth, requirePermission('territory:update'), async (req, res) => {
+  const id = paramId(req.params.id);
   const parsed = territorySchema.safeParse(req.body);
 
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+    return;
+  }
+
+  const existing = await findTerritory(id);
+  if (!existing) {
+    res.status(404).json({ error: 'Território não encontrado.' });
     return;
   }
 
@@ -258,8 +264,8 @@ router.put('/:id', requireAuth, async (req, res) => {
   await pool.execute(
     `UPDATE territories
      SET name = ?, number = ?, cep = ?, geojson = ?, map_lat = ?, map_lng = ?
-     WHERE id = ? AND user_id = ?`,
-    [name.trim(), number ?? null, location.cep, geojson, location.lat, location.lng, id, user.id],
+     WHERE id = ?`,
+    [name.trim(), number ?? null, location.cep, geojson, location.lat, location.lng, id],
   );
 
   res.json({
@@ -271,52 +277,70 @@ router.put('/:id', requireAuth, async (req, res) => {
   });
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
-  await pool.execute('DELETE FROM territories WHERE id = ? AND user_id = ?', [id, user.id]);
+router.delete('/:id', requireAuth, requirePermission('territory:delete'), async (req, res) => {
+  const id = paramId(req.params.id);
+  const [result] = await pool.execute('DELETE FROM territories WHERE id = ?', [id]);
+  const deleteResult = result as { affectedRows?: number };
+  if (!deleteResult.affectedRows) {
+    res.status(404).json({ error: 'Território não encontrado.' });
+    return;
+  }
   res.json({ message: 'Território excluído com sucesso.' });
 });
 
-router.post('/:id/daily', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
+router.post(
+  '/:id/daily',
+  requireAuth,
+  requirePermission('territory:set_daily'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const territory = await findTerritory(id);
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
 
-  await pool.execute('UPDATE territories SET is_daily = 0 WHERE user_id = ?', [user.id]);
-  await pool.execute('UPDATE territories SET is_daily = 1 WHERE id = ? AND user_id = ?', [id, user.id]);
+    await pool.execute('UPDATE territories SET is_daily = 0');
+    await pool.execute('UPDATE territories SET is_daily = 1 WHERE id = ?', [id]);
 
-  res.json({ message: 'Território do dia atualizado com sucesso.' });
-});
+    res.json({ message: 'Território do dia atualizado com sucesso.' });
+  },
+);
 
 /** Remove o vínculo de território do dia (nenhum fica destacado) */
-router.delete('/:id/daily', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
+router.delete(
+  '/:id/daily',
+  requireAuth,
+  requirePermission('territory:set_daily'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
 
-  const [result] = await pool.execute(
-    'UPDATE territories SET is_daily = 0 WHERE id = ? AND user_id = ?',
-    [id, user.id],
-  );
+    const [result] = await pool.execute('UPDATE territories SET is_daily = 0 WHERE id = ?', [id]);
 
-  const updateResult = result as { affectedRows?: number };
-  if (!updateResult.affectedRows) {
+    const updateResult = result as { affectedRows?: number };
+    if (!updateResult.affectedRows) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
+    res.json({ message: 'Território do dia desvinculado com sucesso.' });
+  },
+);
+
+router.get('/:id/blocks', requireAuth, requirePermission('territory:read'), async (req, res) => {
+  const id = paramId(req.params.id);
+
+  const territory = await findTerritory(id);
+  if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
   }
 
-  res.json({ message: 'Território do dia desvinculado com sucesso.' });
-});
-
-router.get('/:id/blocks', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
-
   const [rows] = await pool.execute(
     `SELECT b.* FROM blocks b
-     INNER JOIN territories t ON t.id = b.territory_id
-     WHERE b.territory_id = ? AND t.user_id = ?
+     WHERE b.territory_id = ?
      ORDER BY b.sort_order ASC`,
-    [id, user.id],
+    [id],
   );
 
   const blocks = (rows as Array<Record<string, unknown>>).map(mapBlock);
@@ -324,12 +348,11 @@ router.get('/:id/blocks', requireAuth, async (req, res) => {
   res.json(blocks);
 });
 
-router.post('/:id/blocks', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
+router.post('/:id/blocks', requireAuth, requirePermission('block:manage'), async (req, res) => {
+  const id = paramId(req.params.id);
 
-  const [owned] = await pool.execute('SELECT id FROM territories WHERE id = ? AND user_id = ?', [id, user.id]);
-  if (!(owned as unknown[]).length) {
+  const territory = await findTerritory(id);
+  if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
   }
@@ -363,166 +386,176 @@ router.post('/:id/blocks', requireAuth, async (req, res) => {
 });
 
 /** Atualiza quadra / rua / números (edição do formulário) */
-router.put('/:id/blocks/:blockId', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id, blockId } = req.params;
+router.put(
+  '/:id/blocks/:blockId',
+  requireAuth,
+  requirePermission('block:manage'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const blockId = paramId(req.params.blockId);
 
-  const parsed = blockSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
-    return;
-  }
+    const parsed = blockSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
 
-  const { name, street_name, house_numbers, sort_order } = parsed.data;
-  const houses = house_numbers.map(String);
+    const { name, street_name, house_numbers, sort_order } = parsed.data;
+    const houses = house_numbers.map(String);
 
-  const [rows] = await pool.execute(
-    `SELECT b.* FROM blocks b
-     INNER JOIN territories t ON t.id = b.territory_id
-     WHERE b.id = ? AND b.territory_id = ? AND t.user_id = ?`,
-    [blockId, id, user.id],
-  );
-  const list = rows as Array<Record<string, unknown>>;
-  const block = list[0];
-  if (!block) {
-    res.status(404).json({ error: 'Registro não encontrado.' });
-    return;
-  }
+    const [rows] = await pool.execute(
+      `SELECT b.* FROM blocks b
+       WHERE b.id = ? AND b.territory_id = ?`,
+      [blockId, id],
+    );
+    const list = rows as Array<Record<string, unknown>>;
+    const block = list[0];
+    if (!block) {
+      res.status(404).json({ error: 'Registro não encontrado.' });
+      return;
+    }
 
-  // Mantém só as casas concluídas que ainda existem na lista
-  const prevCompleted = parseHouseNumbers(block.completed_houses);
-  const completed = prevCompleted.filter((h) => houses.includes(h));
+    const prevCompleted = parseHouseNumbers(block.completed_houses);
+    const completed = prevCompleted.filter((h) => houses.includes(h));
 
-  await pool.execute(
-    `UPDATE blocks
-     SET name = ?, street_name = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
-     WHERE id = ?`,
-    [
-      name.trim(),
-      street_name.trim(),
-      JSON.stringify(houses),
-      JSON.stringify(completed),
-      sort_order ?? null,
-      blockId,
-    ],
-  );
+    await pool.execute(
+      `UPDATE blocks
+       SET name = ?, street_name = ?, house_numbers = ?, completed_houses = ?, sort_order = COALESCE(?, sort_order)
+       WHERE id = ?`,
+      [
+        name.trim(),
+        street_name.trim(),
+        JSON.stringify(houses),
+        JSON.stringify(completed),
+        sort_order ?? null,
+        blockId,
+      ],
+    );
 
-  const [updatedRows] = await pool.execute('SELECT * FROM blocks WHERE id = ?', [blockId]);
-  res.json(mapBlock((updatedRows as Array<Record<string, unknown>>)[0]));
-});
+    const [updatedRows] = await pool.execute('SELECT * FROM blocks WHERE id = ?', [blockId]);
+    res.json(mapBlock((updatedRows as Array<Record<string, unknown>>)[0]));
+  },
+);
 
 /** Checklist: marcar / desmarcar número de casa já trabalhado */
-router.patch('/:id/blocks/:blockId/houses', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id, blockId } = req.params;
+router.patch(
+  '/:id/blocks/:blockId/houses',
+  requireAuth,
+  requirePermission('block:manage'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const blockId = paramId(req.params.blockId);
 
-  const parsed = toggleHouseSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
-    return;
-  }
+    const parsed = toggleHouseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
 
-  const { house_number, done } = parsed.data;
+    const { house_number, done } = parsed.data;
 
-  const [rows] = await pool.execute(
-    `SELECT b.* FROM blocks b
-     INNER JOIN territories t ON t.id = b.territory_id
-     WHERE b.id = ? AND b.territory_id = ? AND t.user_id = ?`,
-    [blockId, id, user.id],
-  );
-  const list = rows as Array<Record<string, unknown>>;
-  const block = list[0];
-  if (!block) {
-    res.status(404).json({ error: 'Registro não encontrado.' });
-    return;
-  }
+    const [rows] = await pool.execute(
+      `SELECT b.* FROM blocks b
+       WHERE b.id = ? AND b.territory_id = ?`,
+      [blockId, id],
+    );
+    const list = rows as Array<Record<string, unknown>>;
+    const block = list[0];
+    if (!block) {
+      res.status(404).json({ error: 'Registro não encontrado.' });
+      return;
+    }
 
-  const houses = parseHouseNumbers(block.house_numbers);
-  if (!houses.includes(house_number)) {
-    res.status(400).json({ error: 'Este número não pertence a esta quadra.' });
-    return;
-  }
+    const houses = parseHouseNumbers(block.house_numbers);
+    if (!houses.includes(house_number)) {
+      res.status(400).json({ error: 'Este número não pertence a esta quadra.' });
+      return;
+    }
 
-  let completed = parseHouseNumbers(block.completed_houses);
-  if (done) {
-    if (!completed.includes(house_number)) completed = [...completed, house_number];
-  } else {
-    completed = completed.filter((n) => n !== house_number);
-  }
+    let completed = parseHouseNumbers(block.completed_houses);
+    if (done) {
+      if (!completed.includes(house_number)) completed = [...completed, house_number];
+    } else {
+      completed = completed.filter((n) => n !== house_number);
+    }
 
-  await pool.execute('UPDATE blocks SET completed_houses = ? WHERE id = ?', [
-    JSON.stringify(completed),
-    blockId,
-  ]);
+    await pool.execute('UPDATE blocks SET completed_houses = ? WHERE id = ?', [
+      JSON.stringify(completed),
+      blockId,
+    ]);
 
-  res.json(
-    mapBlock({
-      ...block,
-      completed_houses: completed,
-    }),
-  );
-});
+    res.json(
+      mapBlock({
+        ...block,
+        completed_houses: completed,
+      }),
+    );
+  },
+);
 
-router.delete('/:id/blocks/:blockId', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id, blockId } = req.params;
+router.delete(
+  '/:id/blocks/:blockId',
+  requireAuth,
+  requirePermission('block:manage'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const blockId = paramId(req.params.blockId);
 
-  const [result] = await pool.execute(
-    `DELETE b FROM blocks b
-     INNER JOIN territories t ON t.id = b.territory_id
-     WHERE b.id = ? AND b.territory_id = ? AND t.user_id = ?`,
-    [blockId, id, user.id],
-  );
+    const [result] = await pool.execute(
+      `DELETE FROM blocks WHERE id = ? AND territory_id = ?`,
+      [blockId, id],
+    );
 
-  const deleteResult = result as { affectedRows?: number };
-  if (!deleteResult.affectedRows) {
-    res.status(404).json({ error: 'Registro não encontrado.' });
-    return;
-  }
+    const deleteResult = result as { affectedRows?: number };
+    if (!deleteResult.affectedRows) {
+      res.status(404).json({ error: 'Registro não encontrado.' });
+      return;
+    }
 
-  res.json({ message: 'Registro removido com sucesso.' });
-});
+    res.json({ message: 'Registro removido com sucesso.' });
+  },
+);
 
 /** Apaga várias quadras de não em casa de uma vez */
-router.post('/:id/blocks/bulk-delete', requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const { id } = req.params;
-  const rawIds = (req.body as { ids?: unknown })?.ids;
+router.post(
+  '/:id/blocks/bulk-delete',
+  requireAuth,
+  requirePermission('block:manage'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const rawIds = (req.body as { ids?: unknown })?.ids;
 
-  if (!Array.isArray(rawIds) || rawIds.length === 0) {
-    res.status(400).json({ error: 'Informe ao menos uma quadra para apagar.' });
-    return;
-  }
+    if (!Array.isArray(rawIds) || rawIds.length === 0) {
+      res.status(400).json({ error: 'Informe ao menos uma quadra para apagar.' });
+      return;
+    }
 
-  const ids = [...new Set(rawIds.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0))];
-  if (ids.length === 0) {
-    res.status(400).json({ error: 'IDs inválidos.' });
-    return;
-  }
+    const ids = [
+      ...new Set(rawIds.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0)),
+    ];
+    if (ids.length === 0) {
+      res.status(400).json({ error: 'IDs inválidos.' });
+      return;
+    }
 
-  // Confirma que o território é do usuário
-  const [territoryRows] = await pool.execute(
-    'SELECT id FROM territories WHERE id = ? AND user_id = ?',
-    [id, user.id],
-  );
-  if ((territoryRows as Array<unknown>).length === 0) {
-    res.status(404).json({ error: 'Território não encontrado.' });
-    return;
-  }
+    const territory = await findTerritory(id);
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
 
-  const placeholders = ids.map(() => '?').join(', ');
-  const [result] = await pool.execute(
-    `DELETE b FROM blocks b
-     INNER JOIN territories t ON t.id = b.territory_id
-     WHERE b.territory_id = ? AND t.user_id = ? AND b.id IN (${placeholders})`,
-    [id, user.id, ...ids],
-  );
+    const placeholders = ids.map(() => '?').join(', ');
+    const [result] = await pool.execute(
+      `DELETE FROM blocks WHERE territory_id = ? AND id IN (${placeholders})`,
+      [id, ...ids],
+    );
 
-  const deleteResult = result as { affectedRows?: number };
-  res.json({
-    message: 'Quadras removidas com sucesso.',
-    deleted: deleteResult.affectedRows ?? 0,
-  });
-});
+    const deleteResult = result as { affectedRows?: number };
+    res.json({
+      message: 'Quadras removidas com sucesso.',
+      deleted: deleteResult.affectedRows ?? 0,
+    });
+  },
+);
 
 export default router;

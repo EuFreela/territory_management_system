@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../lib/db.js';
 import { cookieOptions, getUserFromRequest, signToken } from '../lib/auth.js';
+import { loadRbacUserById } from '../lib/load-user.js';
 import { isStrongPassword } from '../lib/password.js';
 import { changePasswordSchema, loginSchema } from '../lib/validations.js';
 import { rateLimit } from '../middleware/rateLimit.js';
@@ -69,10 +70,18 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.cookie('auth_token', token, cookieOptions);
 
     const passwordIsWeak = !isStrongPassword(password);
+    const rbacUser = (await loadRbacUserById(user.id)) ?? {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: null,
+      permissions: [],
+      isAdmin: false,
+    };
 
     res.json({
       message: 'Login realizado com sucesso.',
-      user: { id: user.id, email: user.email, name: user.name },
+      user: rbacUser,
       password_is_weak: passwordIsWeak,
     });
   } catch (error) {

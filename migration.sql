@@ -1,12 +1,30 @@
 CREATE DATABASE IF NOT EXISTS campo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE campo;
 
+CREATE TABLE roles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(50) NOT NULL UNIQUE,
+  name VARCHAR(100) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_system TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE role_permissions (
+  role_id INT NOT NULL,
+  permission VARCHAR(80) NOT NULL,
+  PRIMARY KEY (role_id, permission),
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
   email VARCHAR(180) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  role_id INT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE territories (
@@ -62,7 +80,57 @@ CREATE TABLE IF NOT EXISTS field_assignments (
   INDEX idx_fixed_weekday (fixed_weekday)
 ) ENGINE=InnoDB;
 
+-- Papéis (RBAC)
+INSERT INTO roles (slug, name, description, is_system) VALUES
+  ('admin', 'Administrador', 'Acesso total ao sistema', 1),
+  ('editor', 'Editor', 'Cria e edita territórios e não em casa', 1),
+  ('field', 'Campo', 'Consulta, território do dia e checklist', 1),
+  ('viewer', 'Visualizador', 'Somente leitura de territórios', 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description);
+
+-- Permissões do admin (todos os escopos)
+INSERT IGNORE INTO role_permissions (role_id, permission)
+SELECT r.id, p.permission FROM roles r
+CROSS JOIN (
+  SELECT 'territory:create' AS permission UNION ALL
+  SELECT 'territory:read' UNION ALL
+  SELECT 'territory:update' UNION ALL
+  SELECT 'territory:delete' UNION ALL
+  SELECT 'territory:set_daily' UNION ALL
+  SELECT 'block:manage' UNION ALL
+  SELECT 'user:manage'
+) p
+WHERE r.slug = 'admin';
+
+INSERT IGNORE INTO role_permissions (role_id, permission)
+SELECT r.id, p.permission FROM roles r
+CROSS JOIN (
+  SELECT 'territory:create' AS permission UNION ALL
+  SELECT 'territory:read' UNION ALL
+  SELECT 'territory:update' UNION ALL
+  SELECT 'territory:set_daily' UNION ALL
+  SELECT 'block:manage'
+) p
+WHERE r.slug = 'editor';
+
+INSERT IGNORE INTO role_permissions (role_id, permission)
+SELECT r.id, p.permission FROM roles r
+CROSS JOIN (
+  SELECT 'territory:read' AS permission UNION ALL
+  SELECT 'territory:set_daily' UNION ALL
+  SELECT 'block:manage'
+) p
+WHERE r.slug = 'field';
+
+INSERT IGNORE INTO role_permissions (role_id, permission)
+SELECT r.id, 'territory:read' FROM roles r WHERE r.slug = 'viewer';
+
 -- Senha padrão do admin: 123456 (mínimo 6 caracteres exigido pela API)
-INSERT INTO users (name, email, password_hash)
-VALUES ('Administrador', 'admin@campo.local', '$2b$10$KpSm9ser0EX5usgs2.1em.TpfvROSW8knZpTPosW2/VD8moPOG.Uy')
-ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
+INSERT INTO users (name, email, password_hash, role_id)
+SELECT 'Administrador', 'admin@campo.local',
+       '$2b$10$KpSm9ser0EX5usgs2.1em.TpfvROSW8knZpTPosW2/VD8moPOG.Uy',
+       r.id
+FROM roles r WHERE r.slug = 'admin'
+ON DUPLICATE KEY UPDATE
+  password_hash = VALUES(password_hash),
+  role_id = VALUES(role_id);
