@@ -18,7 +18,7 @@ const features = [
   {
     icon: IconCheckCircle,
     title: 'Checklist de casas',
-    text: 'Marque casas e quadras visitadas, acompanhe o progresso e finalize o território do dia registrando quantas pessoas estavam no campo.',
+    text: 'Cadastre não em casa com várias ruas na mesma quadra, descrição opcional por rua e marque casas visitadas. Finalize o território do dia com pessoas e dirigente do horário.',
   },
   {
     icon: IconUsers,
@@ -63,17 +63,23 @@ const updates: { title: string; items: string[] }[] = [
       'Histórico de finalizações com dia, horário, dirigente, pessoas e quem registrou',
       'Submenu Finalizados com busca; remoção apenas para administrador',
       'Botão Finalizar grava no histórico cumulativo e desvincula o território do dia',
+      'Com vários dirigentes no dia, escolha no dropdown qual dirigiu o território',
       'Busca por endereço no mapa (geocoding) com pin e voo até o local',
+      'Busca de endereço corrigida em Novo território (sem conflito com o formulário da página)',
     ],
   },
   {
     title: 'Mapa e checklist (não em casa)',
     items: [
+      'Várias ruas na mesma quadra (botão Adicionar rua, cadastro dinâmico)',
+      'Descrição opcional por rua — só aparece no card se preenchida (somente leitura)',
+      'Cards agrupados por quadra no cartão e na edição',
       'Tela cheia e botão para reenquadrar as áreas do mapa',
       'Confirmação ao desmarcar casa; limpar destaque; refazer ponto/área',
       'Destaque bidirecional entre mapa e cartões de não em casa',
       'Seleção mapa/cartão sem scroll indesejado; status finalizado em cinza',
       'Exclusão em massa de registros de não em casa e botão voltar ao topo',
+      'Contraste dark no cartão de território, busca do mapa e menu sem sobrepor ícones',
     ],
   },
   {
