@@ -269,7 +269,7 @@ export default function TerritoryDetailPage() {
                   to={`/territories/${id}/edit`}
                   title="Editar área"
                   aria-label="Editar área"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-white shadow-soft transition hover:bg-black"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90"
                 >
                   <IconPencil className="h-4 w-4" />
                 </Link>

@@ -47,7 +47,7 @@ export default function ChangePasswordPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-apple-bg px-5">
-      <div className="w-full max-w-md rounded-apple-xl border border-apple-line bg-white p-8 shadow-card">
+      <div className="w-full max-w-md rounded-apple-xl border border-apple-line bg-apple-surface p-8 shadow-card">
         <h1 className="mb-2 text-[22px] font-semibold tracking-tightish text-apple-ink">
           Alterar senha
         </h1>

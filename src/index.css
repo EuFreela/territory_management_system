@@ -4,9 +4,42 @@
 
 :root {
   color-scheme: light;
-  --apple-bg: #f5f5f7;
-  --apple-ink: #1d1d1f;
-  --apple-blue: #0071e3;
+  --apple-bg: 245 245 247;
+  --apple-surface: 255 255 255;
+  --apple-ink: 29 29 31;
+  --apple-secondary: 110 110 115;
+  --apple-tertiary: 134 134 139;
+  --apple-blue: 0 113 227;
+  --apple-blue-hover: 0 119 237;
+  --apple-green: 52 199 89;
+  --apple-orange: 255 159 10;
+  --apple-red: 255 59 48;
+  --apple-line: rgba(0, 0, 0, 0.08);
+  --apple-fill: rgba(0, 0, 0, 0.04);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-nav: 0 1px 0 rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --apple-bg: 0 0 0;
+  --apple-surface: 28 28 30;
+  --apple-ink: 245 245 247;
+  --apple-secondary: 161 161 166;
+  --apple-tertiary: 134 134 139;
+  --apple-blue: 10 132 255;
+  --apple-blue-hover: 64 156 255;
+  --apple-green: 48 209 88;
+  --apple-orange: 255 159 10;
+  --apple-red: 255 69 58;
+  --apple-line: rgba(255, 255, 255, 0.12);
+  --apple-fill: rgba(255, 255, 255, 0.08);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-nav: 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.55);
 }
 
 html {
@@ -75,6 +108,21 @@ select {
     @apply app-btn bg-apple-blue text-white hover:bg-apple-blue-hover;
   }
 
+  /* Contraste invertido (funciona em light e dark: ink ↔ bg) */
+  .app-btn-ink {
+    @apply app-btn bg-apple-ink text-apple-bg hover:opacity-90;
+  }
+
+  .app-icon-btn-ink {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apple-ink text-apple-bg
+      shadow-soft transition hover:opacity-90 active:scale-[0.97]
+      focus-visible:outline-none focus-visible:ring-2;
+  }
+
+  .app-icon-btn-ink:focus-visible {
+    --tw-ring-color: rgb(var(--apple-blue) / 0.35);
+  }
+
   .app-btn-primary:active,
   .app-btn-secondary:active,
   .app-btn-danger:active {
@@ -82,7 +130,7 @@ select {
   }
 
   .app-btn-secondary {
-    @apply app-btn border border-apple-line bg-white text-apple-ink hover:bg-apple-fill;
+    @apply app-btn border border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill;
   }
 
   .app-btn-ghost {
@@ -90,16 +138,16 @@ select {
   }
 
   .app-btn-ghost:hover {
-    background-color: rgba(0, 113, 227, 0.1);
+    background-color: rgb(var(--apple-blue) / 0.1);
   }
 
   .app-btn-danger {
-    @apply app-btn border border-red-200 bg-white text-apple-red hover:bg-red-50;
+    @apply app-btn border border-apple-red/25 bg-apple-surface text-apple-red hover:bg-apple-red/10;
   }
 
   .app-icon-btn {
     @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-apple-line
-      bg-white text-apple-ink shadow-soft transition hover:bg-apple-fill
+      bg-apple-surface text-apple-ink shadow-soft transition hover:bg-apple-fill
       focus-visible:outline-none focus-visible:ring-2;
   }
 
@@ -108,17 +156,17 @@ select {
   }
 
   .app-icon-btn:focus-visible {
-    --tw-ring-color: rgba(0, 113, 227, 0.35);
+    --tw-ring-color: rgb(var(--apple-blue) / 0.35);
   }
 
   .app-input {
-    @apply w-full rounded-apple border border-apple-line bg-white px-3.5 py-2.5 text-[15px] text-apple-ink
+    @apply w-full rounded-apple border border-apple-line bg-apple-surface px-3.5 py-2.5 text-[15px] text-apple-ink
       shadow-soft outline-none transition placeholder:text-apple-tertiary;
   }
 
   .app-input:focus {
-    border-color: rgba(0, 113, 227, 0.5);
-    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+    border-color: rgb(var(--apple-blue) / 0.5);
+    box-shadow: 0 0 0 4px rgb(var(--apple-blue) / 0.12);
   }
 
   .app-label {
@@ -135,27 +183,26 @@ select {
 
   .app-badge-blue {
     @apply app-badge text-apple-blue;
-    background-color: rgba(0, 113, 227, 0.1);
+    background-color: rgb(var(--apple-blue) / 0.12);
   }
 
   .app-badge-gray {
     @apply app-badge text-apple-secondary;
-    background-color: rgba(0, 0, 0, 0.06);
+    background-color: var(--apple-fill);
   }
 
   .app-badge-green {
-    @apply app-badge text-emerald-700;
+    @apply app-badge text-emerald-700 dark:text-emerald-300;
     background-color: rgba(16, 185, 129, 0.12);
   }
 
   .app-badge-amber {
-    @apply app-badge text-amber-800;
+    @apply app-badge text-amber-800 dark:text-amber-300;
     background-color: rgba(245, 158, 11, 0.12);
   }
 
   .app-empty {
-    @apply rounded-apple-lg border border-dashed border-apple-line px-5 py-10 text-center;
-    background-color: rgba(255, 255, 255, 0.6);
+    @apply rounded-apple-lg border border-dashed border-apple-line px-5 py-10 text-center bg-apple-fill;
   }
 }
 
@@ -244,5 +291,20 @@ select {
   }
   50% {
     transform: translateY(-3px);
+  }
+}
+
+.app-mobile-drawer {
+  animation: app-mobile-drawer-in 0.22s ease-out;
+}
+
+@keyframes app-mobile-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -44,6 +44,9 @@ function normalize(text: string) {
     .trim();
 }
 
+const thClass =
+  'px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary';
+
 export default function FinishedTerritoriesPage() {
   const confirm = useConfirm();
   const { isAdmin } = useAuth();
@@ -124,7 +127,7 @@ export default function FinishedTerritoriesPage() {
           Buscar no histórico
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[#86868b]">
+          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-apple-tertiary">
             <IconSearch className="h-4 w-4" />
           </span>
           <input
@@ -138,7 +141,7 @@ export default function FinishedTerritoriesPage() {
           />
         </div>
         {!loading && rows.length > 0 ? (
-          <p className="mt-2 text-[12px] text-[#86868b]">
+          <p className="mt-2 text-[12px] text-apple-tertiary">
             {query.trim()
               ? `${filtered.length} de ${rows.length} registro(s)`
               : `${rows.length} registro(s)`}
@@ -146,18 +149,18 @@ export default function FinishedTerritoriesPage() {
         ) : null}
       </div>
 
-      {loading ? <p className="text-[15px] text-[#6e6e73]">Carregando…</p> : null}
+      {loading ? <p className="text-[15px] text-apple-secondary">Carregando…</p> : null}
       {error ? (
-        <p className="rounded-[12px] bg-red-50 px-3 py-2 text-[13px] text-[#ff3b30]">{error}</p>
+        <p className="rounded-[12px] bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">{error}</p>
       ) : null}
 
       {!loading && !error && filtered.length === 0 ? (
-        <div className="rounded-[20px] border border-dashed border-black/[0.08] bg-white px-6 py-14 text-center">
-          <IconCheckCircle className="mx-auto mb-3 h-8 w-8 text-[#34c759]/70" />
-          <p className="text-[15px] font-medium text-[#1d1d1f]">
+        <div className="app-empty">
+          <IconCheckCircle className="mx-auto mb-3 h-8 w-8 text-apple-green/70" />
+          <p className="text-[15px] font-medium text-apple-ink">
             {rows.length === 0 ? 'Nenhum território finalizado ainda' : 'Nenhum resultado'}
           </p>
-          <p className="mt-1 text-[13px] text-[#86868b]">
+          <p className="mt-1 text-[13px] text-apple-tertiary">
             {rows.length === 0
               ? 'Quando todas as casas de um território forem marcadas, o registro aparece aqui.'
               : `Nada encontrado para “${query.trim()}”.`}
@@ -166,67 +169,49 @@ export default function FinishedTerritoriesPage() {
       ) : null}
 
       {!loading && filtered.length > 0 ? (
-        <div className="overflow-hidden rounded-[20px] border border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="overflow-hidden rounded-[20px] border border-apple-line bg-apple-surface shadow-soft">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-[14px]">
               <thead>
-                <tr className="border-b border-black/[0.06] bg-[#fafafa]">
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Dia
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Horário
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Dirigente
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Pessoas
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Território
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Registrado por
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                    Data/hora
-                  </th>
-                  {isAdmin ? (
-                    <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">
-                      Ações
-                    </th>
-                  ) : null}
+                <tr className="border-b border-apple-line bg-apple-fill">
+                  <th className={thClass}>Dia</th>
+                  <th className={thClass}>Horário</th>
+                  <th className={thClass}>Dirigente</th>
+                  <th className={thClass}>Pessoas</th>
+                  <th className={thClass}>Território</th>
+                  <th className={thClass}>Registrado por</th>
+                  <th className={thClass}>Data/hora</th>
+                  {isAdmin ? <th className={`${thClass} text-right`}>Ações</th> : null}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-black/[0.04] last:border-0 transition hover:bg-[#fafafa]"
+                    className="border-b border-apple-line last:border-0 transition hover:bg-apple-fill"
                   >
-                    <td className="px-5 py-3.5 font-medium tabular-nums text-[#1d1d1f]">
+                    <td className="px-5 py-3.5 font-medium tabular-nums text-apple-ink">
                       {formatDateBr(row.field_date)}
                     </td>
-                    <td className="px-5 py-3.5 text-[#6e6e73]">
+                    <td className="px-5 py-3.5 text-apple-secondary">
                       {row.field_time?.trim() ? (
-                        <span className="inline-flex rounded-full bg-[#f5f5f7] px-2.5 py-0.5 text-[12px] font-semibold text-[#1d1d1f]">
+                        <span className="inline-flex rounded-full bg-apple-fill px-2.5 py-0.5 text-[12px] font-semibold text-apple-ink">
                           {row.field_time}
                         </span>
                       ) : (
                         '—'
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-[#1d1d1f]">
+                    <td className="px-5 py-3.5 text-apple-ink">
                       {row.leader_name?.trim() || (
-                        <span className="text-[#86868b]">—</span>
+                        <span className="text-apple-tertiary">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 tabular-nums text-[#1d1d1f]">
+                    <td className="px-5 py-3.5 tabular-nums text-apple-ink">
                       {row.people_count != null ? (
                         <span className="font-medium">{row.people_count}</span>
                       ) : (
-                        <span className="text-[#86868b]">—</span>
+                        <span className="text-apple-tertiary">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3.5">
@@ -236,34 +221,34 @@ export default function FinishedTerritoriesPage() {
                             to={`/territories/${row.territory_id}`}
                             title={`Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
                             aria-label={`Abrir território ${row.territory_name}`}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f5f5f7] text-[#1d1d1f] transition hover:bg-[#0071e3] hover:text-white hover:border-transparent"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
                           >
                             <IconMap className="h-4 w-4" />
                           </Link>
                         ) : (
                           <span
                             title={`${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f5f5f7] text-[#86868b]"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
                           >
                             <IconMap className="h-4 w-4" />
                           </span>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-[#1d1d1f]">{row.territory_name}</p>
+                          <p className="truncate font-medium text-apple-ink">{row.territory_name}</p>
                           {row.territory_number ? (
-                            <p className="text-[12px] text-[#86868b]">N.º {row.territory_number}</p>
+                            <p className="text-[12px] text-apple-tertiary">N.º {row.territory_number}</p>
                           ) : null}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-[#1d1d1f]">
+                    <td className="px-5 py-3.5 text-apple-ink">
                       {row.finished_by_name?.trim() ? (
                         <span className="font-medium">{row.finished_by_name}</span>
                       ) : (
-                        <span className="text-[#86868b]">—</span>
+                        <span className="text-apple-tertiary">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap tabular-nums text-[13px] text-[#6e6e73]">
+                    <td className="px-5 py-3.5 whitespace-nowrap tabular-nums text-[13px] text-apple-secondary">
                       {formatDateTimeBr(row.finished_at)}
                     </td>
                     {isAdmin ? (
@@ -274,7 +259,7 @@ export default function FinishedTerritoriesPage() {
                           onClick={() => void removeHistoryRow(row)}
                           title="Remover do histórico"
                           aria-label="Remover do histórico"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-white text-[#ff3b30] transition hover:bg-red-50 disabled:opacity-50"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-50"
                         >
                           <IconTrash className="h-4 w-4" />
                         </button>

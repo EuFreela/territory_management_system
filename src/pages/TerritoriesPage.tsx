@@ -113,7 +113,7 @@ export default function TerritoriesPage() {
             />
           </div>
           {!loading && territories.length > 0 ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-apple-tertiary">
               {query.trim()
                 ? `${filtered.length} de ${territories.length} território(s)`
                 : `${territories.length} território(s)`}
@@ -146,7 +146,9 @@ export default function TerritoriesPage() {
                   ) : null}
                   <p
                     className={`mt-1.5 text-[12px] font-medium ${
-                      hasArea ? 'text-emerald-700' : 'text-amber-700'
+                      hasArea
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-amber-700 dark:text-amber-400'
                     }`}
                   >
                     {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
@@ -193,7 +195,7 @@ export default function TerritoriesPage() {
                       to={`/territories/${territory.id}/edit`}
                       title="Editar área"
                       aria-label="Editar área"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-white shadow-soft transition hover:bg-black active:scale-[0.97]"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90 active:scale-[0.97]"
                     >
                       <IconPencil className="h-4 w-4" />
                     </Link>
