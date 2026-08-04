@@ -73,6 +73,7 @@ export type FieldAssignment = {
   period_label?: string | null;
   is_fixed: number | boolean;
   fixed_weekday?: number | null;
+  /** Horário ou período (ex: 08:00, Manhã, Tarde, Noite) — usado em fixos e datados */
   fixed_time?: string | null;
   sort_order?: number;
 };
