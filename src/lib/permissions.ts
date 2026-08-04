@@ -1,0 +1,42 @@
+/** Escopos RBAC espelhados do backend (server/lib/rbac.ts) */
+export const SCOPES = [
+  'territory:create',
+  'territory:read',
+  'territory:update',
+  'territory:delete',
+  'territory:set_daily',
+  'block:manage',
+  'user:manage',
+] as const;
+
+export type Scope = (typeof SCOPES)[number];
+
+export type RoleInfo = {
+  id: number;
+  slug: string;
+  name: string;
+};
+
+export type AuthUserWithRbac = {
+  id: number;
+  email: string;
+  name: string;
+  role?: RoleInfo | null;
+  permissions?: Scope[] | string[];
+  isAdmin?: boolean;
+};
+
+export function can(user: AuthUserWithRbac | null | undefined, scope: Scope): boolean {
+  if (!user) return false;
+  if (user.isAdmin || user.role?.slug === 'admin') return true;
+  const perms = user.permissions ?? [];
+  return perms.includes(scope);
+}
+
+export function canAny(user: AuthUserWithRbac | null | undefined, scopes: Scope[]): boolean {
+  return scopes.some((s) => can(user, s));
+}
+
+export function canAll(user: AuthUserWithRbac | null | undefined, scopes: Scope[]): boolean {
+  return scopes.every((s) => can(user, s));
+}

@@ -1,12 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Request } from 'express';
+import { loadRbacUserById } from './load-user.js';
+import type { RbacUser } from './rbac.js';
 
-export type AuthUser = {
-  id: number;
-  email: string;
-  name: string;
-};
+export type AuthUser = RbacUser;
 
 export type TokenPayload = {
   userId: number;
@@ -46,7 +44,6 @@ function getSecretKey() {
 }
 
 function sessionMaxAgeMs() {
-  // cookie maxAge em ms — alinhado com 12h padrão
   const raw = JWT_EXPIRES.toLowerCase();
   const m = raw.match(/^(\d+)([smhd])$/);
   if (!m) return 12 * 60 * 60 * 1000;
@@ -57,7 +54,7 @@ function sessionMaxAgeMs() {
   return n * mult;
 }
 
-export async function signToken(user: AuthUser) {
+export async function signToken(user: Pick<AuthUser, 'id' | 'email' | 'name'>) {
   return new SignJWT({
     userId: user.id,
     email: user.email,
@@ -82,18 +79,17 @@ export async function verifyToken(token: string) {
   } satisfies TokenPayload;
 }
 
+/**
+ * Resolve o usuário a partir do cookie JWT e carrega papel/permissões no banco.
+ */
 export async function getUserFromRequest(req: Request): Promise<AuthUser | null> {
   const token = req.cookies?.auth_token as string | undefined;
   if (!token) return null;
 
   try {
     const payload = await verifyToken(token);
-    if (!payload.userId || !payload.email) return null;
-    return {
-      id: payload.userId,
-      email: payload.email,
-      name: payload.name,
-    };
+    if (!payload.userId) return null;
+    return await loadRbacUserById(payload.userId);
   } catch {
     return null;
   }
@@ -110,7 +106,6 @@ function cookieSecure() {
 export const cookieOptions = {
   httpOnly: true,
   secure: cookieSecure(),
-  // Lax: envia em navegação top-level same-site; mitiga CSRF básico em POST cross-site
   sameSite: 'lax' as const,
   path: '/',
   maxAge: sessionMaxAgeMs(),

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import RequirePermission from './components/RequirePermission';
 import ScrollToTop from './components/ui/ScrollToTop';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -9,6 +10,7 @@ import TerritoryDetailPage from './pages/TerritoryDetailPage';
 import EditTerritoryPage from './pages/EditTerritoryPage';
 import FieldLeadersPage from './pages/FieldLeadersPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import UsersPage from './pages/UsersPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -32,14 +34,35 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dirigentes" element={<FieldLeadersPage />} />
           <Route path="/territories" element={<TerritoriesPage />} />
-          <Route path="/territories/new" element={<NewTerritoryPage />} />
+          <Route
+            path="/territories/new"
+            element={
+              <RequirePermission scope="territory:create">
+                <NewTerritoryPage />
+              </RequirePermission>
+            }
+          />
           <Route path="/territories/:id" element={<TerritoryDetailPage />} />
-          <Route path="/territories/:id/edit" element={<EditTerritoryPage />} />
+          <Route
+            path="/territories/:id/edit"
+            element={
+              <RequirePermission anyOf={['territory:update', 'block:manage']}>
+                <EditTerritoryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <RequirePermission scope="user:manage">
+                <UsersPage />
+              </RequirePermission>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {/* Seta flutuante em todas as rotas (login, dashboard, territórios, etc.) */}
       <ScrollToTop />
     </>
   );

@@ -17,12 +17,14 @@ import TerritoryMap, {
 } from '@/components/Map/TerritoryMap';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
 export default function TerritoryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const { can } = useAuth();
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [error, setError] = useState('');
@@ -129,6 +131,7 @@ export default function TerritoryDetailPage() {
 
   async function toggleHouse(block: Block, house: string) {
     if (!id) return;
+    if (!can('block:manage')) return;
     const currentlyDone = isHouseDone(block, house);
     const done = !currentlyDone;
 
@@ -238,44 +241,50 @@ export default function TerritoryDetailPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {!territory.is_daily ? (
+              {can('territory:set_daily') ? (
+                !territory.is_daily ? (
+                  <button
+                    type="button"
+                    onClick={() => void setDaily()}
+                    title="Marcar do dia"
+                    aria-label="Marcar do dia"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <IconStar className="h-5 w-5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void unlinkDaily()}
+                    title="Desvincular do dia"
+                    aria-label="Desvincular do dia"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  >
+                    <IconUnlink className="h-5 w-5" />
+                  </button>
+                )
+              ) : null}
+              {can('territory:update') || can('block:manage') ? (
+                <Link
+                  to={`/territories/${id}/edit`}
+                  title="Editar área"
+                  aria-label="Editar área"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                >
+                  <IconPencil className="h-5 w-5" />
+                </Link>
+              ) : null}
+              {can('territory:delete') ? (
                 <button
                   type="button"
-                  onClick={() => void setDaily()}
-                  title="Marcar do dia"
-                  aria-label="Marcar do dia"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+                  onClick={() => void onDelete()}
+                  title="Excluir território"
+                  aria-label="Excluir território"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50"
                 >
-                  <IconStar className="h-5 w-5" />
+                  <IconTrash className="h-5 w-5" />
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void unlinkDaily()}
-                  title="Desvincular do dia"
-                  aria-label="Desvincular do dia"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                >
-                  <IconUnlink className="h-5 w-5" />
-                </button>
-              )}
-              <Link
-                to={`/territories/${id}/edit`}
-                title="Editar área"
-                aria-label="Editar área"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
-              >
-                <IconPencil className="h-5 w-5" />
-              </Link>
-              <button
-                type="button"
-                onClick={() => void onDelete()}
-                title="Excluir território"
-                aria-label="Excluir território"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50"
-              >
-                <IconTrash className="h-5 w-5" />
-              </button>
+              ) : null}
               <Link
                 to="/territories"
                 title="Voltar à lista"
@@ -448,15 +457,17 @@ export default function TerritoryDetailPage() {
                           <button
                             key={house}
                             type="button"
-                            disabled={busy}
+                            disabled={busy || !can('block:manage')}
                             onClick={(e) => {
                               e.stopPropagation();
                               void toggleHouse(block, house);
                             }}
                             title={
-                              doneHouse
-                                ? 'Clique para desmarcar (pede confirmação)'
-                                : 'Marcar como feito'
+                              !can('block:manage')
+                                ? 'Sem permissão para alterar checklist'
+                                : doneHouse
+                                  ? 'Clique para desmarcar (pede confirmação)'
+                                  : 'Marcar como feito'
                             }
                             className={`inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
                               doneHouse
@@ -485,12 +496,14 @@ export default function TerritoryDetailPage() {
           ) : (
             <p className="text-slate-600">Nenhum registro de não em casa.</p>
           )}
-          <Link
-            to={`/territories/${id}/edit#nao-em-casa`}
-            className="mt-4 inline-block text-sm font-medium text-amber-800 underline"
-          >
-            Gerenciar não em casa
-          </Link>
+          {can('block:manage') ? (
+            <Link
+              to={`/territories/${id}/edit#nao-em-casa`}
+              className="mt-4 inline-block text-sm font-medium text-amber-800 underline"
+            >
+              Gerenciar não em casa
+            </Link>
+          ) : null}
         </div>
       </div>
     </main>

@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 import type { DashboardData, FieldAssignment, FieldLeadersToday } from '@/lib/types';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -116,11 +116,28 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <p className="text-sm text-slate-500">Olá, {user?.name}</p>
+            <p className="text-sm text-slate-500">
+              Olá, {user?.name}
+              {user?.role?.name ? (
+                <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                  {user.role.name}
+                </span>
+              ) : null}
+            </p>
             <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
           </div>
 
           <div className="flex items-center gap-2">
+            {can('user:manage') ? (
+              <Link
+                to="/usuarios"
+                title="Usuários e papéis"
+                aria-label="Usuários e papéis"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-violet-300 bg-white text-violet-700 hover:bg-violet-50"
+              >
+                <IconUsers className="h-5 w-5" />
+              </Link>
+            ) : null}
             <Link
               to="/dirigentes"
               title="Dirigentes"
@@ -129,14 +146,16 @@ export default function DashboardPage() {
             >
               <IconUsers className="h-5 w-5" />
             </Link>
-            <Link
-              to="/territories"
-              title="Territórios"
-              aria-label="Territórios"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-            >
-              <IconMap className="h-5 w-5" />
-            </Link>
+            {can('territory:read') ? (
+              <Link
+                to="/territories"
+                title="Territórios"
+                aria-label="Territórios"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              >
+                <IconMap className="h-5 w-5" />
+              </Link>
+            ) : null}
             <button
               type="button"
               onClick={onLogout}
@@ -178,16 +197,18 @@ export default function DashboardPage() {
                 <p className="mt-0.5 text-xs text-slate-500">Clique para ver mapa, áreas e não em casa</p>
               </Link>
 
-              <button
-                type="button"
-                disabled={unlinking}
-                onClick={(e) => void unlinkDaily(e, daily.id)}
-                title="Desvincular território do dia"
-                aria-label="Desvincular território do dia"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
-                <IconUnlink className="h-5 w-5" />
-              </button>
+              {can('territory:set_daily') ? (
+                <button
+                  type="button"
+                  disabled={unlinking}
+                  onClick={(e) => void unlinkDaily(e, daily.id)}
+                  title="Desvincular território do dia"
+                  aria-label="Desvincular território do dia"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  <IconUnlink className="h-5 w-5" />
+                </button>
+              ) : null}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">

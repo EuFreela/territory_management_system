@@ -1,11 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
+import { can, type AuthUserWithRbac, type Scope } from './permissions';
 
-export type AuthUser = {
-  id: number;
-  email: string;
-  name: string;
-};
+export type AuthUser = AuthUserWithRbac;
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -13,6 +10,8 @@ type AuthContextValue = {
   refresh: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   logout: () => Promise<void>;
+  can: (scope: Scope) => boolean;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,9 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const canFn = useCallback((scope: Scope) => can(user, scope), [user]);
+
   const value = useMemo(
-    () => ({ user, loading, refresh, setUser, logout }),
-    [user, loading, refresh, logout],
+    () => ({
+      user,
+      loading,
+      refresh,
+      setUser,
+      logout,
+      can: canFn,
+      isAdmin: Boolean(user?.isAdmin || user?.role?.slug === 'admin'),
+    }),
+    [user, loading, refresh, logout, canFn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

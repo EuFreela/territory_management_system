@@ -10,6 +10,7 @@ import {
 } from '@/components/Map/mapIcons';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import type { Territory } from '@/lib/types';
 
 function normalize(text: string) {
@@ -22,6 +23,7 @@ function normalize(text: string) {
 
 export default function TerritoriesPage() {
   const confirm = useConfirm();
+  const { can } = useAuth();
   const [territories, setTerritories] = useState<Territory[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -93,12 +95,14 @@ export default function TerritoriesPage() {
             <p className="text-sm text-slate-600">Localidade + Terr. N.º + área desenhada no mapa</p>
           </div>
 
-          <Link
-            to="/territories/new"
-            className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700"
-          >
-            Novo território
-          </Link>
+          {can('territory:create') ? (
+            <Link
+              to="/territories/new"
+              className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700"
+            >
+              Novo território
+            </Link>
+          ) : null}
         </div>
 
         <div className="mb-4">
@@ -158,27 +162,29 @@ export default function TerritoriesPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {!territory.is_daily ? (
-                    <button
-                      type="button"
-                      onClick={() => void setDaily(territory.id)}
-                      title="Marcar do dia"
-                      aria-label="Marcar do dia"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
-                    >
-                      <IconStar className="h-5 w-5" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void unlinkDaily(territory.id)}
-                      title="Desvincular do dia"
-                      aria-label="Desvincular do dia"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    >
-                      <IconUnlink className="h-5 w-5" />
-                    </button>
-                  )}
+                  {can('territory:set_daily') ? (
+                    !territory.is_daily ? (
+                      <button
+                        type="button"
+                        onClick={() => void setDaily(territory.id)}
+                        title="Marcar do dia"
+                        aria-label="Marcar do dia"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+                      >
+                        <IconStar className="h-5 w-5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void unlinkDaily(territory.id)}
+                        title="Desvincular do dia"
+                        aria-label="Desvincular do dia"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      >
+                        <IconUnlink className="h-5 w-5" />
+                      </button>
+                    )
+                  ) : null}
                   <Link
                     to={`/territories/${territory.id}`}
                     title="Ver cartão"
@@ -187,14 +193,16 @@ export default function TerritoriesPage() {
                   >
                     <IconEye className="h-5 w-5" />
                   </Link>
-                  <Link
-                    to={`/territories/${territory.id}/edit`}
-                    title="Editar área"
-                    aria-label="Editar área"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
-                  >
-                    <IconPencil className="h-5 w-5" />
-                  </Link>
+                  {can('territory:update') || can('block:manage') ? (
+                    <Link
+                      to={`/territories/${territory.id}/edit`}
+                      title="Editar área"
+                      aria-label="Editar área"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                    >
+                      <IconPencil className="h-5 w-5" />
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             );

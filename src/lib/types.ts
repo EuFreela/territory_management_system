@@ -39,7 +39,14 @@ export type UnfinishedTerritory = Territory & {
 };
 
 export type DashboardData = {
-  user: { id: number; name: string; email: string };
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role?: { id: number; slug: string; name: string } | null;
+    permissions?: string[];
+    isAdmin?: boolean;
+  };
   territories: Territory[];
   daily: (Territory & { blocks: Block[] }) | null;
   /** Territórios com ao menos uma quadra de "não em casa" ainda incompleta */
