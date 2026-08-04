@@ -21,9 +21,12 @@ export default function EditTerritoryPage() {
   const [geojson, setGeojson] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [blockName, setBlockName] = useState('');
-  const [streetName, setStreetName] = useState('');
-  const [houseNumbers, setHouseNumbers] = useState('');
-  /** null = novo registro; number = editando esse block */
+  /** Uma ou mais ruas no mesmo cadastro de quadra (cada linha vira um registro no banco) */
+  type StreetRow = { key: string; streetName: string; houseNumbers: string; description: string };
+  const [streetRows, setStreetRows] = useState<StreetRow[]>([
+    { key: 'r0', streetName: '', houseNumbers: '', description: '' },
+  ]);
+  /** null = novo registro; number = editando esse block (uma rua) */
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [blockError, setBlockError] = useState('');
@@ -85,18 +88,25 @@ export default function EditTerritoryPage() {
     return [...new Set(labels)];
   }, [geojson]);
 
-  /** No cadastro novo: só quadras ainda sem registro de não em casa */
+  /** Todas as quadras do mapa (pode repetir: várias ruas na mesma quadra) */
   const selectableQuadraOptions = useMemo(() => {
-    if (editingBlockId != null) {
-      // em edição: todas as do mapa + a atual (se não estiver no mapa por legado)
-      const current = blockName.trim();
-      const set = new Set(mapQuadraOptions);
-      if (current) set.add(current);
-      return [...set];
+    const current = blockName.trim();
+    const set = new Set(mapQuadraOptions);
+    if (current) set.add(current);
+    return [...set];
+  }, [mapQuadraOptions, blockName]);
+
+  /** Agrupa registros de rua pela quadra (mesmo name) */
+  const blocksByQuadra = useMemo(() => {
+    const map = new Map<string, Block[]>();
+    for (const b of blocks) {
+      const key = (b.name ?? '').trim() || '—';
+      const list = map.get(key) ?? [];
+      list.push(b);
+      map.set(key, list);
     }
-    const used = new Set(blocks.map((b) => b.name.trim().toLowerCase()));
-    return mapQuadraOptions.filter((label) => !used.has(label.toLowerCase()));
-  }, [mapQuadraOptions, blocks, editingBlockId, blockName]);
+    return [...map.entries()];
+  }, [blocks]);
 
   async function saveTerritory(event: FormEvent) {
     event.preventDefault();
@@ -126,11 +136,19 @@ export default function EditTerritoryPage() {
     }
   }
 
+  function newStreetRow(): StreetRow {
+    return {
+      key: `r${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      streetName: '',
+      houseNumbers: '',
+      description: '',
+    };
+  }
+
   function clearBlockForm() {
     setEditingBlockId(null);
     setBlockName('');
-    setStreetName('');
-    setHouseNumbers('');
+    setStreetRows([newStreetRow()]);
     setBlockError('');
     setMapSelectedKey(null);
   }
@@ -139,10 +157,15 @@ export default function EditTerritoryPage() {
     const name = (block.name ?? '').trim();
     setEditingBlockId(block.id);
     setBlockName(name);
-    setStreetName(block.street_name ?? '');
-    setHouseNumbers((block.house_numbers ?? []).join(', '));
+    setStreetRows([
+      {
+        key: `edit-${block.id}`,
+        streetName: block.street_name ?? '',
+        houseNumbers: (block.house_numbers ?? []).join(', '),
+        description: block.description ?? '',
+      },
+    ]);
     setBlockError('');
-    // Destaca a quadra no mapa (sem rolar a página)
     setMapSelectedKey(name || null);
     setMapFocusToken((n) => n + 1);
   }
@@ -151,65 +174,75 @@ export default function EditTerritoryPage() {
   function onMapAreaSelect(area: { id: string; label: string }) {
     setMapSelectedKey(area.label);
     setMapFocusToken((n) => n + 1);
-    // se já existe card com esse nome, carrega para edição (usuário permanece no mapa)
-    const match = blocks.find(
-      (b) => b.name.trim().toLowerCase() === area.label.trim().toLowerCase(),
-    );
-    if (match) {
-      setEditingBlockId(match.id);
-      setBlockName(match.name ?? '');
-      setStreetName(match.street_name ?? '');
-      setHouseNumbers((match.house_numbers ?? []).join(', '));
-      setBlockError('');
-    } else {
-      // pré-preenche a quadra no formulário novo
-      setEditingBlockId(null);
-      setBlockName(area.label);
-    }
+    // pré-preenche a quadra para nova rua (pode já existir outra rua nessa quadra)
+    setEditingBlockId(null);
+    setBlockName(area.label);
+    setStreetRows([newStreetRow()]);
+    setBlockError('');
+  }
+
+  function parseHouseList(raw: string) {
+    return raw
+      .split(/[,\s;]+/)
+      .map((v) => v.trim())
+      .filter(Boolean);
   }
 
   async function saveBlock(event: FormEvent) {
     event.preventDefault();
     if (!id) return;
 
-    const numbers = houseNumbers
-      .split(/[,\s;]+/)
-      .map((v) => v.trim())
-      .filter(Boolean);
-
     if (!blockName.trim()) {
       setBlockError('Selecione a quadra desenhada no mapa.');
       return;
     }
-    if (mapQuadraOptions.length === 0) {
+    if (mapQuadraOptions.length === 0 && editingBlockId == null) {
       setBlockError('Desenhe e salve as áreas no mapa antes de cadastrar não em casa.');
       return;
     }
-    if (!streetName.trim() || numbers.length === 0) {
-      setBlockError('Preencha o nome da rua e ao menos uma casa.');
-      return;
+
+    const rowsParsed = streetRows.map((row) => ({
+      street_name: row.streetName.trim(),
+      house_numbers: parseHouseList(row.houseNumbers),
+      description: row.description.trim() || null,
+    }));
+
+    for (const row of rowsParsed) {
+      if (!row.street_name || row.house_numbers.length === 0) {
+        setBlockError('Preencha o nome da rua e ao menos uma casa em cada linha.');
+        return;
+      }
     }
 
     setAddingBlock(true);
     setBlockError('');
 
-    const payload = {
-      name: blockName.trim(),
-      street_name: streetName.trim(),
-      house_numbers: numbers,
-    };
-
     try {
       if (editingBlockId != null) {
+        // edição de uma rua existente
+        const row = rowsParsed[0];
         await api(`/api/territories/${id}/blocks/${editingBlockId}`, {
           method: 'PUT',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            name: blockName.trim(),
+            street_name: row.street_name,
+            house_numbers: row.house_numbers,
+            description: row.description,
+          }),
         });
       } else {
-        await api(`/api/territories/${id}/blocks`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
+        // várias ruas na mesma quadra = vários registros com o mesmo name
+        for (const row of rowsParsed) {
+          await api(`/api/territories/${id}/blocks`, {
+            method: 'POST',
+            body: JSON.stringify({
+              name: blockName.trim(),
+              street_name: row.street_name,
+              house_numbers: row.house_numbers,
+              description: row.description,
+            }),
+          });
+        }
       }
       const refreshed = await api<Territory>(`/api/territories/${id}`);
       setBlocks(refreshed.blocks ?? []);
@@ -368,15 +401,17 @@ export default function EditTerritoryPage() {
                   setMapSelectedKey(null);
                   setMapFocusToken(0);
                 }}
-                finishedKeys={blocks
-                  .filter((b) => {
-                    const total = b.house_numbers.length;
-                    const done = (b.completed_houses ?? []).filter((h) =>
-                      b.house_numbers.includes(h),
-                    ).length;
-                    return total > 0 && done >= total;
-                  })
-                  .map((b) => b.name)}
+                finishedKeys={blocksByQuadra
+                  .filter(([, streetBlocks]) =>
+                    streetBlocks.every((b) => {
+                      const total = b.house_numbers.length;
+                      const done = (b.completed_houses ?? []).filter((h) =>
+                        b.house_numbers.includes(h),
+                      ).length;
+                      return total > 0 && done >= total;
+                    }),
+                  )
+                  .map(([quadraName]) => quadraName)}
               />
             </div>
 
@@ -392,7 +427,7 @@ export default function EditTerritoryPage() {
               Não em casa
             </h2>
             <p className="mt-1 text-[14px] text-apple-secondary">
-              Quadra igual ao mapa · informe rua e números · toque no card para editar
+              Quadra igual ao mapa · uma ou mais ruas por quadra · toque na rua para editar
             </p>
           </div>
 
@@ -414,7 +449,7 @@ export default function EditTerritoryPage() {
             {editingBlockId != null ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[14px] font-semibold text-apple-blue">
-                  Editando · {blockName || editingBlockId}
+                  Editando rua · Quadra {blockName || editingBlockId}
                 </p>
                 <button type="button" onClick={clearBlockForm} className="app-btn-secondary h-8 px-3 text-[12px]">
                   <IconX className="h-3.5 w-3.5" />
@@ -423,59 +458,146 @@ export default function EditTerritoryPage() {
               </div>
             ) : null}
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
-                <label htmlFor="block-quadra-select" className="app-label">
-                  Quadra (mapa)
-                </label>
-                <select
-                  id="block-quadra-select"
-                  value={blockName}
-                  onChange={(event) => setBlockName(event.target.value)}
-                  className="app-input"
-                  required
-                  disabled={mapQuadraOptions.length === 0 && !blockName}
-                >
-                  <option value="">
-                    {mapQuadraOptions.length === 0
-                      ? 'Nenhuma quadra no mapa'
-                      : 'Selecione a quadra…'}
+            <div>
+              <label htmlFor="block-quadra-select" className="app-label">
+                Quadra (mapa)
+              </label>
+              <select
+                id="block-quadra-select"
+                value={blockName}
+                onChange={(event) => setBlockName(event.target.value)}
+                className="app-input max-w-md"
+                required
+                disabled={mapQuadraOptions.length === 0 && !blockName}
+              >
+                <option value="">
+                  {mapQuadraOptions.length === 0
+                    ? 'Nenhuma quadra no mapa'
+                    : 'Selecione a quadra…'}
+                </option>
+                {selectableQuadraOptions.map((label) => (
+                  <option key={label} value={label}>
+                    {label}
+                    {blocks.some((b) => b.name.trim().toLowerCase() === label.toLowerCase())
+                      ? ' (já tem rua — pode adicionar outra)'
+                      : ''}
                   </option>
-                  {selectableQuadraOptions.map((label) => (
-                    <option key={label} value={label}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="app-label">Nome da rua</label>
-                <input
-                  value={streetName}
-                  onChange={(event) => setStreetName(event.target.value)}
-                  placeholder="Ex: Rua Bahia, Av. da Saudade…"
-                  className="app-input"
-                  required
-                />
-              </div>
+                ))}
+              </select>
             </div>
 
-            <div>
-              <label className="app-label">Números das casas</label>
-              <input
-                value={houseNumbers}
-                onChange={(event) => setHouseNumbers(event.target.value)}
-                placeholder="Ex: 101, 103, 105, 210"
-                className="app-input"
-                required
-              />
-              <p className="mt-1.5 text-[12px] text-apple-tertiary">
-                Separe por vírgula ou espaço.
-              </p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[13px] font-semibold text-apple-ink">
+                  {editingBlockId != null ? 'Rua' : 'Ruas nesta quadra'}
+                </p>
+                {editingBlockId == null ? (
+                  <button
+                    type="button"
+                    onClick={() => setStreetRows((prev) => [...prev, newStreetRow()])}
+                    className="app-btn-secondary h-9 px-3 text-[13px]"
+                  >
+                    <IconPlus className="h-3.5 w-3.5" />
+                    Adicionar rua
+                  </button>
+                ) : null}
+              </div>
+
+              {streetRows.map((row, index) => (
+                <div
+                  key={row.key}
+                  className="space-y-3 rounded-apple border border-apple-line bg-apple-surface p-3.5 sm:p-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary">
+                      Rua {index + 1}
+                    </p>
+                    {editingBlockId == null && streetRows.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setStreetRows((prev) => prev.filter((r) => r.key !== row.key))
+                        }
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-red transition hover:bg-apple-red/10"
+                        data-tooltip="Remover esta rua"
+                        aria-label={`Remover rua ${index + 1}`}
+                      >
+                        <IconTrash className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <div>
+                    <label className="app-label" htmlFor={`street-name-${row.key}`}>
+                      Nome da rua
+                    </label>
+                    <input
+                      id={`street-name-${row.key}`}
+                      value={row.streetName}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setStreetRows((prev) =>
+                          prev.map((r) =>
+                            r.key === row.key ? { ...r, streetName: value } : r,
+                          ),
+                        );
+                      }}
+                      placeholder="Ex: Rua das Mangabeiras…"
+                      className="app-input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="app-label" htmlFor={`street-houses-${row.key}`}>
+                      Números das casas
+                    </label>
+                    <input
+                      id={`street-houses-${row.key}`}
+                      value={row.houseNumbers}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setStreetRows((prev) =>
+                          prev.map((r) =>
+                            r.key === row.key ? { ...r, houseNumbers: value } : r,
+                          ),
+                        );
+                      }}
+                      placeholder="Ex: 101, 103, 105, 210"
+                      className="app-input"
+                      required
+                    />
+                    <p className="mt-1.5 text-[12px] text-apple-tertiary">
+                      Separe por vírgula ou espaço.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="app-label" htmlFor={`street-desc-${row.key}`}>
+                      Descrição <span className="font-normal text-apple-tertiary">(opcional)</span>
+                    </label>
+                    <input
+                      id={`street-desc-${row.key}`}
+                      value={row.description}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setStreetRows((prev) =>
+                          prev.map((r) =>
+                            r.key === row.key ? { ...r, description: value } : r,
+                          ),
+                        );
+                      }}
+                      placeholder="Nota informativa (ex.: portão lateral, cães…)"
+                      className="app-input"
+                      maxLength={500}
+                    />
+                    <p className="mt-1.5 text-[12px] text-apple-tertiary">
+                      Só aparece no card se preenchida — não é clicável, só leitura.
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {blockError ? (
-              <p className="rounded-apple bg-red-50 px-3 py-2 text-[13px] text-apple-red">
+              <p className="rounded-apple border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">
                 {blockError}
               </p>
             ) : null}
@@ -493,12 +615,12 @@ export default function EditTerritoryPage() {
                 {editingBlockId != null ? (
                   <>
                     <IconSave className="h-4 w-4" />
-                    Salvar edição
+                    Salvar rua
                   </>
                 ) : (
                   <>
                     <IconPlus className="h-4 w-4" />
-                    Adicionar
+                    Salvar {streetRows.length > 1 ? `${streetRows.length} ruas` : 'quadra / rua'}
                   </>
                 )}
               </button>
@@ -547,162 +669,163 @@ export default function EditTerritoryPage() {
             </div>
           ) : null}
 
-          <div className="space-y-3">
-            {blocks.map((block) => {
-              const completed = block.completed_houses ?? [];
-              const done = completed.filter((h) => block.house_numbers.includes(h)).length;
-              const total = block.house_numbers.length;
-              const finished = total > 0 && done >= total;
-              const isEditing = editingBlockId === block.id;
+          <div className="space-y-4">
+            {blocksByQuadra.map(([quadraName, streetBlocks]) => {
+              const allDone = streetBlocks.every((b) => {
+                const total = b.house_numbers.length;
+                const done = (b.completed_houses ?? []).filter((h) =>
+                  b.house_numbers.includes(h),
+                ).length;
+                return total > 0 && done >= total;
+              });
+              const doneSum = streetBlocks.reduce((s, b) => {
+                return (
+                  s + (b.completed_houses ?? []).filter((h) => b.house_numbers.includes(h)).length
+                );
+              }, 0);
+              const totalSum = streetBlocks.reduce((s, b) => s + b.house_numbers.length, 0);
               const onMap =
                 mapSelectedKey != null &&
-                (mapSelectedKey.trim().toLowerCase() === block.name.trim().toLowerCase() ||
-                  areaMatchesBlock(mapSelectedKey, block.name));
-              const selected = isEditing || onMap;
-              const inBulk = bulkSelectedIds.includes(block.id);
-              const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+                (mapSelectedKey.trim().toLowerCase() === quadraName.trim().toLowerCase() ||
+                  areaMatchesBlock(mapSelectedKey, quadraName));
 
               return (
                 <div
-                  key={block.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => loadBlockForEdit(block)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      loadBlockForEdit(block);
-                    }
-                  }}
+                  key={quadraName}
                   className={[
-                    'flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-[20px] border p-5 text-left transition duration-200',
-                    'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
-                    inBulk
-                      ? 'border-transparent bg-white shadow-[0_0_0_2px_#ff3b30,0_4px_16px_rgba(255,59,48,0.1)]'
-                      : finished
-                        ? selected
-                          ? 'border-transparent bg-[#f0fdf4] shadow-[0_0_0_2px_#34c759,0_8px_24px_rgba(52,199,89,0.14)]'
-                          : 'border-[#34c759]/25 bg-[#f0fdf4] shadow-[0_1px_2px_rgba(52,199,89,0.06)]'
-                        : selected
-                          ? 'border-transparent bg-white shadow-[0_0_0_2px_#0071e3,0_8px_24px_rgba(0,113,227,0.12)]'
-                          : 'border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+                    'rounded-[20px] border p-5 transition',
+                    allDone
+                      ? 'border-apple-green/30 bg-emerald-500/10 dark:bg-emerald-500/12'
+                      : onMap
+                        ? 'border-apple-blue/40 bg-apple-surface shadow-[0_0_0_2px_rgb(var(--apple-blue))]'
+                        : 'border-apple-line bg-apple-surface shadow-soft',
                   ].join(' ')}
                 >
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={inBulk}
-                      onChange={() => toggleBulkSelect(block.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      data-tooltip="Selecionar para apagar em massa"
-                      aria-label={`Selecionar quadra ${block.name}`}
-                      className="mt-1.5 h-4 w-4 shrink-0 rounded border-[#d2d2d7] text-[#ff3b30] focus:ring-[#ff3b30]/30"
-                    />
-                    <div className="min-w-0 flex-1">
-                      {finished ? (
-                        <div className="mb-2.5 h-[3px] max-w-[8rem] overflow-hidden rounded-full bg-[#34c759]/15">
-                          <div className="h-full w-full rounded-full bg-[#34c759]" />
-                        </div>
-                      ) : null}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p
-                          className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
-                            finished ? 'text-[#248a3d]' : 'text-[#86868b]'
-                          }`}
-                        >
-                          Quadra{finished ? ' · concluída' : ''}
-                        </p>
-                        {isEditing ? (
-                          <span className="rounded-full bg-[#0071e3]/[0.1] px-2 py-0.5 text-[11px] font-semibold text-[#0071e3]">
-                            Edição
-                          </span>
-                        ) : null}
-                        {onMap && !isEditing ? (
-                          <span className="rounded-full bg-[#0071e3]/[0.1] px-2 py-0.5 text-[11px] font-semibold text-[#0071e3]">
-                            No mapa
-                          </span>
-                        ) : null}
-                        {finished ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#34c759] px-2 py-0.5 text-[11px] font-semibold text-white">
-                            Finalizado
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-[#f5f5f7] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#6e6e73]">
-                            {done}/{total}
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        className={`mt-1 text-[24px] font-semibold leading-none tracking-[-0.03em] ${
-                          finished ? 'text-[#1b4332]' : 'text-[#1d1d1f]'
-                        }`}
-                      >
-                        {block.name}
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-apple-tertiary">
+                        Quadra{allDone ? ' · concluída' : ''} · {streetBlocks.length}{' '}
+                        {streetBlocks.length === 1 ? 'rua' : 'ruas'}
                       </p>
-                      {block.street_name ? (
-                        <p
-                          className={`mt-1.5 text-[14px] ${
-                            finished ? 'text-[#2d6a4f]' : 'text-[#6e6e73]'
-                          }`}
-                        >
-                          {block.street_name}
-                        </p>
-                      ) : (
-                        <p className="mt-1.5 text-[12px] text-[#86868b]">Sem rua</p>
-                      )}
-
-                      {!finished && total > 0 ? (
-                        <div className="mt-3 h-[3px] max-w-xs overflow-hidden rounded-full bg-[#f5f5f7]">
-                          <div
-                            className="h-full rounded-full bg-[#0071e3] transition-all"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      ) : null}
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {block.house_numbers.map((item) => {
-                          const house = String(item);
-                          const isDone = completed.includes(house);
-                          return (
-                            <span
-                              key={house}
-                              className={[
-                                'inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2.5 py-1.5',
-                                'text-[13px] font-medium tabular-nums',
-                                isDone
-                                  ? 'bg-[#34c759] text-white'
-                                  : finished
-                                    ? 'bg-white/90 text-[#1b4332] ring-1 ring-[#34c759]/25'
-                                    : 'bg-[#f5f5f7] text-[#1d1d1f]',
-                              ].join(' ')}
-                            >
-                              {house}
-                            </span>
-                          );
-                        })}
-                      </div>
+                      <p className="mt-1 text-[24px] font-semibold tracking-tightish text-apple-ink">
+                        {quadraName}
+                      </p>
                     </div>
+                    <span className="rounded-full bg-apple-fill px-2.5 py-1 text-[11px] font-semibold tabular-nums text-apple-secondary">
+                      {doneSum}/{totalSum}
+                    </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void removeBlock(block.id);
-                    }}
-                    data-tooltip="Remover"
-                    aria-label="Remover"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#ff3b30] transition hover:bg-[#fff5f5]"
-                  >
-                    <IconTrash className="h-4 w-4" />
-                  </button>
+
+                  <div className="space-y-3">
+                    {streetBlocks.map((block) => {
+                      const completed = block.completed_houses ?? [];
+                      const done = completed.filter((h) => block.house_numbers.includes(h)).length;
+                      const total = block.house_numbers.length;
+                      const finished = total > 0 && done >= total;
+                      const isEditing = editingBlockId === block.id;
+                      const inBulk = bulkSelectedIds.includes(block.id);
+
+                      return (
+                        <div
+                          key={block.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => loadBlockForEdit(block)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              loadBlockForEdit(block);
+                            }
+                          }}
+                          className={[
+                            'flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-apple border p-3.5 transition',
+                            inBulk
+                              ? 'border-apple-red/40 bg-apple-red/5'
+                              : isEditing
+                                ? 'border-apple-blue/40 bg-apple-blue/5'
+                                : 'border-apple-line bg-apple-fill/80 hover:bg-apple-fill',
+                          ].join(' ')}
+                        >
+                          <div className="flex min-w-0 flex-1 items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={inBulk}
+                              onChange={() => toggleBulkSelect(block.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              data-tooltip="Selecionar para apagar em massa"
+                              aria-label={`Selecionar rua ${block.street_name ?? block.id}`}
+                              className="mt-1 h-4 w-4 shrink-0 rounded border-apple-line text-apple-red focus:ring-apple-red/30"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <p className="text-[15px] font-semibold text-apple-ink">
+                                  {block.street_name?.trim() || 'Sem rua'}
+                                </p>
+                                {isEditing ? (
+                                  <span className="rounded-full bg-apple-blue/10 px-2 py-0.5 text-[11px] font-semibold text-apple-blue">
+                                    Edição
+                                  </span>
+                                ) : null}
+                                {finished ? (
+                                  <span className="rounded-full bg-apple-green px-2 py-0.5 text-[11px] font-semibold text-white">
+                                    Finalizado
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-apple-fill px-2 py-0.5 text-[11px] font-semibold tabular-nums text-apple-secondary">
+                                    {done}/{total}
+                                  </span>
+                                )}
+                              </div>
+                              {block.description?.trim() ? (
+                                <p className="mt-1.5 text-[13px] leading-relaxed text-apple-secondary">
+                                  {block.description.trim()}
+                                </p>
+                              ) : null}
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {block.house_numbers.map((item) => {
+                                  const house = String(item);
+                                  const isDone = completed.includes(house);
+                                  return (
+                                    <span
+                                      key={house}
+                                      className={[
+                                        'inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2.5 py-1',
+                                        'text-[13px] font-medium tabular-nums',
+                                        isDone
+                                          ? 'bg-apple-green text-white'
+                                          : 'bg-apple-surface text-apple-ink ring-1 ring-apple-line',
+                                      ].join(' ')}
+                                    >
+                                      {house}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void removeBlock(block.id);
+                            }}
+                            data-tooltip="Remover esta rua"
+                            aria-label="Remover esta rua"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10"
+                          >
+                            <IconTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
             {blocks.length === 0 ? (
-              <div className="rounded-[20px] border border-dashed border-black/[0.08] bg-white px-6 py-10 text-center">
-                <p className="text-[14px] text-[#86868b]">Nenhum registro ainda.</p>
+              <div className="app-empty">
+                <p className="text-[14px] text-apple-tertiary">Nenhum registro ainda.</p>
               </div>
             ) : null}
           </div>

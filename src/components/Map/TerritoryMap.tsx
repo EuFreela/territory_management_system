@@ -8,7 +8,7 @@
   useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import {
@@ -679,8 +679,7 @@ export default function TerritoryMap({
     setSearchFlyToken((t) => t + 1);
   }
 
-  async function searchAddress(event?: FormEvent) {
-    event?.preventDefault();
+  async function searchAddress() {
     const q = addressQuery.trim();
     if (q.length < 3) {
       setAddressError('Digite ao menos 3 caracteres (rua, bairro, cidade ou CEP).');
@@ -1080,12 +1079,9 @@ export default function TerritoryMap({
         </div>
       ) : null}
 
-      {/* Busca por endereço — acima do mapa */}
+      {/* Busca por endereço — div (não form) p/ não quebrar em páginas com form pai (Novo/Editar) */}
       <div ref={addressBoxRef} className={`relative w-full ${isFullscreen ? 'shrink-0' : ''}`}>
-        <form
-          onSubmit={(e) => void searchAddress(e)}
-          className="flex overflow-hidden rounded-xl border border-apple-line bg-apple-surface shadow-soft"
-        >
+        <div className="flex overflow-hidden rounded-xl border border-apple-line bg-apple-surface shadow-soft">
           <label htmlFor="map-address-search" className="sr-only">
             Buscar endereço no mapa
           </label>
@@ -1102,6 +1098,13 @@ export default function TerritoryMap({
             }}
             onFocus={() => {
               if (addressHits.length > 1) setAddressOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                void searchAddress();
+              }
             }}
             placeholder="Buscar rua, bairro, cidade ou CEP…"
             className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm text-apple-ink outline-none placeholder:text-apple-tertiary"
@@ -1126,16 +1129,17 @@ export default function TerritoryMap({
             </button>
           ) : null}
           <button
-            type="submit"
+            type="button"
             data-tooltip="Buscar endereço"
             aria-label="Buscar endereço"
             disabled={addressSearching}
+            onClick={() => void searchAddress()}
             className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-apple-line bg-apple-blue px-3 text-sm font-semibold text-white hover:bg-apple-blue-hover disabled:opacity-60"
           >
             <IconSearch className="h-4 w-4" />
             <span className="hidden sm:inline">{addressSearching ? 'Buscando…' : 'Buscar'}</span>
           </button>
-        </form>
+        </div>
 
         {addressError ? (
           <p className="mt-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-200">

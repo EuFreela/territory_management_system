@@ -21,6 +21,8 @@ export type Block = {
   name: string;
   /** Nome da rua */
   street_name?: string | null;
+  /** Nota informativa da rua (só exibição; não clicável) */
+  description?: string | null;
   /** Números das casas (não em casa) */
   house_numbers: string[];
   /** Casas já trabalhadas / concluídas no checklist */

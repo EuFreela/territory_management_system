@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "migrate:rbac": "node scripts/migrate-rbac.js",
     "migrate:finish-history": "node scripts/migrate-finish-history.js",
-    "migrate:theme": "node scripts/migrate-theme-preference.js"
+    "migrate:theme": "node scripts/migrate-theme-preference.js",
+    "migrate:block-description": "node scripts/migrate-block-description.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

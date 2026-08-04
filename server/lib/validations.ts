@@ -29,10 +29,19 @@ export const territorySchema = z.object({
   is_daily: z.boolean().optional(),
 });
 
-// Registro "NÃO EM CASA": número da quadra + rua + casas
+// Registro "NÃO EM CASA": número da quadra + rua + casas + descrição opcional
 export const blockSchema = z.object({
   name: z.string().min(1, 'Número da quadra é obrigatório').max(100),
   street_name: z.string().min(1, 'Nome da rua é obrigatório').max(180),
+  description: z
+    .string()
+    .max(500, 'Descrição no máximo 500 caracteres')
+    .optional()
+    .nullable()
+    .transform((v) => {
+      const t = (v ?? '').trim();
+      return t.length ? t : null;
+    }),
   house_numbers: z
     .array(z.union([z.string(), z.number()]))
     .min(1, 'Informe ao menos um número de casa (não em casa)'),

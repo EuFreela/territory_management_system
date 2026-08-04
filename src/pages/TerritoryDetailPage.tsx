@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   IconArrowLeft,
@@ -96,6 +96,18 @@ export default function TerritoryDetailPage() {
     if (!linkedKey) return false;
     return areaMatchesBlock(linkedKey, block.name) || linkedKey === String(block.id);
   }
+
+  /** Agrupa ruas pela mesma quadra (name) */
+  const blocksByQuadra = useMemo(() => {
+    const map = new Map<string, Block[]>();
+    for (const b of territory?.blocks ?? []) {
+      const key = (b.name ?? '').trim() || '—';
+      const list = map.get(key) ?? [];
+      list.push(b);
+      map.set(key, list);
+    }
+    return [...map.entries()];
+  }, [territory?.blocks]);
 
   /** Clique no polígono do mapa → destaca card (sem rolar a página) */
   function onMapAreaSelect(area: { id: string; label: string }) {
@@ -342,9 +354,9 @@ export default function TerritoryDetailPage() {
                 setMapFocusToken(0);
                 setLinkHint('');
               }}
-              finishedKeys={(territory.blocks ?? [])
-                .filter((b) => blockProgress(b).finished)
-                .map((b) => b.name)}
+              finishedKeys={blocksByQuadra
+                .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
+                .map(([name]) => name)}
             />
             {!hasArea ? (
               <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
@@ -365,7 +377,8 @@ export default function TerritoryDetailPage() {
                 Não em casa
               </h2>
               <p className="mt-1 text-[14px] text-apple-secondary">
-                Toque no card para destacar no mapa · toque no número para marcar
+                Toque no card para destacar no mapa · toque no número para marcar · várias ruas por
+                quadra
               </p>
             </div>
             {can('block:manage') ? (
@@ -375,24 +388,27 @@ export default function TerritoryDetailPage() {
             ) : null}
           </div>
 
-          {territory.blocks && territory.blocks.length > 0 ? (
+          {blocksByQuadra.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {territory.blocks.map((block) => {
-                const { done, total, finished } = blockProgress(block);
-                const linked = isBlockLinked(block);
-                const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+              {blocksByQuadra.map(([quadraName, streetBlocks]) => {
+                const doneSum = streetBlocks.reduce((s, b) => s + blockProgress(b).done, 0);
+                const totalSum = streetBlocks.reduce((s, b) => s + blockProgress(b).total, 0);
+                const finished = streetBlocks.every((b) => blockProgress(b).finished);
+                const linked = streetBlocks.some((b) => isBlockLinked(b));
+                const progress = totalSum > 0 ? Math.round((doneSum / totalSum) * 100) : 0;
+                const primary = streetBlocks[0];
 
                 return (
                   <div
-                    key={block.id}
-                    id={`block-card-${block.id}`}
+                    key={quadraName}
+                    id={`block-card-${primary?.id ?? quadraName}`}
                     role="button"
                     tabIndex={0}
-                    onClick={() => onBlockCardSelect(block)}
+                    onClick={() => primary && onBlockCardSelect(primary)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      if ((e.key === 'Enter' || e.key === ' ') && primary) {
                         e.preventDefault();
-                        onBlockCardSelect(block);
+                        onBlockCardSelect(primary);
                       }
                     }}
                     className={[
@@ -406,12 +422,6 @@ export default function TerritoryDetailPage() {
                           : 'border-apple-line bg-apple-surface shadow-soft',
                     ].join(' ')}
                   >
-                    {finished ? (
-                      <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full bg-apple-green/20">
-                        <div className="h-full w-full rounded-full bg-apple-green" />
-                      </div>
-                    ) : null}
-
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p
@@ -421,7 +431,8 @@ export default function TerritoryDetailPage() {
                               : 'text-apple-tertiary'
                           }`}
                         >
-                          Quadra{finished ? ' · concluída' : ''}
+                          Quadra{finished ? ' · concluída' : ''} · {streetBlocks.length}{' '}
+                          {streetBlocks.length === 1 ? 'rua' : 'ruas'}
                         </p>
                         <p
                           className={`mt-1 text-[26px] font-semibold leading-none tracking-tightish ${
@@ -430,21 +441,9 @@ export default function TerritoryDetailPage() {
                               : 'text-apple-ink'
                           }`}
                         >
-                          {block.name}
+                          {quadraName}
                         </p>
-                        {block.street_name ? (
-                          <p
-                            className={`mt-2 truncate text-[14px] font-normal ${
-                              finished
-                                ? 'text-emerald-800 dark:text-emerald-200/90'
-                                : 'text-apple-secondary'
-                            }`}
-                          >
-                            {block.street_name}
-                          </p>
-                        ) : null}
                       </div>
-
                       <div className="flex shrink-0 flex-col items-end gap-1.5">
                         {finished ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-apple-green px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
@@ -453,7 +452,7 @@ export default function TerritoryDetailPage() {
                           </span>
                         ) : (
                           <span className="rounded-full bg-apple-fill px-2.5 py-1 text-[11px] font-semibold tabular-nums text-apple-secondary">
-                            {done}/{total}
+                            {doneSum}/{totalSum}
                           </span>
                         )}
                         {linked ? (
@@ -465,7 +464,7 @@ export default function TerritoryDetailPage() {
                       </div>
                     </div>
 
-                    {!finished && total > 0 ? (
+                    {!finished && totalSum > 0 ? (
                       <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-apple-fill">
                         <div
                           className="h-full rounded-full bg-apple-blue transition-all duration-300"
@@ -474,46 +473,72 @@ export default function TerritoryDetailPage() {
                       </div>
                     ) : null}
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {block.house_numbers.map((item) => {
-                        const house = String(item);
-                        const doneHouse = isHouseDone(block, house);
-                        const busy = togglingKey === `${block.id}:${house}`;
+                    <div className="mt-4 space-y-4">
+                      {streetBlocks.map((block) => {
+                        const { finished: streetFinished } = blockProgress(block);
                         return (
-                          <button
-                            key={house}
-                            type="button"
-                            disabled={busy || !can('block:manage')}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void toggleHouse(block, house);
-                            }}
-                            data-tooltip={
-                              !can('block:manage')
-                                ? 'Sem permissão para alterar checklist'
-                                : doneHouse
-                                  ? 'Clique para desmarcar (pede confirmação)'
-                                  : 'Marcar como feito'
-                            }
-                            className={[
-                              'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
-                              'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',
-                              doneHouse
-                                ? 'bg-apple-green text-white shadow-sm'
-                                : finished
-                                  ? 'bg-apple-surface/90 text-emerald-900 ring-1 ring-apple-green/30 dark:text-emerald-100'
-                                  : 'bg-apple-fill text-apple-ink hover:bg-apple-line',
-                            ].join(' ')}
+                          <div
+                            key={block.id}
+                            className="border-t border-apple-line pt-3 first:border-t-0 first:pt-0"
                           >
-                            {doneHouse ? (
-                              <>
-                                <IconCheck className="h-3.5 w-3.5" />
-                                {house}
-                              </>
-                            ) : (
-                              house
-                            )}
-                          </button>
+                            <p
+                              className={`mb-1 text-[14px] font-semibold ${
+                                streetFinished
+                                  ? 'text-emerald-800 dark:text-emerald-200'
+                                  : 'text-apple-ink'
+                              }`}
+                            >
+                              {block.street_name?.trim() || 'Sem rua'}
+                            </p>
+                            {block.description?.trim() ? (
+                              <p className="mb-2 select-text text-[13px] leading-relaxed text-apple-secondary">
+                                {block.description.trim()}
+                              </p>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2">
+                              {block.house_numbers.map((item) => {
+                                const house = String(item);
+                                const doneHouse = isHouseDone(block, house);
+                                const busy = togglingKey === `${block.id}:${house}`;
+                                return (
+                                  <button
+                                    key={house}
+                                    type="button"
+                                    disabled={busy || !can('block:manage')}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void toggleHouse(block, house);
+                                    }}
+                                    data-tooltip={
+                                      !can('block:manage')
+                                        ? 'Sem permissão para alterar checklist'
+                                        : doneHouse
+                                          ? 'Clique para desmarcar (pede confirmação)'
+                                          : 'Marcar como feito'
+                                    }
+                                    className={[
+                                      'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
+                                      'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',
+                                      doneHouse
+                                        ? 'bg-apple-green text-white shadow-sm'
+                                        : streetFinished
+                                          ? 'bg-apple-surface/90 text-emerald-900 ring-1 ring-apple-green/30 dark:text-emerald-100'
+                                          : 'bg-apple-fill text-apple-ink hover:bg-apple-line',
+                                    ].join(' ')}
+                                  >
+                                    {doneHouse ? (
+                                      <>
+                                        <IconCheck className="h-3.5 w-3.5" />
+                                        {house}
+                                      </>
+                                    ) : (
+                                      house
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
