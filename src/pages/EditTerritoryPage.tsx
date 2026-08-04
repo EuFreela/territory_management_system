@@ -297,22 +297,21 @@ export default function EditTerritoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <main className="app-page space-y-6">
+      <div className="space-y-6">
         {/* 1. Localidade + mapa */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="app-card-pad">
           <Link
             to={`/territories/${id}`}
             title="Voltar"
             aria-label="Voltar"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            className="app-icon-btn"
           >
-            <IconArrowLeft className="h-5 w-5" />
+            <IconArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">Editar cartão de território</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Ajuste localidade e áreas no mapa. Em seguida gerencie o <strong>não em casa</strong>. O
-            botão de salvar fica no final da página.
+          <h1 className="app-title mt-4">Editar território</h1>
+          <p className="app-subtitle">
+            Ajuste localidade e áreas no mapa. Em seguida gerencie o <strong>não em casa</strong>.
           </p>
 
           <form id="territory-form" onSubmit={saveTerritory} className="mt-6 space-y-5">
@@ -381,51 +380,39 @@ export default function EditTerritoryPage() {
           </form>
         </div>
 
-        {/* 2. Não em casa (meio da página) */}
-        <div
-          id="nao-em-casa"
-          className="scroll-mt-6 rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm"
-        >
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-bold tracking-wide text-amber-900">NÃO EM CASA</h2>
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-              Anotações do cartão
-            </span>
+        {/* 2. Não em casa */}
+        <section id="nao-em-casa" className="app-card-pad scroll-mt-6">
+          <div className="mb-5">
+            <p className="app-section-title">Checklist</p>
+            <h2 className="mt-1 text-[22px] font-semibold tracking-tightish text-apple-ink">
+              Não em casa
+            </h2>
+            <p className="mt-1 text-[14px] text-apple-secondary">
+              Quadra igual ao mapa · informe rua e números · toque no card para editar
+            </p>
           </div>
-          <p className="mb-4 text-sm text-slate-600">
-            A <strong>quadra</strong> deve ser a mesma desenhada no mapa. Escolha no select, informe a{' '}
-            <strong>rua</strong> e os <strong>números</strong>. Clique em um card para editar e destacar a
-            área no mapa (sem subir a página).
-          </p>
 
           {mapQuadraOptions.length === 0 ? (
-            <div className="mb-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Nenhuma área no mapa ainda. Desenhe as quadras no mapa (acima), salve a localidade e área, e
-              depois cadastre o não em casa.
+            <div className="mb-5 rounded-apple border border-dashed border-apple-line bg-apple-fill px-4 py-3 text-[13px] text-apple-secondary">
+              Nenhuma área no mapa ainda. Desenhe as quadras acima, salve, e depois cadastre aqui.
             </div>
           ) : null}
 
           <form
             id="nao-em-casa-form"
             onSubmit={saveBlock}
-            className={`mb-6 space-y-3 rounded-xl border p-4 ${
+            className={`mb-6 space-y-4 rounded-apple-lg border p-4 sm:p-5 ${
               editingBlockId != null
-                ? 'border-sky-300 bg-sky-50/50'
-                : 'border-transparent bg-transparent p-0'
+                ? 'border-apple-blue/25 bg-apple-blue/[0.04]'
+                : 'border-apple-line bg-apple-fill/40'
             }`}
           >
             {editingBlockId != null ? (
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-sky-800">
-                  Editando quadra · {blockName || editingBlockId}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[14px] font-semibold text-apple-blue">
+                  Editando · {blockName || editingBlockId}
                 </p>
-                <button
-                  type="button"
-                  onClick={clearBlockForm}
-                  title="Cancelar edição"
-                  aria-label="Cancelar edição"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                >
+                <button type="button" onClick={clearBlockForm} className="app-btn-secondary h-8 px-3 text-[12px]">
                   <IconX className="h-3.5 w-3.5" />
                   Nova entrada
                 </button>
@@ -434,17 +421,14 @@ export default function EditTerritoryPage() {
 
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <label
-                  htmlFor="block-quadra-select"
-                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500"
-                >
+                <label htmlFor="block-quadra-select" className="app-label">
                   Quadra (mapa)
                 </label>
                 <select
                   id="block-quadra-select"
                   value={blockName}
                   onChange={(event) => setBlockName(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  className="app-input"
                   required
                   disabled={mapQuadraOptions.length === 0 && !blockName}
                 >
@@ -459,41 +443,38 @@ export default function EditTerritoryPage() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-slate-500">
-                  Mesmo nome/número da área desenhada no mapa.
-                </p>
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Nome da rua
-                </label>
+                <label className="app-label">Nome da rua</label>
                 <input
                   value={streetName}
                   onChange={(event) => setStreetName(event.target.value)}
                   placeholder="Ex: Rua Bahia, Av. da Saudade…"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  className="app-input"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-                Números das casas (não em casa)
-              </label>
+              <label className="app-label">Números das casas</label>
               <input
                 value={houseNumbers}
                 onChange={(event) => setHouseNumbers(event.target.value)}
                 placeholder="Ex: 101, 103, 105, 210"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                className="app-input"
                 required
               />
-              <p className="mt-1 text-xs text-slate-500">
-                Separe por vírgula ou espaço. Ao editar, você pode incluir ou remover números.
+              <p className="mt-1.5 text-[12px] text-apple-tertiary">
+                Separe por vírgula ou espaço.
               </p>
             </div>
 
-            {blockError ? <p className="text-sm text-red-600">{blockError}</p> : null}
+            {blockError ? (
+              <p className="rounded-apple bg-red-50 px-3 py-2 text-[13px] text-apple-red">
+                {blockError}
+              </p>
+            ) : null}
 
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -503,40 +484,22 @@ export default function EditTerritoryPage() {
                   (mapQuadraOptions.length === 0 && editingBlockId == null) ||
                   selectableQuadraOptions.length === 0
                 }
-                title={
-                  addingBlock
-                    ? 'Salvando…'
-                    : editingBlockId != null
-                      ? 'Salvar alterações'
-                      : 'Adicionar não em casa'
-                }
-                aria-label={
-                  editingBlockId != null ? 'Salvar alterações' : 'Adicionar não em casa'
-                }
-                className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 font-semibold text-white shadow-sm disabled:opacity-70 ${
-                  editingBlockId != null
-                    ? 'bg-sky-600 hover:bg-sky-700'
-                    : 'bg-amber-700 hover:bg-amber-800'
-                }`}
+                className="app-btn-primary disabled:opacity-50"
               >
                 {editingBlockId != null ? (
                   <>
-                    <IconSave className="h-5 w-5" />
-                    <span className="text-sm">Salvar edição</span>
+                    <IconSave className="h-4 w-4" />
+                    Salvar edição
                   </>
                 ) : (
                   <>
-                    <IconPlus className="h-5 w-5" />
-                    <span className="text-sm">Adicionar</span>
+                    <IconPlus className="h-4 w-4" />
+                    Adicionar
                   </>
                 )}
               </button>
               {editingBlockId != null ? (
-                <button
-                  type="button"
-                  onClick={clearBlockForm}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
+                <button type="button" onClick={clearBlockForm} className="app-btn-secondary">
                   Cancelar
                 </button>
               ) : null}
@@ -544,8 +507,8 @@ export default function EditTerritoryPage() {
           </form>
 
           {blocks.length > 0 ? (
-            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-              <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-apple border border-apple-line bg-apple-fill/50 px-3.5 py-2.5">
+              <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] font-medium text-apple-secondary">
                 <input
                   type="checkbox"
                   checked={bulkSelectedIds.length === blocks.length && blocks.length > 0}
@@ -556,25 +519,24 @@ export default function EditTerritoryPage() {
                     }
                   }}
                   onChange={toggleSelectAllBlocks}
-                  className="h-4 w-4 rounded border-slate-300 text-amber-700 focus:ring-amber-500"
+                  className="h-4 w-4 rounded border-apple-line text-apple-blue focus:ring-apple-blue/30"
                 />
                 {bulkSelectedIds.length === 0
-                  ? 'Selecionar quadras'
+                  ? 'Selecionar'
                   : bulkSelectedIds.length === blocks.length
-                    ? 'Todas selecionadas'
+                    ? 'Todas'
                     : `${bulkSelectedIds.length} selecionada(s)`}
               </label>
 
-              <div className="ml-auto flex flex-wrap items-center gap-2">
+              <div className="ml-auto">
                 <button
                   type="button"
                   disabled={bulkBusy || bulkSelectedIds.length === 0}
                   onClick={() => void bulkDeleteSelected()}
-                  title="Apagar quadras selecionadas"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="app-btn-danger h-9 px-3 text-[13px] disabled:opacity-40"
                 >
-                  <IconTrash className="h-4 w-4" />
-                  Apagar selecionadas
+                  <IconTrash className="h-3.5 w-3.5" />
+                  Apagar
                   {bulkSelectedIds.length > 0 ? ` (${bulkSelectedIds.length})` : ''}
                 </button>
               </div>
@@ -594,16 +556,8 @@ export default function EditTerritoryPage() {
                   areaMatchesBlock(mapSelectedKey, block.name));
               const selected = isEditing || onMap;
               const inBulk = bulkSelectedIds.includes(block.id);
-              // Finalizado + selecionado: base cinza de concluído + anel de seleção
-              const cardTone = inBulk
-                ? 'border-red-300 bg-red-50/80 ring-2 ring-red-200'
-                : selected
-                  ? finished
-                    ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 opacity-100'
-                    : 'border-sky-400 bg-sky-50 ring-2 ring-sky-300'
-                  : finished
-                    ? 'border-slate-200 bg-slate-100/80 opacity-75 hover:opacity-100'
-                    : 'border-amber-200 bg-amber-50 hover:border-amber-300';
+              const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+
               return (
                 <div
                   key={block.id}
@@ -616,7 +570,19 @@ export default function EditTerritoryPage() {
                       loadBlockForEdit(block);
                     }
                   }}
-                  className={`flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-xl border p-4 text-left transition hover:shadow-md ${cardTone}`}
+                  className={[
+                    'flex cursor-pointer flex-wrap items-start justify-between gap-3 rounded-[20px] border p-5 text-left transition duration-200',
+                    'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
+                    inBulk
+                      ? 'border-transparent bg-white shadow-[0_0_0_2px_#ff3b30,0_4px_16px_rgba(255,59,48,0.1)]'
+                      : finished
+                        ? selected
+                          ? 'border-transparent bg-[#f0fdf4] shadow-[0_0_0_2px_#34c759,0_8px_24px_rgba(52,199,89,0.14)]'
+                          : 'border-[#34c759]/25 bg-[#f0fdf4] shadow-[0_1px_2px_rgba(52,199,89,0.06)]'
+                        : selected
+                          ? 'border-transparent bg-white shadow-[0_0_0_2px_#0071e3,0_8px_24px_rgba(0,113,227,0.12)]'
+                          : 'border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+                  ].join(' ')}
                 >
                   <div className="flex min-w-0 flex-1 items-start gap-3">
                     <input
@@ -627,69 +593,86 @@ export default function EditTerritoryPage() {
                       onKeyDown={(e) => e.stopPropagation()}
                       title="Selecionar para apagar em massa"
                       aria-label={`Selecionar quadra ${block.name}`}
-                      className="mt-1.5 h-4 w-4 shrink-0 rounded border-slate-300 text-red-600 focus:ring-red-400"
+                      className="mt-1.5 h-4 w-4 shrink-0 rounded border-[#d2d2d7] text-[#ff3b30] focus:ring-[#ff3b30]/30"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
+                      {finished ? (
+                        <div className="mb-2.5 h-[3px] max-w-[8rem] overflow-hidden rounded-full bg-[#34c759]/15">
+                          <div className="h-full w-full rounded-full bg-[#34c759]" />
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <p
-                          className={`text-xs font-medium uppercase tracking-wide ${
-                            finished ? 'text-slate-500' : 'text-amber-800'
+                          className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
+                            finished ? 'text-[#248a3d]' : 'text-[#86868b]'
                           }`}
                         >
-                          Quadra · clique para destacar no mapa
-                          {finished ? ' · finalizada' : ''}
+                          Quadra{finished ? ' · concluída' : ''}
                         </p>
                         {isEditing ? (
-                          <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                            Em edição
+                          <span className="rounded-full bg-[#0071e3]/[0.1] px-2 py-0.5 text-[11px] font-semibold text-[#0071e3]">
+                            Edição
                           </span>
                         ) : null}
                         {onMap && !isEditing ? (
-                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
+                          <span className="rounded-full bg-[#0071e3]/[0.1] px-2 py-0.5 text-[11px] font-semibold text-[#0071e3]">
                             No mapa
                           </span>
                         ) : null}
                         {finished ? (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#34c759] px-2 py-0.5 text-[11px] font-semibold text-white">
                             Finalizado
                           </span>
                         ) : (
-                          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
-                            {done}/{total} feitos
+                          <span className="rounded-full bg-[#f5f5f7] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#6e6e73]">
+                            {done}/{total}
                           </span>
                         )}
-                        {selected && finished ? (
-                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800 ring-1 ring-sky-300">
-                            Selecionada
-                          </span>
-                        ) : null}
                       </div>
                       <p
-                        className={`text-2xl font-bold ${
-                          finished ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-900'
+                        className={`mt-1 text-[24px] font-semibold leading-none tracking-[-0.03em] ${
+                          finished ? 'text-[#1b4332]' : 'text-[#1d1d1f]'
                         }`}
                       >
                         {block.name}
                       </p>
                       {block.street_name ? (
-                        <p className="mt-1 text-sm font-medium text-slate-800">
-                          Rua: <span className="font-normal text-slate-700">{block.street_name}</span>
+                        <p
+                          className={`mt-1.5 text-[14px] ${
+                            finished ? 'text-[#2d6a4f]' : 'text-[#6e6e73]'
+                          }`}
+                        >
+                          {block.street_name}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-slate-500">Sem rua informada</p>
+                        <p className="mt-1.5 text-[12px] text-[#86868b]">Sem rua</p>
                       )}
-                      <div className="mt-2 flex flex-wrap gap-2">
+
+                      {!finished && total > 0 ? (
+                        <div className="mt-3 h-[3px] max-w-xs overflow-hidden rounded-full bg-[#f5f5f7]">
+                          <div
+                            className="h-full rounded-full bg-[#0071e3] transition-all"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {block.house_numbers.map((item) => {
                           const house = String(item);
                           const isDone = completed.includes(house);
                           return (
                             <span
                               key={house}
-                              className={`rounded-full px-2 py-1 text-xs font-medium ring-1 ${
+                              className={[
+                                'inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2.5 py-1.5',
+                                'text-[13px] font-medium tabular-nums',
                                 isDone
-                                  ? 'bg-emerald-600 text-white ring-emerald-700 line-through'
-                                  : 'bg-white text-slate-700 ring-amber-200'
-                              }`}
+                                  ? 'bg-[#34c759] text-white'
+                                  : finished
+                                    ? 'bg-white/90 text-[#1b4332] ring-1 ring-[#34c759]/25'
+                                    : 'bg-[#f5f5f7] text-[#1d1d1f]',
+                              ].join(' ')}
                             >
                               {house}
                             </span>
@@ -706,18 +689,20 @@ export default function EditTerritoryPage() {
                     }}
                     title="Remover"
                     aria-label="Remover"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#ff3b30] transition hover:bg-[#fff5f5]"
                   >
-                    <IconTrash className="h-5 w-5" />
+                    <IconTrash className="h-4 w-4" />
                   </button>
                 </div>
               );
             })}
             {blocks.length === 0 ? (
-              <p className="text-sm text-slate-600">Nenhum registro de não em casa ainda.</p>
+              <div className="rounded-[20px] border border-dashed border-black/[0.08] bg-white px-6 py-10 text-center">
+                <p className="text-[14px] text-[#86868b]">Nenhum registro ainda.</p>
+              </div>
             ) : null}
           </div>
-        </div>
+        </section>
 
         {/* 3. Salvar por último (localidade + áreas do mapa) */}
         <SaveActionBar hint="Grava localidade, Terr. N.º e áreas do mapa. Os registros de não em casa já são salvos ao adicionar/editar cada quadra.">

@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IconArrowLeft, IconPlus, IconTrash, IconUsers } from '@/components/Map/mapIcons';
+import { IconPlus, IconTrash, IconUsers } from '@/components/Map/mapIcons';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -121,22 +120,15 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <main className="app-page max-w-4xl space-y-6">
+      <div className="space-y-6">
         <div>
-          <Link
-            to="/dashboard"
-            title="Voltar"
-            aria-label="Voltar"
-            className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-          >
-            <IconArrowLeft className="h-5 w-5" />
-          </Link>
+          <p className="app-section-title">Administração</p>
           <div className="mt-1 flex items-center gap-2">
-            <IconUsers className="h-7 w-7 text-sky-700" />
-            <h1 className="text-3xl font-bold text-slate-900">Usuários e papéis</h1>
+            <IconUsers className="h-6 w-6 text-apple-ink" />
+            <h1 className="app-title">Usuários e papéis</h1>
           </div>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="app-subtitle">
             Controle de acesso baseado em papéis (RBAC). O administrador tem todos os escopos; demais
             papéis recebem permissões delegadas.
           </p>
@@ -148,46 +140,48 @@ export default function UsersPage() {
           </p>
         ) : null}
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-lg font-bold text-slate-900">Novo usuário</h2>
+        <section className="app-card-pad">
+          <h2 className="mb-4 text-[17px] font-semibold tracking-tightish text-apple-ink">
+            Novo usuário
+          </h2>
           <form onSubmit={onCreate} className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Nome</label>
+              <label className="app-label">Nome</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="app-input"
                 required
                 minLength={2}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <label className="app-label">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="app-input"
                 required
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Senha</label>
+              <label className="app-label">Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="app-input"
                 required
                 autoComplete="new-password"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Papel</label>
+              <label className="app-label">Papel</label>
               <select
                 value={roleId}
                 onChange={(e) => setRoleId(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="app-input"
                 required
               >
                 {roles.map((r) => (
@@ -201,17 +195,17 @@ export default function UsersPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+                className="app-btn-primary disabled:opacity-60"
               >
-                <IconPlus className="h-5 w-5" />
+                <IconPlus className="h-4 w-4" />
                 {saving ? 'Criando…' : 'Criar usuário'}
               </button>
             </div>
           </form>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-lg font-bold text-slate-900">Papéis</h2>
+        <section className="app-card-pad">
+          <h2 className="mb-3 text-[17px] font-semibold tracking-tightish text-apple-ink">Papéis</h2>
           <ul className="space-y-2 text-sm">
             {roles.map((r) => (
               <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
@@ -228,8 +222,8 @@ export default function UsersPage() {
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-lg font-bold text-slate-900">Usuários</h2>
+        <section className="app-card-pad">
+          <h2 className="mb-3 text-[17px] font-semibold tracking-tightish text-apple-ink">Usuários</h2>
           {loading ? (
             <p className="text-slate-600">Carregando…</p>
           ) : users.length === 0 ? (

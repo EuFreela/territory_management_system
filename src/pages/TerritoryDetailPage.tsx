@@ -215,9 +215,9 @@ export default function TerritoryDetailPage() {
   const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+    <main className="app-page space-y-6">
+      <div className="space-y-6">
+        <div className="app-card-pad">
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-center text-xl font-bold tracking-wide text-slate-900 md:text-left">
@@ -248,9 +248,9 @@ export default function TerritoryDetailPage() {
                     onClick={() => void setDaily()}
                     title="Marcar do dia"
                     aria-label="Marcar do dia"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+                    className="app-icon-btn text-amber-600"
                   >
-                    <IconStar className="h-5 w-5" />
+                    <IconStar className="h-4 w-4" />
                   </button>
                 ) : (
                   <button
@@ -258,9 +258,9 @@ export default function TerritoryDetailPage() {
                     onClick={() => void unlinkDaily()}
                     title="Desvincular do dia"
                     aria-label="Desvincular do dia"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    className="app-icon-btn"
                   >
-                    <IconUnlink className="h-5 w-5" />
+                    <IconUnlink className="h-4 w-4" />
                   </button>
                 )
               ) : null}
@@ -269,9 +269,9 @@ export default function TerritoryDetailPage() {
                   to={`/territories/${id}/edit`}
                   title="Editar área"
                   aria-label="Editar área"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-white shadow-soft transition hover:bg-black"
                 >
-                  <IconPencil className="h-5 w-5" />
+                  <IconPencil className="h-4 w-4" />
                 </Link>
               ) : null}
               {can('territory:delete') ? (
@@ -280,26 +280,26 @@ export default function TerritoryDetailPage() {
                   onClick={() => void onDelete()}
                   title="Excluir território"
                   aria-label="Excluir território"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 bg-white text-red-700 hover:bg-red-50"
+                  className="app-icon-btn text-apple-red"
                 >
-                  <IconTrash className="h-5 w-5" />
+                  <IconTrash className="h-4 w-4" />
                 </button>
               ) : null}
               <Link
                 to="/territories"
                 title="Voltar à lista"
                 aria-label="Voltar à lista"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                className="app-icon-btn"
               >
-                <IconArrowLeft className="h-5 w-5" />
+                <IconArrowLeft className="h-4 w-4" />
               </Link>
               <Link
                 to="/dashboard"
-                title="Dashboard"
-                aria-label="Dashboard"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300 bg-white text-sky-700 hover:bg-sky-50"
+                title="Início"
+                aria-label="Início"
+                className="app-icon-btn"
               >
-                <IconHome className="h-5 w-5" />
+                <IconHome className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -355,25 +355,31 @@ export default function TerritoryDetailPage() {
           </div>
         </div>
 
-        <div id="nao-em-casa-cards" className="scroll-mt-6 rounded-2xl border-2 border-amber-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-1 text-lg font-bold tracking-wide text-amber-900">NÃO EM CASA</h2>
-          <p className="mb-4 text-sm text-slate-600">
-            Clique no card da quadra para destacar a área no mapa (cor + balão), sem mover a página. Toque
-            nos números para marcar as casas já trabalhadas.
-          </p>
+        <section id="nao-em-casa-cards" className="scroll-mt-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="app-section-title">Checklist</p>
+              <h2 className="mt-1 text-[22px] font-semibold tracking-tightish text-apple-ink">
+                Não em casa
+              </h2>
+              <p className="mt-1 text-[14px] text-apple-secondary">
+                Toque no card para destacar no mapa · toque no número para marcar
+              </p>
+            </div>
+            {can('block:manage') ? (
+              <Link to={`/territories/${id}/edit#nao-em-casa`} className="app-btn-ghost text-[13px]">
+                Gerenciar
+              </Link>
+            ) : null}
+          </div>
+
           {territory.blocks && territory.blocks.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {territory.blocks.map((block) => {
                 const { done, total, finished } = blockProgress(block);
                 const linked = isBlockLinked(block);
-                // Finalizado + selecionado: mantém visual de concluído e anel de seleção
-                const cardTone = linked
-                  ? finished
-                    ? 'border-sky-500 bg-slate-100 ring-2 ring-sky-400 shadow-md shadow-sky-200/50 opacity-100'
-                    : 'border-sky-500 bg-sky-50 ring-2 ring-sky-400 shadow-md shadow-sky-200/60'
-                  : finished
-                    ? 'border-slate-200 bg-slate-100/80 opacity-70 hover:opacity-100'
-                    : 'border-amber-200 bg-amber-50 hover:border-amber-300 hover:shadow-md';
+                const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+
                 return (
                   <div
                     key={block.id}
@@ -387,68 +393,83 @@ export default function TerritoryDetailPage() {
                         onBlockCardSelect(block);
                       }
                     }}
-                    className={`cursor-pointer rounded-xl border p-4 shadow-sm transition scroll-mt-6 ${cardTone}`}
+                    className={[
+                      'scroll-mt-6 cursor-pointer rounded-[20px] border p-5 transition duration-200',
+                      'hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]',
+                      // Finalizado: lavagem verde Apple (System Green) — legível e elegante
+                      finished
+                        ? linked
+                          ? 'border-transparent bg-[#f0fdf4] shadow-[0_0_0_2px_#34c759,0_8px_24px_rgba(52,199,89,0.14)]'
+                          : 'border-[#34c759]/25 bg-[#f0fdf4] shadow-[0_1px_2px_rgba(52,199,89,0.06)]'
+                        : linked
+                          ? 'border-transparent bg-white shadow-[0_0_0_2px_#0071e3,0_8px_24px_rgba(0,113,227,0.12)]'
+                          : 'border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+                    ].join(' ')}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                    {/* faixa superior sutil quando finalizado */}
+                    {finished ? (
+                      <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full bg-[#34c759]/15">
+                        <div className="h-full w-full rounded-full bg-[#34c759]" />
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <p
-                          className={`text-xs font-medium uppercase tracking-wide ${
-                            finished ? 'text-slate-500' : linked ? 'text-sky-700' : 'text-amber-800'
+                          className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
+                            finished ? 'text-[#248a3d]' : 'text-[#86868b]'
                           }`}
                         >
-                          Quadra
-                          {finished ? ' · finalizada' : ''}
+                          Quadra{finished ? ' · concluída' : ''}
                         </p>
                         <p
-                          className={`text-3xl font-bold ${
-                            finished
-                              ? 'text-slate-500 line-through decoration-slate-400'
-                              : 'text-slate-900'
+                          className={`mt-1 text-[26px] font-semibold leading-none tracking-[-0.03em] ${
+                            finished ? 'text-[#1b4332]' : 'text-[#1d1d1f]'
                           }`}
                         >
                           {block.name}
                         </p>
-                        {linked ? (
+                        {block.street_name ? (
                           <p
-                            className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ${
-                              finished ? 'bg-sky-700' : 'bg-sky-600'
+                            className={`mt-2 truncate text-[14px] font-normal ${
+                              finished ? 'text-[#2d6a4f]' : 'text-[#6e6e73]'
                             }`}
                           >
-                            <span className="territorio-map-selected-dot inline-block h-1.5 w-1.5 rounded-full bg-sky-200" />
-                            Destacada no mapa
+                            {block.street_name}
                           </p>
                         ) : null}
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
+
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
                         {finished ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
-                            <IconCheckCircle className="h-4 w-4" />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#34c759] px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+                            <IconCheckCircle className="h-3.5 w-3.5" />
                             Finalizado
                           </span>
                         ) : (
-                          <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-amber-900 ring-1 ring-amber-200">
+                          <span className="rounded-full bg-[#f5f5f7] px-2.5 py-1 text-[11px] font-semibold tabular-nums text-[#6e6e73]">
                             {done}/{total}
                           </span>
                         )}
-                        {linked && finished ? (
-                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-300">
-                            Selecionada
+                        {linked ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#0071e3]/[0.1] px-2.5 py-1 text-[11px] font-semibold text-[#0071e3]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#0071e3]" />
+                            No mapa
                           </span>
                         ) : null}
                       </div>
                     </div>
 
-                    {block.street_name ? (
-                      <p
-                        className={`mt-1 text-sm font-medium ${
-                          finished ? 'text-slate-500' : 'text-slate-800'
-                        }`}
-                      >
-                        {block.street_name}
-                      </p>
+                    {!finished && total > 0 ? (
+                      <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-[#f5f5f7]">
+                        <div
+                          className="h-full rounded-full bg-[#0071e3] transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
                     ) : null}
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       {block.house_numbers.map((item) => {
                         const house = String(item);
                         const doneHouse = isHouseDone(block, house);
@@ -469,19 +490,21 @@ export default function TerritoryDetailPage() {
                                   ? 'Clique para desmarcar (pede confirmação)'
                                   : 'Marcar como feito'
                             }
-                            className={`inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                            className={[
+                              'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
+                              'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',
                               doneHouse
-                                ? 'bg-emerald-600 text-white line-through decoration-white/70 shadow-sm'
+                                ? 'bg-[#34c759] text-white shadow-sm'
                                 : finished
-                                  ? 'bg-white text-slate-500 ring-1 ring-slate-200'
-                                  : 'bg-white text-slate-800 ring-1 ring-amber-300 hover:bg-amber-100'
-                            }`}
+                                  ? 'bg-white/80 text-[#1b4332] ring-1 ring-[#34c759]/25'
+                                  : 'bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]',
+                            ].join(' ')}
                           >
                             {doneHouse ? (
-                              <span className="inline-flex items-center gap-0.5">
+                              <>
                                 <IconCheck className="h-3.5 w-3.5" />
                                 {house}
-                              </span>
+                              </>
                             ) : (
                               house
                             )}
@@ -494,17 +517,14 @@ export default function TerritoryDetailPage() {
               })}
             </div>
           ) : (
-            <p className="text-slate-600">Nenhum registro de não em casa.</p>
+            <div className="rounded-[20px] border border-dashed border-black/[0.08] bg-white px-6 py-12 text-center">
+              <p className="text-[15px] font-medium text-[#1d1d1f]">Nenhum registro ainda</p>
+              <p className="mt-1 text-[13px] text-[#86868b]">
+                Adicione quadras e casas na edição do território.
+              </p>
+            </div>
           )}
-          {can('block:manage') ? (
-            <Link
-              to={`/territories/${id}/edit#nao-em-casa`}
-              className="mt-4 inline-block text-sm font-medium text-amber-800 underline"
-            >
-              Gerenciar não em casa
-            </Link>
-          ) : null}
-        </div>
+        </section>
       </div>
     </main>
   );

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  IconArrowLeft,
   IconEye,
   IconPencil,
   IconSearch,
@@ -79,47 +78,37 @@ export default function TerritoriesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <main className="app-page">
+      <div>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Link
-              to="/dashboard"
-              title="Voltar ao dashboard"
-              aria-label="Voltar ao dashboard"
-              className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-            >
-              <IconArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">Cartões de território</h1>
-            <p className="text-sm text-slate-600">Localidade + Terr. N.º + área desenhada no mapa</p>
+            <p className="app-section-title">Cartões</p>
+            <h1 className="app-title mt-1">Territórios</h1>
+            <p className="app-subtitle">Localidade, Terr. N.º</p>
           </div>
 
           {can('territory:create') ? (
-            <Link
-              to="/territories/new"
-              className="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700"
-            >
+            <Link to="/territories/new" className="app-btn-primary">
               Novo território
             </Link>
           ) : null}
         </div>
 
-        <div className="mb-4">
+        <div className="mb-6">
           <label htmlFor="territory-search" className="sr-only">
             Buscar território
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-              <IconSearch className="h-5 w-5" />
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-apple-tertiary">
+              <IconSearch className="h-4 w-4" />
             </span>
             <input
               id="territory-search"
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por localidade, Terr. N.º ou CEP…"
-              className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none ring-sky-500 placeholder:text-slate-400 focus:border-sky-500 focus:ring-2"
+              placeholder="Buscar por localidade, Terr. N.º…"
+              className="app-input pl-10"
               autoComplete="off"
             />
           </div>
@@ -132,32 +121,38 @@ export default function TerritoriesPage() {
           ) : null}
         </div>
 
-        {loading ? <p className="text-slate-600">Carregando…</p> : null}
-        {error ? <p className="text-red-600">{error}</p> : null}
+        {loading ? <p className="text-[15px] text-apple-secondary">Carregando…</p> : null}
+        {error ? <p className="text-[15px] text-apple-red">{error}</p> : null}
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filtered.map((territory) => {
             const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
             return (
               <div
                 key={territory.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-5 shadow-sm"
+                className="app-card flex flex-wrap items-center justify-between gap-4 p-5 transition hover:shadow-card"
               >
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Localidade</p>
-                  <h2 className="text-xl font-semibold text-slate-900">{territory.name}</h2>
+                  <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-apple-tertiary">
+                    Localidade
+                  </p>
+                  <h2 className="text-[18px] font-semibold tracking-tightish text-apple-ink">
+                    {territory.name}
+                  </h2>
                   {territory.number ? (
-                    <p className="text-sm text-slate-600">
-                      Terr. N.º <span className="font-semibold">{territory.number}</span>
+                    <p className="text-[14px] text-apple-secondary">
+                      Terr. N.º <span className="font-medium text-apple-ink">{territory.number}</span>
                     </p>
                   ) : null}
-                  <p className={`mt-1 text-xs font-medium ${hasArea ? 'text-emerald-700' : 'text-amber-700'}`}>
-                    {hasArea ? '✓ Área definida no mapa' : '⚠ Sem área no mapa'}
+                  <p
+                    className={`mt-1.5 text-[12px] font-medium ${
+                      hasArea ? 'text-emerald-700' : 'text-amber-700'
+                    }`}
+                  >
+                    {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
                   </p>
                   {territory.is_daily ? (
-                    <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-                      Território do dia
-                    </span>
+                    <span className="app-badge-green mt-2">Território do dia</span>
                   ) : null}
                 </div>
 
@@ -169,9 +164,9 @@ export default function TerritoriesPage() {
                         onClick={() => void setDaily(territory.id)}
                         title="Marcar do dia"
                         aria-label="Marcar do dia"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+                        className="app-icon-btn text-amber-600"
                       >
-                        <IconStar className="h-5 w-5" />
+                        <IconStar className="h-4 w-4" />
                       </button>
                     ) : (
                       <button
@@ -179,9 +174,9 @@ export default function TerritoriesPage() {
                         onClick={() => void unlinkDaily(territory.id)}
                         title="Desvincular do dia"
                         aria-label="Desvincular do dia"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                        className="app-icon-btn"
                       >
-                        <IconUnlink className="h-5 w-5" />
+                        <IconUnlink className="h-4 w-4" />
                       </button>
                     )
                   ) : null}
@@ -189,18 +184,18 @@ export default function TerritoriesPage() {
                     to={`/territories/${territory.id}`}
                     title="Ver cartão"
                     aria-label="Ver cartão"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    className="app-icon-btn"
                   >
-                    <IconEye className="h-5 w-5" />
+                    <IconEye className="h-4 w-4" />
                   </Link>
                   {can('territory:update') || can('block:manage') ? (
                     <Link
                       to={`/territories/${territory.id}/edit`}
                       title="Editar área"
                       aria-label="Editar área"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-white shadow-soft transition hover:bg-black active:scale-[0.97]"
                     >
-                      <IconPencil className="h-5 w-5" />
+                      <IconPencil className="h-4 w-4" />
                     </Link>
                   ) : null}
                 </div>
@@ -209,13 +204,11 @@ export default function TerritoriesPage() {
           })}
 
           {!loading && territories.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
-              Nenhum território cadastrado.
-            </div>
+            <div className="app-empty text-apple-secondary">Nenhum território cadastrado.</div>
           ) : null}
 
           {!loading && territories.length > 0 && filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+            <div className="app-empty text-apple-secondary">
               Nenhum território encontrado para “{query.trim()}”.
             </div>
           ) : null}

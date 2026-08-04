@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import AppShell from '@/components/layout/AppShell';
 import { useAuth } from '@/lib/auth-context';
 
 export default function ProtectedRoute() {
@@ -7,8 +8,11 @@ export default function ProtectedRoute() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-600">
-        Carregando…
+      <div className="flex min-h-screen items-center justify-center bg-apple-bg">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-pulse rounded-full bg-apple-ink/10" />
+          <p className="text-[15px] text-apple-secondary">Carregando…</p>
+        </div>
       </div>
     );
   }
@@ -25,5 +29,14 @@ export default function ProtectedRoute() {
     return <Navigate to="/change-password" replace />;
   }
 
-  return <Outlet />;
+  // Troca de senha forçada: tela limpa, sem shell
+  if (location.pathname === '/change-password' && mustChange) {
+    return <Outlet />;
+  }
+
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
 }
