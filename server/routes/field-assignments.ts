@@ -13,7 +13,8 @@ const assignmentSchema = z.object({
   period_label: z.string().max(80).nullable().optional(),
   is_fixed: z.boolean().optional(),
   fixed_weekday: z.number().int().min(0).max(6).nullable().optional(),
-  fixed_time: z.string().max(10).nullable().optional(),
+  /** Horário ou período (ex: 08:00, Noite, Manhã) — vale para fixos e datados */
+  fixed_time: z.string().max(40).nullable().optional(),
   sort_order: z.number().int().optional(),
 });
 
@@ -94,6 +95,7 @@ router.post('/', requireAuth, async (req, res) => {
 
   const data = parsed.data;
   const isFixed = Boolean(data.is_fixed);
+  const scheduleTime = data.fixed_time?.trim() || null;
 
   const [result] = await pool.execute(
     `INSERT INTO field_assignments
@@ -106,7 +108,7 @@ router.post('/', requireAuth, async (req, res) => {
       data.period_label ?? null,
       isFixed ? 1 : 0,
       isFixed ? (data.fixed_weekday ?? null) : null,
-      isFixed ? (data.fixed_time ?? null) : null,
+      scheduleTime,
       data.sort_order ?? 0,
     ],
   );
@@ -147,6 +149,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 
   const data = parsed.data;
   const isFixed = Boolean(data.is_fixed);
+  const scheduleTime = data.fixed_time?.trim() || null;
 
   const [result] = await pool.execute(
     `UPDATE field_assignments SET
@@ -166,7 +169,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       data.period_label ?? null,
       isFixed ? 1 : 0,
       isFixed ? (data.fixed_weekday ?? null) : null,
-      isFixed ? (data.fixed_time ?? null) : null,
+      scheduleTime,
       data.sort_order ?? 0,
       id,
     ],

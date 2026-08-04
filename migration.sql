@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS field_assignments (
   period_label VARCHAR(80) NULL,
   is_fixed TINYINT(1) DEFAULT 0,
   fixed_weekday TINYINT NULL,              -- 0=Dom … 6=Sáb (JS)
-  fixed_time VARCHAR(10) NULL,              -- ex: 08:00
+  fixed_time VARCHAR(40) NULL,             -- horário ou período (08:00, Manhã, Noite)
   sort_order INT DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
