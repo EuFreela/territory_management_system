@@ -11,7 +11,8 @@
     "start": "node dist-server/index.js",
     "preview": "vite preview",
     "migrate:rbac": "node scripts/migrate-rbac.js",
-    "migrate:finish-history": "node scripts/migrate-finish-history.js"
+    "migrate:finish-history": "node scripts/migrate-finish-history.js",
+    "migrate:theme": "node scripts/migrate-theme-preference.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

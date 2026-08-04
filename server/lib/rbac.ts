@@ -44,6 +44,8 @@ export type RoleInfo = {
   name: string;
 };
 
+export type ThemePreference = 'light' | 'dark';
+
 export type RbacUser = {
   id: number;
   email: string;
@@ -51,7 +53,13 @@ export type RbacUser = {
   role: RoleInfo | null;
   permissions: Scope[];
   isAdmin: boolean;
+  /** Preferência de aparência salva no usuário */
+  theme_preference: ThemePreference;
 };
+
+export function normalizeThemePreference(value: unknown): ThemePreference {
+  return value === 'dark' ? 'dark' : 'light';
+}
 
 export function hasPermission(user: Pick<RbacUser, 'isAdmin' | 'permissions'>, scope: Scope): boolean {
   if (user.isAdmin) return true;

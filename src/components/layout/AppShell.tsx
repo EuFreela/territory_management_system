@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconCheckCircle,
+  IconInfo,
   IconLogOut,
   IconMap,
   IconMoon,
@@ -237,9 +238,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </NavLink>
               {can('user:manage') ? (
                 <NavLink to="/usuarios" className={navClass}>
+                  <IconUsers className="h-3.5 w-3.5 opacity-80" />
                   Usuários
                 </NavLink>
               ) : null}
+              <NavLink to="/sobre" className={navClass}>
+                <IconInfo className="h-3.5 w-3.5 opacity-80" />
+                Sobre
+              </NavLink>
             </nav>
           </div>
 
@@ -367,6 +373,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   Usuários
                 </NavLink>
               ) : null}
+
+              <NavLink to="/sobre" className={mobileNavClass}>
+                <IconInfo className="h-4 w-4 opacity-70" />
+                Sobre
+              </NavLink>
             </nav>
 
             <div className="space-y-2 border-t border-apple-line p-4">

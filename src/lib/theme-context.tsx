@@ -4,13 +4,17 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { api } from './api';
+import { useAuth } from './auth-context';
+import type { AuthUser, ThemePreference } from './auth-context';
 
-export type Theme = 'light' | 'dark';
+export type Theme = ThemePreference;
 
-const STORAGE_KEY = 'campo-theme';
+const GUEST_STORAGE_KEY = 'campo-theme-guest';
 
 type ThemeContextValue = {
   theme: Theme;
@@ -20,10 +24,13 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function readStoredTheme(): Theme | null {
+function readGuestTheme(): Theme | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
+    // compat com chave antiga
+    const legacy = localStorage.getItem('campo-theme');
+    if (legacy === 'light' || legacy === 'dark') return legacy;
   } catch {
     /* ignore */
   }
@@ -36,7 +43,7 @@ function systemTheme(): Theme {
 }
 
 export function getInitialTheme(): Theme {
-  return readStoredTheme() ?? systemTheme();
+  return readGuestTheme() ?? systemTheme();
 }
 
 export function applyTheme(theme: Theme) {
@@ -50,25 +57,95 @@ export function applyTheme(theme: Theme) {
   }
 }
 
+function normalizeTheme(value: unknown): Theme | null {
+  if (value === 'light' || value === 'dark') return value;
+  return null;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading, setUser } = useAuth();
   const [theme, setThemeState] = useState<Theme>(() => getInitialTheme());
+  const lastUserId = useRef<number | null>(null);
+  const saveSeq = useRef(0);
+
+  // Aplica tema do usuário quando a sessão carrega / troca de conta
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (user) {
+      const pref = normalizeTheme(user.theme_preference);
+      if (pref) {
+        setThemeState(pref);
+      } else if (lastUserId.current !== user.id) {
+        // usuário sem preferência no banco: mantém o tema atual da UI e tenta gravar
+        setThemeState((current) => current);
+      }
+      lastUserId.current = user.id;
+      return;
+    }
+
+    // logout: volta ao tema de convidado / sistema
+    if (lastUserId.current != null) {
+      lastUserId.current = null;
+      setThemeState(readGuestTheme() ?? systemTheme());
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     applyTheme(theme);
-    try {
-      localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      /* ignore */
+    // cache local só quando não autenticado (login)
+    if (!user) {
+      try {
+        localStorage.setItem(GUEST_STORAGE_KEY, theme);
+        localStorage.setItem('campo-theme', theme);
+      } catch {
+        /* ignore */
+      }
     }
-  }, [theme]);
+  }, [theme, user]);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-  }, []);
+  const persistUserTheme = useCallback(
+    async (next: Theme, currentUser: AuthUser) => {
+      const seq = ++saveSeq.current;
+      try {
+        const data = await api<{ theme: Theme; user?: AuthUser }>('/api/auth/theme', {
+          method: 'PUT',
+          body: JSON.stringify({ theme: next }),
+        });
+        if (seq !== saveSeq.current) return;
+        if (data.user) {
+          setUser(data.user);
+        } else {
+          setUser({ ...currentUser, theme_preference: data.theme ?? next });
+        }
+      } catch (err) {
+        console.error('[theme] falha ao salvar preferência', err);
+      }
+    },
+    [setUser],
+  );
+
+  const setTheme = useCallback(
+    (next: Theme) => {
+      setThemeState(next);
+      if (user) {
+        setUser({ ...user, theme_preference: next });
+        void persistUserTheme(next, user);
+      } else {
+        try {
+          localStorage.setItem(GUEST_STORAGE_KEY, next);
+          localStorage.setItem('campo-theme', next);
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    [user, setUser, persistUserTheme],
+  );
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
 
   const value = useMemo(
     () => ({ theme, setTheme, toggleTheme }),
