@@ -1168,7 +1168,7 @@ export default function TerritoryMap({
       </div>
 
       <div
-        className={`relative w-full overflow-hidden rounded-xl border border-apple-line bg-apple-surface ${
+        className={`relative z-0 isolate w-full overflow-hidden rounded-xl border border-apple-line bg-apple-surface ${
           isFullscreen ? 'min-h-0 flex-1' : heightClass
         } ${drawMode ? 'ring-2 ring-apple-blue/60' : selected ? 'ring-2 ring-apple-blue/40' : ''}`}
         onMouseEnter={() => setMapHovered(true)}
@@ -1176,7 +1176,7 @@ export default function TerritoryMap({
       >
         {/* Chip flutuante: reforço visual fixo no canto (além do balão no centróide) */}
         {selected && !drawMode ? (
-          <div className="pointer-events-none absolute left-3 top-3 z-[500] max-w-[min(100%-1.5rem,18rem)]">
+          <div className="pointer-events-none absolute left-3 top-3 z-[1000] max-w-[min(100%-1.5rem,18rem)]">
             {(() => {
               const selectedFinished = areaIsFinished(selected.label, finishedKeys);
               return (
@@ -1211,8 +1211,8 @@ export default function TerritoryMap({
           </div>
         ) : null}
 
-        {/* Controles do mapa (canto superior direito) */}
-        <div className="absolute right-3 top-3 z-[500] flex flex-col gap-2">
+        {/* Controles acima do Leaflet (z~200–700), contidos por isolate no pai — não cobrem o header sticky */}
+        <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
           <button
             type="button"
             data-tooltip={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Tela cheia'}
