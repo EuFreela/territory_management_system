@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build && tsc -p tsconfig.server.json",
     "start": "node dist-server/index.js",
     "preview": "vite preview",
-    "migrate:rbac": "node scripts/migrate-rbac.js"
+    "migrate:rbac": "node scripts/migrate-rbac.js",
+    "migrate:finish-history": "node scripts/migrate-finish-history.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

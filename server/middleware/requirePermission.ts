@@ -26,6 +26,22 @@ export function requirePermission(...scopes: Scope[]) {
   };
 }
 
+/** Apenas papel administrador (role admin). */
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const user = (req as AuthedRequest).user;
+  if (!user) {
+    res.status(401).json({ error: 'Não autorizado' });
+    return;
+  }
+  if (!user.isAdmin && user.role?.slug !== 'admin') {
+    res.status(403).json({
+      error: 'Apenas administradores podem realizar esta ação.',
+    });
+    return;
+  }
+  next();
+}
+
 /** Exige ao menos um dos escopos. */
 export function requireAnyPermission(...scopes: Scope[]) {
   return (req: Request, res: Response, next: NextFunction) => {

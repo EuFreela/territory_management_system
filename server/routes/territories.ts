@@ -1,9 +1,14 @@
 import { Router } from 'express';
 import pool from '../lib/db.js';
+import {
+  isTerritoryFullyFinished,
+  maybeRecordTerritoryFinished,
+  recordTerritoryFinished,
+} from '../lib/finish-history.js';
 import { getMapConfig } from '../lib/map-config.js';
 import { territorySchema, blockSchema, toggleHouseSchema } from '../lib/validations.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import { requireAdmin, requirePermission } from '../middleware/requirePermission.js';
 
 const router = Router();
 
@@ -114,6 +119,9 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
     dailyBlocks = blocksByTerritory.get(Number(daily.id)) ?? [];
   }
 
+  const dailyFinished =
+    dailyBlocks.length > 0 && dailyBlocks.every((b) => Boolean(b.is_finished));
+
   const unfinished = territoryList
     .map((t) => {
       const blocks = blocksByTerritory.get(Number(t.id)) ?? [];
@@ -145,10 +153,73 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
       isAdmin: user.isAdmin,
     },
     territories: territoryList,
-    daily: daily ? { ...daily, blocks: dailyBlocks } : null,
+    daily: daily
+      ? { ...daily, blocks: dailyBlocks, is_finished: dailyFinished }
+      : null,
     unfinished,
   });
 });
+
+/** Histórico de territórios finalizados (dia, horário, dirigente) */
+router.get(
+  '/finished-history',
+  requireAuth,
+  requirePermission('territory:read'),
+  async (_req, res) => {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT id, territory_id, territory_name, territory_number,
+                field_date, field_time, leader_name, people_count,
+                finished_by_user_id, finished_by_name, finished_at
+         FROM territory_finish_history
+         ORDER BY field_date DESC, finished_at DESC, id DESC`,
+      );
+      res.json(rows);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (/doesn't exist|Unknown table|territory_finish_history/i.test(msg)) {
+        res.status(503).json({
+          error: 'Histórico ainda não configurado. Rode: npm run migrate:finish-history',
+        });
+        return;
+      }
+      console.error('[finished-history]', error);
+      res.status(500).json({ error: 'Erro ao carregar histórico.' });
+    }
+  },
+);
+
+/** Remove uma linha do histórico — apenas administrador */
+router.delete(
+  '/finished-history/:historyId',
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const historyId = paramId(req.params.historyId);
+    try {
+      const [result] = await pool.execute(
+        'DELETE FROM territory_finish_history WHERE id = ?',
+        [historyId],
+      );
+      const deleteResult = result as { affectedRows?: number };
+      if (!deleteResult.affectedRows) {
+        res.status(404).json({ error: 'Registro do histórico não encontrado.' });
+        return;
+      }
+      res.json({ message: 'Registro removido do histórico.' });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (/doesn't exist|Unknown table|territory_finish_history/i.test(msg)) {
+        res.status(503).json({
+          error: 'Histórico ainda não configurado. Rode: npm run migrate:finish-history',
+        });
+        return;
+      }
+      console.error('[finished-history/delete]', error);
+      res.status(500).json({ error: 'Erro ao remover do histórico.' });
+    }
+  },
+);
 
 router.post('/', requireAuth, requirePermission('territory:create'), async (req, res) => {
   const user = (req as AuthedRequest).user;
@@ -327,6 +398,63 @@ router.delete(
   },
 );
 
+/**
+ * Finaliza o território do dia:
+ * - grava no histórico (dia, horário, dirigente, pessoas no campo)
+ * - desvincula do dia
+ */
+router.post(
+  '/:id/finish',
+  requireAuth,
+  requirePermission('territory:set_daily'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+    const territory = await findTerritory(id);
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
+    const rawPeople = (req.body as { people_count?: unknown })?.people_count;
+    const peopleCount = Number(rawPeople);
+    if (!Number.isFinite(peopleCount) || peopleCount < 1 || peopleCount > 999) {
+      res.status(400).json({
+        error: 'Informe o número de pessoas no campo (mínimo 1).',
+      });
+      return;
+    }
+
+    const fullyDone = await isTerritoryFullyFinished(id);
+    if (!fullyDone) {
+      res.status(400).json({
+        error:
+          'Ainda há casas pendentes no “não em casa”. Conclua todas antes de finalizar o território do dia.',
+      });
+      return;
+    }
+
+    const authUser = (req as AuthedRequest).user;
+
+    try {
+      await recordTerritoryFinished(id, {
+        peopleCount: Math.floor(peopleCount),
+        finishedByUserId: authUser.id,
+        finishedByName: authUser.name,
+      });
+    } catch (err) {
+      console.error('[finish]', err);
+      res.status(500).json({ error: 'Erro ao registrar no histórico de finalizados.' });
+      return;
+    }
+
+    await pool.execute('UPDATE territories SET is_daily = 0 WHERE id = ?', [id]);
+
+    res.json({
+      message: 'Território finalizado, registrado no histórico e desvinculado do dia.',
+    });
+  },
+);
+
 router.get('/:id/blocks', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const id = paramId(req.params.id);
 
@@ -483,6 +611,15 @@ router.patch(
       JSON.stringify(completed),
       blockId,
     ]);
+
+    // Se o território ficou 100% feito, registra no histórico (1x por dia)
+    if (done) {
+      try {
+        await maybeRecordTerritoryFinished(id);
+      } catch (err) {
+        console.error('[finish-history]', err);
+      }
+    }
 
     res.json(
       mapBlock({

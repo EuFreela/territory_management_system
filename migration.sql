@@ -63,6 +63,24 @@ CREATE TABLE territory_images (
   FOREIGN KEY (territory_id) REFERENCES territories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Histórico de territórios finalizados (dia de campo + dirigente)
+CREATE TABLE IF NOT EXISTS territory_finish_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  territory_id INT NULL,
+  territory_name VARCHAR(120) NOT NULL,
+  territory_number VARCHAR(50) NULL,
+  field_date DATE NOT NULL,
+  field_time VARCHAR(40) NULL,
+  leader_name VARCHAR(255) NULL,
+  people_count INT NULL,
+  finished_by_user_id INT NULL,
+  finished_by_name VARCHAR(150) NULL,
+  finished_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_field_date (field_date),
+  INDEX idx_territory_id (territory_id),
+  FOREIGN KEY (territory_id) REFERENCES territories(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 -- Dirigentes do serviço de campo (designações por data ou dia fixo)
 CREATE TABLE IF NOT EXISTS field_assignments (
   id INT AUTO_INCREMENT PRIMARY KEY,

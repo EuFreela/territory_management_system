@@ -5,6 +5,7 @@ import ScrollToTop from './components/ui/ScrollToTop';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TerritoriesPage from './pages/TerritoriesPage';
+import FinishedTerritoriesPage from './pages/FinishedTerritoriesPage';
 import NewTerritoryPage from './pages/NewTerritoryPage';
 import TerritoryDetailPage from './pages/TerritoryDetailPage';
 import EditTerritoryPage from './pages/EditTerritoryPage';
@@ -16,7 +17,11 @@ import { useAuth } from './lib/auth-context';
 function HomeRedirect() {
   const { user, loading } = useAuth();
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-600">Carregando…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-apple-bg text-[15px] text-apple-secondary">
+        Carregando…
+      </div>
+    );
   }
   return <Navigate to={user ? '/dashboard' : '/login'} replace />;
 }
@@ -34,6 +39,14 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dirigentes" element={<FieldLeadersPage />} />
           <Route path="/territories" element={<TerritoriesPage />} />
+          <Route
+            path="/territories/finalizados"
+            element={
+              <RequirePermission scope="territory:read">
+                <FinishedTerritoriesPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="/territories/new"
             element={
