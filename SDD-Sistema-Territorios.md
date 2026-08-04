@@ -1,480 +1,533 @@
-# SDD — Campo (Sistema de Territórios)
+# SDD — CAMPO (Sistema de Territórios)
 
-**Produto:** Campo  
-**Versão do documento:** 3.0  
-**Data:** 02/08/2026  
-**Status:** Implementado (v2.x do código)  
-**Objetivo:** Especificação oficial e atualizada do que o sistema faz, como está estruturado e como evoluir.
+| Campo | Valor |
+|-------|--------|
+| **Produto** | CAMPO |
+| **Cliente / contexto** | Congregação Alpinópolis — gestão de territórios de campo |
+| **Versão do software** | **v0.0.4** |
+| **Versão deste documento** | **4.0** |
+| **Data** | 03/08/2026 |
+| **Status** | Implementado e alinhado ao código atual |
+| **Repositório** | https://github.com/EuFreela/territory_management_system |
+| **Tag** | [`v0.0.4`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.4) |
+
+**Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
 
 ---
 
-## 1. Visão Geral
+## 1. Visão geral
 
-**Campo** é um sistema web para **gestão de cartões de território de campo**:
+O **CAMPO** é um sistema web para **planejar, acompanhar e registrar o trabalho de campo por territórios**:
 
-- Localidade e Terr. N.º (como no cartão impresso)
-- Mapa com áreas desenhadas (polígonos)
-- Registros de **NÃO EM CASA** (quadra, rua, casas)
-- Checklist de casas já trabalhadas
-- **Território do dia** e lista de **Não finalizados**
+- Cartões de território (localidade + Terr. N.º)
+- Mapa com polígonos (áreas/quadras) e busca por endereço
+- Registros **NÃO EM CASA** (quadra, rua, casas) com checklist
+- **Território do dia** no Início, com finalização e histórico
+- Escala de **dirigentes** (dias fixos e datas específicas)
+- **RBAC** (papéis e permissões)
+- Preferência de tema **light/dark por usuário**
+- Página **Sobre** (descrição + changelog da versão)
 
 ### Público
-Usuários autenticados (irmãos / responsáveis) que trabalham e acompanham territórios.
+
+Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, editor, campo, visualizador).
 
 ### Fase atual
+
 | Item | Valor |
 |------|--------|
-| Banco | MySQL local |
-| Nome do banco (padrão) | `campo` (configurável via `.env`) |
+| Versão | v0.0.4 |
+| Banco | MySQL 8+ (local ou servidor) |
+| Nome do banco (padrão) | `campo` (`DB_NAME`) |
 | Frontend | Vite + React SPA |
-| Backend | Express + TypeScript |
-| Deploy | Não obrigatório nesta fase |
+| Backend | Express + TypeScript (mesmo monorepo) |
+| Deploy | Build único; API serve o `dist` em produção |
 
 ---
 
-## 2. Stack Tecnológica
+## 2. Stack tecnológica
 
-| Camada | Tecnologia | Motivo |
+| Camada | Tecnologia | Notas |
 |--------|------------|--------|
-| Frontend | **Vite 7** + **React 19** | Dev rápido (substituindo Next.js) |
-| Roteamento | **React Router 7** | SPA |
-| Estilo | **Tailwind CSS 3** | UI rápida e consistente |
-| API | **Express 5** + **tsx** | REST Node |
-| Linguagem | **TypeScript** | Tipagem |
-| Banco | **MySQL** + **mysql2** | Persistência local |
+| Frontend | **Vite 7** + **React 19** | SPA |
+| Roteamento | **React Router 7** | Rotas e guards |
+| Estilo | **Tailwind CSS 3** | Design system “Apple” (`apple-*`, `app-*`) |
+| API | **Express 5** + **tsx** | REST |
+| Linguagem | **TypeScript** | Client + server |
+| Banco | **MySQL** + **mysql2** | Prepared statements |
 | Auth | **JWT** (`jose`) + cookie `httpOnly` | Sessão |
-| Senha | **bcryptjs** | Hash |
-| Mapa | **Leaflet** + **react-leaflet** | Polígonos |
-| Validação | **Zod 4** | Schemas API |
-| CEP → coords | BrasilAPI (+ fallback Nominatim) | Centralizar mapa |
+| Senha | **bcryptjs** | Hash (12 rounds no login) |
+| Mapa | **Leaflet** + **react-leaflet** | Polígonos GeoJSON |
+| Validação | **Zod 4** | Schemas de request |
+| CEP / geocode | Config mapa + **Nominatim** (busca endereço) | Sem Google Maps |
+| Fuso | `APP_TIMEZONE` (padrão `America/Sao_Paulo`) | “Hoje” de dirigentes |
 
-> **Não usar** Google Maps.  
-> **Não usar** Next.js nesta versão (lentidão no dev Windows).
+> **Não usar** Google Maps nesta versão.  
+> **Não usar** Next.js (projeto é Vite SPA).
 
 ---
 
-## 3. Funcionalidades Implementadas
+## 3. Funcionalidades implementadas
 
-### 3.1 Autenticação
-- [x] Registro (nome, email, senha ≥ 6)
-- [x] Login (JWT em cookie `auth_token`)
-- [x] Logout
-- [x] Rota protegida no frontend (`ProtectedRoute`)
-- [x] Proteção nas APIs (`requireAuth`)
-- [x] Após login → `/dashboard`
+### 3.1 Autenticação e sessão
 
-### 3.2 Dashboard (`/dashboard`)
-- [x] Anúncio **compacto** do Território do Dia (localidade, Terr. N.º)
-- [x] Clique no card → cartão do território
-- [x] Botão **Desvincular** (ícone) com modal de confirmação
-- [x] Lista **Não finalizados** — territórios com ≥ 1 quadra de não em casa incompleta
-- [x] Contagem de quadras pendentes e casas faltando
-- [x] Link para listagem de territórios
-- [x] **Sem** listagem completa de todos os territórios no dashboard
+| Item | Status | Detalhe |
+|------|--------|---------|
+| Login | ✅ | Email + senha → JWT em cookie `auth_token` |
+| Logout | ✅ | Limpa cookie |
+| Cadastro público | ❌ desabilitado | `POST /api/auth/register` → 403 |
+| Criação de usuários | ✅ | Somente admin (`user:manage`) |
+| Sessão atual | ✅ | `GET /api/auth/me` |
+| Troca de senha | ✅ | `/change-password`; rate limit |
+| Senha fraca no login | ✅ | Flag `password_is_weak` → força troca |
+| Rate limit login | ✅ | 10 tentativas / 15 min (por IP + email) |
+| Rota protegida (front) | ✅ | `ProtectedRoute` + shell |
+| API protegida | ✅ | `requireAuth` + `requirePermission` |
+
+### 3.2 Início / Dashboard (`/dashboard`)
+
+- Anúncio do **território do dia** (localidade, Terr. N.º)
+- Ações: desvincular do dia; **Finalizar** (modal com nº de pessoas → histórico + desvincula)
+- Lista **Não finalizados** (territórios com quadra incompleta)
+- Bloco de **dirigentes de hoje** (datados + fixos), com edição de nome quando permitido
+- Link para listagem e dirigentes
 
 ### 3.3 Territórios (lista `/territories`)
-- [x] Listar territórios do usuário
-- [x] Busca por localidade, Terr. N.º, CEP (sem acentos)
-- [x] Criar / ver cartão / editar
-- [x] Marcar como território do dia (ícone estrela)
-- [x] Desvincular do dia (ícone unlink)
-- [x] Indicador de área no mapa (com / sem)
-- [x] Botões de ação **somente ícones** + `title`/`aria-label`
 
-### 3.4 Cartão de território (detalhe `/territories/:id`)
-- [x] Cabeçalho estilo cartão: **Localidade** + **Terr. N.º**
-- [x] Mapa em modo leitura com polígonos e rótulos
-- [x] Seção **NÃO EM CASA** com checklist clicável
-- [x] Marcar/desmarcar casa como feita
-- [x] Contador `feitos/total` e tag **Finalizado**
-- [x] Quadra finalizada com visual desbotado
-- [x] Ações: marcar/desvincular dia, editar, excluir, voltar (ícones)
+- Listagem (com `territory:read`)
+- Busca por localidade, Terr. N.º (normalizada, sem acentos)
+- Indicador de área no mapa (com / sem)
+- Marcar / desvincular território do dia (`territory:set_daily`)
+- Criar (`territory:create`) — botão ícone **+**
+- Ver cartão / editar área (ícones; permissões respectivas)
 
-### 3.5 Criar / Editar território
-- [x] Campos: **Localidade** (não “Nome”) e **Terr. N.º**
-- [x] Mapa com CEP global (`TERRITORY_CEP` no `.env`)
-- [x] Desenho de **múltiplas áreas** (FeatureCollection)
-- [x] Toolbar de ícones no mapa:
-  - 🔒 Travado (padrão — não desenha)
-  - ✏️ Desenhar
-  - ✓ Concluir área (≥ 3 pontos)
-  - ↩ Desfazer ponto/área
-  - 🗑 Limpar áreas
-- [x] Nome/texto em cada área (rótulo no centro do polígono)
-- [x] Zoom/câmera **não resetam** ao clicar pontos
-- [x] Rótulos legíveis (pill âmbar, texto escuro, largura dinâmica)
-- [x] Salvar exige ≥ 1 área válida
-- [x] Seção **NÃO EM CASA** na edição:
-  - N.º da quadra
-  - Nome da rua
-  - Números das casas
-  - Add (ícone +) / Remover (ícone lixeira)
-  - Progresso do checklist (somente leitura na edição)
+### 3.4 Finalizados (`/territories/finalizados`)
 
-### 3.6 UI / UX global
-- [x] Modal de confirmação estilizado (substitui `confirm`/`alert`)
-  - Tons: default, warning, danger
-  - Esc / clique fora cancela
-- [x] Botão Voltar com ícone de seta
-- [x] Botões Salvar / Adicionar como ícones
+- Histórico cumulativo de finalizações
+- Colunas: dia do campo, horário, dirigente, pessoas, território, registrado por, data/hora
+- Busca textual
+- Remoção de linha do histórico **apenas admin**
 
-### 3.7 Fora de escopo atual (planejado / futuro)
-- [ ] Upload real de imagens (existe tabela `territory_images`)
-- [ ] CEP por território (hoje CEP é global no `.env`)
-- [ ] Multi-região / multi-congregação
-- [ ] Deploy produção documentado em CI
+### 3.5 Cartão / detalhe (`/territories/:id`)
 
----
+- Cabeçalho estilo cartão: Localidade + Terr. N.º
+- Mapa em leitura (polígonos, rótulos)
+- Seção **NÃO EM CASA**: checklist por casa; confirmação ao desmarcar
+- Contador feitos/total; tag **Finalizado**
+- Destaque bidirecional mapa ↔ cartão
+- Ações condicionadas a permissão (dia, editar, excluir)
 
-## 4. Modelo de Dados (MySQL)
+### 3.6 Criar / editar território
 
-Banco padrão: **`campo`** (ou `DB_NAME` no `.env`).
+| Rota | Permissão |
+|------|-----------|
+| `/territories/new` | `territory:create` |
+| `/territories/:id/edit` | `territory:update` **ou** `block:manage` |
 
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(150) NOT NULL,
-  email VARCHAR(180) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+- Campos: Localidade, Terr. N.º
+- Mapa centrado no CEP do sistema (`TERRITORY_CEP`)
+- Desenho de **múltiplas áreas** (FeatureCollection)
+- Toolbar do mapa:
+  - Travado (padrão) / Desenhar / Concluir área (≥ 3 pontos)
+  - Desfazer / Refazer / Apagar áreas
+  - Tela cheia / Reenquadrar áreas / Limpar destaque
+  - Busca de endereço (geocode) com pin
+- Seção NÃO EM CASA na edição: quadra, rua, casas; add/remove; bulk delete; progresso
 
-CREATE TABLE territories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  name VARCHAR(120) NOT NULL,              -- Localidade (ex: Mundo Novo)
-  number VARCHAR(50) NULL,               -- Terr. N.º (ex: 31)
-  cep VARCHAR(9) NULL,                   -- Cópia do CEP do sistema no save
-  geojson LONGTEXT NULL,                 -- FeatureCollection de áreas
-  map_lat DECIMAL(10,7) NULL,
-  map_lng DECIMAL(10,7) NULL,
-  is_daily TINYINT(1) DEFAULT 0,         -- 1 = território do dia
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+### 3.7 Dirigentes (`/dirigentes`)
 
-CREATE TABLE blocks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  territory_id INT NOT NULL,
-  name VARCHAR(100) NOT NULL,             -- N.º da quadra
-  street_name VARCHAR(180) NULL,          -- Nome da rua
-  house_numbers JSON NOT NULL,            -- ["101","103"]
-  completed_houses JSON NULL,             -- casas já trabalhadas
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (territory_id) REFERENCES territories(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+- Designações **datadas** e **fixas** (dia da semana)
+- Horário/período (manhã/noite — selects fixos)
+- Cards agrupados; “Hoje” em destaque
+- CRUD de designações (API autenticada)
+- Fuso: `APP_TIMEZONE` / America/Sao_Paulo
 
-CREATE TABLE territory_images (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  territory_id INT NOT NULL,
-  image_url VARCHAR(500) NOT NULL,
-  caption VARCHAR(255) NULL,
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (territory_id) REFERENCES territories(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-```
+### 3.8 Usuários (`/usuarios`) — `user:manage`
 
-### Regras de negócio
-1. Apenas **um** território por usuário com `is_daily = 1`
-2. Ao marcar diário: zerar os outros e setar o escolhido
-3. Ao desvincular: `is_daily = 0` no território
-4. `geojson` obrigatório ao criar/atualizar território (≥ 1 polígono válido)
-5. Checklist: `completed_houses` ⊆ `house_numbers`
-6. Quadra **finalizada** quando todas as casas estão em `completed_houses`
-7. Território em **Não finalizados** se tem ≥ 1 block com `is_finished = false`
-8. CEP do mapa vem de **`TERRITORY_CEP`** no `.env` (global nesta versão)
+- Listar papéis e permissões
+- Criar usuário (nome, email, senha forte, papel)
+- Alterar papel; excluir (com regras de proteção do último admin)
+- Papéis seed: admin, editor, field, viewer
 
-### Arquivo de migração
-- Schema completo: `migration.sql`
-- RBAC (se DB antigo): `npm run migrate:rbac` (`scripts/migrate-rbac.js`)
-- Seed dirigentes (opcional): `scripts/setup-field-leaders.js`
+### 3.9 Sobre (`/sobre`)
+
+- Aba **O sistema**: o que é o CAMPO, o que faz, para quem é
+- Aba **Atualizações**: versão **v0.0.4** + changelog agrupado
+
+### 3.10 UI / UX global
+
+- Design system Apple (`bg-apple-*`, `app-card`, `app-btn-*`, `app-input`, etc.)
+- Shell: logo, nav desktop, drawer mobile, usuário, tema, sair
+- Tooltips custom (`data-tooltip`) — sem `title` nativo feio
+- Tema light/dark (classe `dark` no `html`)
+- Preferência de tema **persistida no usuário** (`theme_preference`)
+- Modal de confirmação (`ConfirmModal`: default / warning / danger)
+- Scroll to top
+- Login com header, card e tipografia do sistema
+
+### 3.11 Fora de escopo / futuro
+
+- [ ] Upload real de imagens (tabela `territory_images` existe, sem UI completa)
+- [ ] CEP por território editável (hoje CEP é global no `.env`)
+- [ ] Multi-congregação / multi-tenant
+- [ ] CI/CD e pipeline de deploy documentados
+- [ ] App mobile nativo
 
 ---
 
-## 5. Formato do GeoJSON (áreas no mapa)
+## 4. Papéis e permissões (RBAC)
 
-Salvo em `territories.geojson` como **FeatureCollection**:
+### 4.1 Escopos
 
-```json
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "id": "area-…",
-      "properties": {
-        "label": "Quadra1",
-        "name": "Quadra1"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[[lng, lat], …, [lng, lat]]]
-      }
-    }
-  ]
-}
-```
+| Escopo | Uso |
+|--------|-----|
+| `territory:create` | Criar território |
+| `territory:read` | Listar, ver, dashboard, histórico |
+| `territory:update` | Editar território/mapa |
+| `territory:delete` | Excluir território |
+| `territory:set_daily` | Marcar/desvincular território do dia |
+| `block:manage` | CRUD de não em casa / checklist |
+| `user:manage` | Gestão de usuários e papéis |
 
-- Compatível com Feature única / Polygon legado na leitura
-- Rótulo exibido no centróide da área
+Admin (`slug = admin` ou `isAdmin`) tem **todos** os escopos implicitamente.
+
+### 4.2 Papéis padrão
+
+| Slug | Nome | Permissões |
+|------|------|------------|
+| `admin` | Administrador | Todos os escopos |
+| `editor` | Editor | create, read, update, set_daily, block:manage |
+| `field` | Campo | read, set_daily, block:manage |
+| `viewer` | Visualizador | read |
+
+### 4.3 Enforcement
+
+- **API:** `requirePermission(scope)` / `requireAdmin` / `requireAuth`
+- **Front:** `useAuth().can(scope)`, `RequirePermission`, ocultação de botões/menus
 
 ---
 
-## 6. Estrutura de Pastas
+## 5. Modelo de dados (MySQL)
+
+Banco padrão: **`campo`**. Schema de referência: `migration.sql` + scripts em `scripts/`.
+
+### 5.1 Diagrama lógico (entidades)
 
 ```
-campo/
-├── index.html
-├── vite.config.ts              # proxy /api → :3001
-├── package.json
-├── migration.sql
-├── README.md
-├── SDD-Sistema-Territorios.md  # este documento
-├── .env.example
-├── .gitignore
-├── scripts/                    # migrações auxiliares
-├── server/
-│   ├── index.ts                # Express app
-│   ├── lib/
-│   │   ├── auth.ts             # JWT sign/verify
-│   │   ├── db.ts               # pool mysql2
-│   │   ├── cep.ts              # geocode CEP
-│   │   ├── map-config.ts       # TERRITORY_CEP cache
-│   │   └── validations.ts      # Zod
-│   ├── middleware/
-│   │   └── requireAuth.ts
-│   └── routes/
-│       ├── auth.ts
-│       └── territories.ts
-└── src/
-    ├── main.tsx
-    ├── App.tsx                 # rotas
-    ├── index.css
-    ├── components/
-    │   ├── ProtectedRoute.tsx
-    │   ├── ui/ConfirmModal.tsx
-    │   └── Map/
-    │       ├── TerritoryMap.tsx
-    │       └── mapIcons.tsx
-    ├── lib/
-    │   ├── api.ts
-    │   ├── auth-context.tsx
-    │   └── types.ts
-    └── pages/
-        ├── LoginPage.tsx
-        ├── RegisterPage.tsx
-        ├── DashboardPage.tsx
-        ├── TerritoriesPage.tsx
-        ├── NewTerritoryPage.tsx
-        ├── TerritoryDetailPage.tsx
-        └── EditTerritoryPage.tsx
+roles 1──* role_permissions
+roles 1──* users
+users 1──* territories
+territories 1──* blocks
+territories 1──* territory_images   (reservado)
+territories 0──* territory_finish_history
+field_assignments (independente)
 ```
 
+### 5.2 Tabelas
+
+#### `roles`
+- `id`, `slug` (unique), `name`, `description`, `is_system`, `created_at`
+
+#### `role_permissions`
+- PK (`role_id`, `permission`)
+- FK `role_id` → `roles`
+
+#### `users`
+- `id`, `name`, `email` (unique), `password_hash`
+- `role_id` → `roles` (nullable, ON DELETE SET NULL)
+- `theme_preference` VARCHAR(10) NOT NULL DEFAULT `'light'` — valores: `light` | `dark`  
+  *(migração: `npm run migrate:theme` se o banco for antigo)*
+- `created_at`
+
+#### `territories`
+- `id`, `user_id` → `users`
+- `name` (localidade), `number` (Terr. N.º)
+- `cep`, `geojson` (LONGTEXT, FeatureCollection), `map_lat`, `map_lng`
+- `is_daily` (0/1) — no máximo um “do dia” na prática de negócio (API set/unset)
+- `created_at`, `updated_at`
+
+#### `blocks` (NÃO EM CASA)
+- `id`, `territory_id` → `territories`
+- `name` (nº da quadra), `street_name`
+- `house_numbers` JSON — casas
+- `completed_houses` JSON — checklist feito
+- `sort_order`
+
+#### `territory_finish_history`
+- Histórico **cumulativo** (sempre INSERT na finalização; não sobrescreve)
+- `territory_id` (nullable se território apagado), `territory_name`, `territory_number`
+- `field_date`, `field_time`, `leader_name`, `people_count`
+- `finished_by_user_id`, `finished_by_name`, `finished_at`
+
+#### `field_assignments`
+- Designações de dirigentes
+- `service_date` (datado) **ou** `is_fixed` + `fixed_weekday` (0=Dom … 6=Sáb)
+- `weekday_label`, `assignee_name`, `period_label`, `fixed_time`, `sort_order`
+- `created_at`, `updated_at`
+
+#### `territory_images`
+- Reservado: `territory_id`, `image_url`, `caption`, `sort_order` — **sem fluxo completo na UI atual**
+
+### 5.3 Migrações auxiliares
+
+| Comando | Efeito |
+|---------|--------|
+| `npm run migrate:rbac` | Roles / permissions / role_id em users |
+| `npm run migrate:finish-history` | Tabela `territory_finish_history` |
+| `npm run migrate:theme` | Coluna `users.theme_preference` |
+
 ---
 
-## 7. Rotas Frontend
+## 6. API REST
 
-| Path | Auth | Página |
-|------|------|--------|
-| `/` | — | Redirect login ou dashboard |
-| `/login` | público | Login |
-| `/register` | público | Cadastro |
-| `/dashboard` | sim | Território do dia + Não finalizados |
-| `/territories` | sim | Lista + busca |
-| `/territories/new` | sim | Criar + desenhar áreas |
-| `/territories/:id` | sim | Cartão + checklist |
-| `/territories/:id/edit` | sim | Editar + não em casa |
+Base: `/api` (proxy Vite em dev; mesma origem em prod).
 
----
+### 6.1 Config / saúde
 
-## 8. API REST
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/api/health` | — | Healthcheck |
+| GET | `/api/config/map` | — | Centro do mapa (CEP do `.env`) |
+| GET | `/api/config/geocode?q=` | ✅ | Busca endereço → coords (rate limit) |
 
-Base: `/api`  
-Auth: cookie `auth_token` (exceto register/login)
+### 6.2 Auth (`/api/auth`)
 
-### Auth
-| Método | Path | Descrição |
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| POST | `/register` | — | **403** — cadastro desabilitado |
+| POST | `/login` | — | Login; cookie; `password_is_weak?` |
+| POST | `/logout` | — | Limpa cookie |
+| GET | `/me` | cookie | Usuário + role + permissions + `theme_preference` |
+| PUT | `/theme` | ✅ | `{ theme: "light"\|"dark" }` → grava no user |
+| POST | `/change-password` | ✅ | Senha atual + nova (forte) |
+
+### 6.3 Territórios (`/api/territories`)
+
+| Método | Rota | Permissão | Descrição |
+|--------|------|-----------|-----------|
+| GET | `/` | `territory:read` | Lista |
+| GET | `/dashboard` | `territory:read` | Daily + unfinished |
+| GET | `/finished-history` | `territory:read` | Histórico |
+| DELETE | `/finished-history/:id` | admin | Remove linha do histórico |
+| POST | `/` | `territory:create` | Cria |
+| GET | `/:id` | `territory:read` | Detalhe |
+| PUT | `/:id` | `territory:update` | Atualiza |
+| DELETE | `/:id` | `territory:delete` | Exclui |
+| POST | `/:id/daily` | `territory:set_daily` | Marca do dia |
+| DELETE | `/:id/daily` | `territory:set_daily` | Desvincula |
+| POST | `/:id/finish` | (fluxo dia) | Finaliza → history + unsets daily |
+| GET/POST | `/:id/blocks` | read / `block:manage` | Lista / cria |
+| PUT/PATCH/DELETE | blocks… | `block:manage` | Atualiza / checklist / remove |
+| POST | bulk delete blocks | `block:manage` | Exclusão em massa |
+
+*(Rotas exatas de blocks: ver `server/routes/territories.ts`.)*
+
+### 6.4 Dirigentes (`/api/field-assignments`)
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/` | ✅ | Lista todas |
+| GET | `/today` | ✅ | Designações de hoje (datadas + fixas) |
+| POST | `/` | ✅ | Cria |
+| PUT | `/:id` | ✅ | Atualiza |
+| DELETE | `/:id` | ✅ | Remove |
+
+### 6.5 Usuários (`/api/users`)
+
+Todas exigem `user:manage`:
+
+| Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | `/api/auth/register` | Cadastro |
-| POST | `/api/auth/login` | Login + cookie |
-| POST | `/api/auth/logout` | Limpa cookie |
-| GET | `/api/auth/me` | Usuário atual |
-
-### Config / saúde
-| Método | Path | Descrição |
-|--------|------|-----------|
-| GET | `/api/health` | Healthcheck |
-| GET | `/api/config/map` | CEP global + lat/lng/label |
-
-### Territórios
-| Método | Path | Descrição |
-|--------|------|-----------|
-| GET | `/api/territories` | Lista do usuário |
-| GET | `/api/territories/dashboard` | daily + unfinished + user |
-| POST | `/api/territories` | Cria (localidade, número, geojson) |
-| GET | `/api/territories/:id` | Detalhe + blocks mapeados |
-| PUT | `/api/territories/:id` | Atualiza |
-| DELETE | `/api/territories/:id` | Exclui |
-| POST | `/api/territories/:id/daily` | Marca território do dia |
-| DELETE | `/api/territories/:id/daily` | Desvincula do dia |
-
-### Não em casa (blocks)
-| Método | Path | Descrição |
-|--------|------|-----------|
-| GET | `/api/territories/:id/blocks` | Lista |
-| POST | `/api/territories/:id/blocks` | Cria (quadra, rua, casas) |
-| PATCH | `/api/territories/:id/blocks/:blockId/houses` | Checklist `{ house_number, done }` |
-| DELETE | `/api/territories/:id/blocks/:blockId` | Remove registro |
-
-### Payload do checklist
-```json
-{ "house_number": "101", "done": true }
-```
-
-### Resposta de block (mapeada)
-```json
-{
-  "id": 1,
-  "name": "1",
-  "street_name": "Rua Bahia",
-  "house_numbers": ["101", "103"],
-  "completed_houses": ["101"],
-  "done_count": 1,
-  "total": 2,
-  "is_finished": false
-}
-```
-
-### Dashboard `unfinished`
-Territórios com ≥ 1 block `is_finished === false`, incluindo:
-- `unfinished_blocks`
-- `total_blocks`
-- `pending_houses`
+| GET | `/roles` | Papéis + permissões |
+| GET | `/` | Lista usuários |
+| POST | `/` | Cria |
+| PUT | `/:id` | Atualiza (papel, etc.) |
+| DELETE | `/:id` | Remove |
 
 ---
 
-## 9. Variáveis de Ambiente
+## 7. Frontend — rotas e páginas
 
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=campo
-JWT_SECRET=
-PORT=3001
-VITE_APP_URL=http://localhost:3000
-TERRITORY_CEP=37940-000
-```
+| Rota | Página | Guard |
+|------|--------|-------|
+| `/` | Redirect login ou dashboard | — |
+| `/login` | Login | público |
+| `/register` | Redirect → login | — |
+| `/change-password` | Troca de senha | autenticado (pode forçar) |
+| `/dashboard` | Início | autenticado |
+| `/territories` | Lista | shell + can read implícito via API |
+| `/territories/finalizados` | Finalizados | `territory:read` |
+| `/territories/new` | Novo | `territory:create` |
+| `/territories/:id` | Cartão | autenticado |
+| `/territories/:id/edit` | Editar | `territory:update` \| `block:manage` |
+| `/dirigentes` | Escala | autenticado |
+| `/usuarios` | RBAC UI | `user:manage` |
+| `/sobre` | Sobre + versão | autenticado |
+
+### 7.1 Componentes principais
+
+| Path | Função |
+|------|--------|
+| `AppShell` | Layout, menu desktop/mobile, tema, logout |
+| `TerritoryMap` | Mapa interativo (draw, fullscreen, geocode…) |
+| `ProtectedRoute` | Auth + shell + troca de senha forçada |
+| `RequirePermission` | Gate de escopo |
+| `ConfirmModal` | Confirmações |
+| `theme-context` | Aplica tema; sincroniza com user + API |
+| `auth-context` | Sessão, `can()`, admin |
+
+---
+
+## 8. Tema (dark / light)
+
+1. Coluna `users.theme_preference` (`light` | `dark`, default `light`).
+2. Login / `GET /me` devolve a preferência; o front aplica (`class="dark"` no `html`).
+3. Toggle no shell/login: se autenticado → `PUT /api/auth/theme` e atualiza o usuário em memória.
+4. Sem sessão (login): cache local (`campo-theme-guest` / `campo-theme`).
+5. Tokens CSS: variáveis `--apple-*` em `:root` e `.dark` (`src/index.css` + `tailwind.config.ts`).
+
+---
+
+## 9. Segurança
+
+| Controle | Implementação |
+|----------|----------------|
+| Senha | bcrypt; política forte na troca e criação admin |
+| Sessão | JWT assinado; cookie httpOnly; duração `JWT_EXPIRES` (padrão 12h) |
+| Produção | `JWT_SECRET` ≥ 32 chars obrigatório |
+| Cookie Secure | Configurável (`COOKIE_SECURE`); false em HTTP/LAN |
+| SQL | Prepared statements |
+| Rate limit | Login, change-password, geocode |
+| Cadastro público | Desabilitado |
+| RBAC | Server-side é a fonte da verdade; front só esconde UI |
+| CORS | `VITE_APP_URL` + credentials |
+
+**Não commitar** `.env`.
+
+---
+
+## 10. Configuração (`.env`)
 
 | Variável | Uso |
 |----------|-----|
-| `TERRITORY_CEP` | CEP único do sistema; centraliza o mapa e grava lat/lng ao salvar território |
-| `PORT` | Porta da API Express |
-| `VITE_APP_URL` | Origin CORS do frontend |
-
-> Reiniciar `npm run dev` após alterar `.env`.
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL |
+| `JWT_SECRET` | Assinatura JWT |
+| `JWT_EXPIRES` | Ex.: `12h`, `1d` |
+| `PORT` | Porta da API (padrão 3001) |
+| `VITE_APP_URL` | Origin do front (CORS) |
+| `COOKIE_SECURE` | `true` só com HTTPS |
+| `APP_TIMEZONE` | Ex.: `America/Sao_Paulo` |
+| `TERRITORY_CEP` | CEP base do mapa |
 
 ---
 
-## 10. Scripts npm
+## 11. Scripts e deploy
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Vite (:3000) + API (:3001) |
-| `npm run dev:web` | Só frontend |
-| `npm run dev:server` | Só API |
-| `npm run build` | Build SPA + compile server |
-| `npm start` | Produção (API + static `dist`) |
+| `npm run dev` | Vite + API |
+| `npm run build` | Typecheck + build web + compile server |
+| `npm start` | Produção: API + static `dist` + SPA fallback |
+| `npm run migrate:rbac` | RBAC |
+| `npm run migrate:finish-history` | Histórico |
+| `npm run migrate:theme` | Tema por usuário |
+
+Produção Express 5: `GET /{*path}` → `index.html`.
 
 ---
 
-## 11. Fluxos Principais
+## 12. Estrutura de pastas (resumo)
 
-### 11.1 Login
-1. POST `/api/auth/login`  
-2. Cookie `auth_token`  
-3. Redirect `/dashboard`
-
-### 11.2 Criar território
-1. Localidade + Terr. N.º  
-2. Mapa no CEP do `.env`  
-3. 🔒 → ✏️ → cliques → ✓ (nome da área)  
-4. Repetir áreas se necessário  
-5. 💾 Salvar → grava FeatureCollection + CEP/coords  
-
-### 11.3 Não em casa + checklist
-1. Em **Editar**: cadastrar quadra + rua + casas  
-2. No **Cartão**: clicar casas para marcar feito  
-3. 100% → tag Finalizado + visual desbotado  
-4. Dashboard **Não finalizados** atualiza  
-
-### 11.4 Território do dia
-1. Marcar na lista ou no cartão  
-2. Aparece compacto no dashboard  
-3. Desvincular via ícone + modal  
+```
+campo/
+├── src/                 # React SPA
+│   ├── pages/
+│   ├── components/      # layout, Map, ui, guards
+│   └── lib/             # api, auth, theme, permissions, types
+├── server/
+│   ├── routes/          # auth, territories, field-assignments, users
+│   ├── lib/             # db, rbac, load-user, finish-history, auth…
+│   └── middleware/      # requireAuth, requirePermission, rateLimit
+├── scripts/             # migrações auxiliares
+├── public/logo.webp
+├── migration.sql
+├── package.json         # version 0.0.4
+├── README.md
+└── SDD-Sistema-Territorios.md   # este documento
+```
 
 ---
 
-## 12. Segurança
+## 13. Fluxos principais
 
-- [x] bcrypt (salt ≥ 10)
-- [x] JWT assinado (`jose`)
-- [x] Cookie httpOnly, sameSite=lax, secure em produção
-- [x] Prepared statements
-- [x] Validação Zod
-- [x] `.env` no `.gitignore`
-- [x] Ownership: território/blocks só do `user_id` autenticado
+### 13.1 Login e tema
 
----
+```
+Usuário → POST /login → cookie + user.theme_preference
+       → front aplica dark/light
+       → se password_is_weak → /change-password
+       → senão → /dashboard
+```
 
-## 13. Critérios de Aceitação (estado atual)
+### 13.2 Território do dia → finalização
 
-- [x] Registrar e logar  
-- [x] Dashboard após login  
-- [x] Criar território com área no mapa  
-- [x] Múltiplas áreas com rótulo legível  
-- [x] Mapa travado por padrão; desenho só com lápis  
-- [x] Zoom estável ao desenhar  
-- [x] Não em casa com rua  
-- [x] Checklist de casas  
-- [x] Finalizado / desbotado  
-- [x] Não finalizados no dashboard  
-- [x] Território do dia compacto + desvincular  
-- [x] Busca em `/territories`  
-- [x] Modais de confirmação  
-- [x] Ícones nas ações principais  
-- [x] Dados no MySQL  
+```
+Admin/editor/field marca território do dia
+  → aparece no Início
+  → Finalizar + pessoas
+  → INSERT territory_finish_history (cumulativo)
+  → is_daily = 0
+  → visível em /territories/finalizados
+```
 
----
+### 13.3 Checklist NÃO EM CASA
 
-## 14. Histórico de decisões
-
-| Decisão | Motivo |
-|---------|--------|
-| Migrar Next → Vite + Express | Dev extremamente lento no Windows com Next |
-| JWT com `jose` | Compatibilidade e edge/crypto moderno |
-| CEP global no `.env` | Um território/região na fase atual |
-| FeatureCollection multi-área | Vários “quadros” no mesmo cartão |
-| Checklist em `completed_houses` | Progresso sem apagar a lista original |
-| Dashboard só diário + não finalizados | UI limpa; lista completa em `/territories` |
-| Modal custom | UX melhor que `window.confirm` |
+```
+Editar/cartão → blocks (quadra/rua/casas)
+  → PATCH completed_houses
+  → todas as casas feitas → visual “finalizado”
+  → desmarcar → ConfirmModal
+```
 
 ---
 
-## 15. Observações para o Agente / Desenvolvedor
+## 14. Changelog resumido (v0.0.4)
 
-1. Preferir ícones (`mapIcons.tsx`) a texto em ações secundárias.  
-2. Confirmações destrutivas: `useConfirm()` do `ConfirmModal`.  
-3. Mapa: não chamar `setView`/`fitBounds` durante o desenho.  
-4. Zod 4 usa `error.issues`, não `error.errors`.  
-5. Após mudar `.env`, reiniciar processos.  
-6. Manter este SDD alinhado ao código em mudanças de domínio.  
+Alinhado à aba **Sobre → Atualizações** no produto:
+
+1. **Sobre, login e preferências** — página Sobre, login do design system, tema por usuário, Congregação Alpinópolis  
+2. **UI** — logo, menu mobile, dark mode visual, tooltips Apple, ações por ícone  
+3. **Territórios / dia** — histórico de finalizados, finalizar com pessoas, busca de endereço no mapa  
+4. **Mapa / não em casa** — tela cheia, refazer, limpar destaque, destaque mapa↔card, bulk delete  
+5. **Dirigentes** — escala, horários, card hoje, fuso SP  
+6. **Segurança / RBAC** — papéis, rate limit, senha forte, sem cadastro público  
+7. **Infra** — Express 5 SPA fallback, limpeza de código morto  
 
 ---
 
-**Fim do SDD v3.0 — Campo**
+## 15. Critérios de aceite (regressão v0.0.4)
 
-Este documento reflete o sistema **como implementado**.  
-Qualquer divergência futura deve atualizar este arquivo junto com o código.
+- [ ] Login com usuário admin seed; senha fraca força troca se aplicável  
+- [ ] Menu: Início, Territórios (lista + Finalizados), Dirigentes, Usuários (admin), Sobre  
+- [ ] Criar território com ≥ 1 área no mapa e salvar  
+- [ ] NÃO EM CASA: marcar/desmarcar casa com confirmação  
+- [ ] Marcar território do dia; finalizar com pessoas; ver em Finalizados  
+- [ ] Escala de dirigentes e card “hoje” no fuso correto  
+- [ ] Toggle tema grava e reaparece após logout/login no mesmo usuário  
+- [ ] Outro usuário mantém preferência de tema independente  
+- [ ] Viewer não vê ações de edição/exclusão indevidas  
+- [ ] Sobre: abas “O sistema” e “Atualizações” com **v0.0.4**  
+
+---
+
+## 16. Histórico do documento
+
+| Versão doc | Data | Notas |
+|------------|------|--------|
+| 1.x–2.x | 2025–2026 | Versões iniciais (Next/legado) |
+| 3.0 | 02/08/2026 | SPA Vite; território do dia; não em casa |
+| **4.0** | **03/08/2026** | **Estado real v0.0.4:** RBAC, dirigentes, finalizados, tema por usuário, Sobre, design Apple, segurança atual |
+
+---
+
+*Fim do SDD — CAMPO v0.0.4*

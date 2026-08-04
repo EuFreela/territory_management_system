@@ -1,46 +1,49 @@
-# Campo
+# CAMPO
 
-**Sistema de gestão de territórios de campo**
+**Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** `v0.0.0`
+**Versão:** [`v0.0.4`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.4)
 
-Aplicação web para catalogar cartões de território: localidade, mapa, áreas desenhadas, registros de **não em casa** e checklist do que já foi feito.
+Aplicação web para planejar, acompanhar e registrar o trabalho de campo: cartões de território no mapa, checklist de casas (não em casa), escala de dirigentes, território do dia, histórico de finalizações e controle de acesso por papéis.
 
 ---
 
 ## Sobre
 
-> Release inicial do produto: **v0.0.0**.
+O **CAMPO** centraliza o que antes ficava em planilhas e papel:
 
-O **Campo** ajuda a organizar o trabalho de campo com:
+| Área | O que faz |
+|------|-----------|
+| **Territórios** | Localidade, Terr. N.º, áreas no mapa (GeoJSON), busca de endereço |
+| **Território do dia** | Destaque no Início; finalizar com contagem de pessoas e histórico |
+| **Não em casa** | Quadras, ruas, casas e checklist; status finalizado |
+| **Dirigentes** | Escala com dias, horários e card de “hoje” (fuso `America/Sao_Paulo`) |
+| **Finalizados** | Histórico de finalizações (busca; remoção só admin) |
+| **Usuários (RBAC)** | Papéis admin, editor, campo e visualizador com permissões |
+| **Sobre** | Descrição do sistema + changelog da versão |
+| **Tema** | Light/dark salvo **por usuário** no banco |
 
-- Cadastro de territórios (localidade + Terr. N.º)
-- Mapa interativo (Leaflet) com desenho de áreas/quadras
-- **Território do dia** no dashboard
-- **Não em casa** — quadra, rua e números das casas
-- Checklist por casa (marcar como feito) e status **finalizado**
-- Lista **Não finalizados** no dashboard
-- Busca na listagem de territórios
+Interface no estilo Apple (tokens, menu responsivo, tooltips, dark mode).
 
 ---
 
 ## Stack
 
-| Camada     | Tecnologia                          |
-|------------|-------------------------------------|
-| Frontend   | Vite 7, React 19, React Router, Tailwind |
-| API        | Express 5, TypeScript (`tsx`)       |
-| Banco      | MySQL (`mysql2`)                    |
-| Auth       | JWT (`jose`) + cookie httpOnly      |
-| Mapa       | Leaflet + react-leaflet             |
-| Validação  | Zod                                 |
+| Camada | Tecnologia |
+|--------|------------|
+| Frontend | Vite 7, React 19, React Router 7, Tailwind CSS 3 |
+| API | Express 5, TypeScript (`tsx`) |
+| Banco | MySQL (`mysql2`) |
+| Auth | JWT (`jose`) + cookie httpOnly |
+| Mapa | Leaflet + react-leaflet |
+| Validação | Zod |
 
 ---
 
 ## Pré-requisitos
 
-- Node.js 20+
-- MySQL 8+
+- Node.js **20+**
+- MySQL **8+**
 - npm
 
 ---
@@ -50,8 +53,8 @@ O **Campo** ajuda a organizar o trabalho de campo com:
 ### 1. Clone e instale
 
 ```bash
-git clone https://github.com/SEU_USUARIO/campo.git
-cd campo
+git clone https://github.com/EuFreela/territory_management_system.git
+cd territory_management_system
 npm install
 ```
 
@@ -61,7 +64,7 @@ npm install
 cp .env.example .env
 ```
 
-Edite o `.env`:
+Principais variáveis:
 
 ```env
 DB_HOST=localhost
@@ -69,9 +72,18 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=sua_senha
 DB_NAME=campo
-JWT_SECRET=uma-chave-super-secreta-longa-e-aleatoria
+
+# Obrigatório em produção: mín. 32 caracteres aleatórios
+JWT_SECRET=gere-uma-chave-longa-aleatoria-com-pelo-menos-32-chars
+JWT_EXPIRES=12h
+
 PORT=3001
 VITE_APP_URL=http://localhost:3000
+
+# true só com HTTPS; false em HTTP local/LAN
+# COOKIE_SECURE=false
+
+APP_TIMEZONE=America/Sao_Paulo
 
 # CEP base do mapa (região de trabalho)
 TERRITORY_CEP=37940-000
@@ -79,16 +91,18 @@ TERRITORY_CEP=37940-000
 
 ### 3. Banco de dados
 
-Crie o schema com a migração:
+Schema inicial:
 
 ```bash
 mysql -u root -p < migration.sql
 ```
 
-Se o banco já existir e faltar RBAC (papéis/permissões):
+Migrações auxiliares (se o banco já existia):
 
 ```bash
-npm run migrate:rbac
+npm run migrate:rbac              # papéis e permissões
+npm run migrate:finish-history    # histórico de finalizações
+npm run migrate:theme             # preferência light/dark por usuário
 ```
 
 Opcional — seed da escala de dirigentes:
@@ -97,35 +111,42 @@ Opcional — seed da escala de dirigentes:
 node scripts/setup-field-leaders.js
 ```
 
-### 4. Rodar em desenvolvimento
+### 4. Desenvolvimento
 
 ```bash
 npm run dev
 ```
 
-- **Web:** http://localhost:3000  
-- **API:** http://localhost:3001  
-- O Vite faz proxy de `/api` → API
+| Serviço | URL |
+|---------|-----|
+| Web | http://localhost:3000 |
+| API | http://localhost:3001 |
 
-### 5. Build / produção
+O Vite faz proxy de `/api` → API.
+
+### 5. Produção
 
 ```bash
 npm run build
 npm start
 ```
 
+A API serve o frontend buildado (`dist`) e o fallback SPA (Express 5).
+
 ---
 
 ## Scripts
 
-| Comando              | Descrição                          |
-|----------------------|------------------------------------|
-| `npm run dev`        | Frontend + API em paralelo         |
-| `npm run dev:web`    | Só Vite                            |
-| `npm run dev:server` | Só API                             |
-| `npm run build`      | Build frontend + compile server    |
-| `npm start`          | Sobe API servindo o `dist`         |
-| `npm run migrate:rbac` | Migração RBAC (roles/permissões) |
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Frontend + API em paralelo |
+| `npm run dev:web` | Só Vite |
+| `npm run dev:server` | Só API |
+| `npm run build` | Typecheck + build web + compile server |
+| `npm start` | API em produção (serve `dist`) |
+| `npm run migrate:rbac` | Migração RBAC |
+| `npm run migrate:finish-history` | Tabela de histórico de finalizações |
+| `npm run migrate:theme` | Coluna `theme_preference` em `users` |
 
 ---
 
@@ -133,50 +154,93 @@ npm start
 
 ```
 campo/
-├── src/                 # Frontend (React + Vite)
-│   ├── pages/
-│   ├── components/
-│   └── lib/
-├── server/              # API Express
-│   ├── routes/
-│   ├── lib/
-│   └── middleware/
-├── scripts/             # Migrações auxiliares / utilitários
-├── migration.sql        # Schema inicial MySQL
+├── src/                    # Frontend (React + Vite)
+│   ├── pages/              # Login, Início, Territórios, Dirigentes, Usuários, Sobre…
+│   ├── components/         # Shell, mapa, UI, guards de permissão
+│   └── lib/                # API client, auth, tema, tipos
+├── server/                 # API Express
+│   ├── routes/             # auth, territories, field-assignments, users
+│   ├── lib/                # DB, JWT, RBAC, finish-history…
+│   └── middleware/         # auth, permissões, rate limit
+├── scripts/                # Migrações auxiliares
+├── public/logo.webp        # Logo do sistema
+├── migration.sql           # Schema inicial MySQL
 └── package.json
 ```
 
 ---
 
-## Funcionalidades principais
+## Funcionalidades
 
-### Autenticação
-Registro, login e logout com JWT em cookie httpOnly.
+### Autenticação e segurança
 
-### Territórios
-Localidade, Terr. N.º, polígonos no mapa (GeoJSON), CEP global via `TERRITORY_CEP`.
+- Login com JWT em cookie httpOnly (cadastro **público desabilitado**)
+- Senha forte; troca obrigatória se a senha atual for fraca (`/change-password`)
+- Rate limit em login e troca de senha
+- Contas criadas apenas pelo administrador
 
-### Território do dia
-Um território em destaque no dashboard; pode ser marcado e desvinculado.
+### Territórios e mapa
+
+- Cartões com localidade e Terr. N.º
+- Desenho de áreas, tela cheia, reenquadrar, desfazer/refazer
+- Busca de endereço (Nominatim) com pin no mapa
+- CEP global via `TERRITORY_CEP`
+
+### Território do dia e finalizados
+
+- Marcar / desvincular território do dia
+- Finalizar com quantidade de pessoas → histórico cumulativo
+- Página **Finalizados** com busca e exclusão (admin)
 
 ### Não em casa
-- Número da quadra  
-- Nome da rua  
-- Números das casas  
-- Checklist: marcar casas já trabalhadas  
-- Tag **Finalizado** quando a quadra estiver completa  
 
-### Dashboard
-- Anúncio compacto do território do dia  
-- Lista **Não finalizados** (territórios com quadra incompleta)  
+- Quadra, rua e números das casas
+- Checklist por casa (confirmação ao desmarcar)
+- Destaque mapa ↔ cartão; status finalizado
+
+### Dirigentes
+
+- Escala por dia da semana e data específica
+- Horários (manhã/noite), card de “hoje” no topo
+
+### RBAC
+
+| Papel | Resumo |
+|-------|--------|
+| **admin** | Acesso total + usuários |
+| **editor** | Territórios e checklist (sem excluir nem gerir usuários) |
+| **field** | Leitura, território do dia e checklist |
+| **viewer** | Somente leitura de territórios |
+
+### Tema
+
+Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na tela de login (sem sessão) usa cache local do dispositivo.
 
 ---
 
-## Segurança
+## Segurança (checklist)
 
 - Não commite o arquivo `.env`
-- Use `JWT_SECRET` forte em produção
+- Use `JWT_SECRET` forte (≥ 32 caracteres) em produção
+- `COOKIE_SECURE=true` apenas com HTTPS
 - Senhas com bcrypt; SQL com prepared statements
+
+---
+
+## Changelog (v0.0.4)
+
+Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
+
+- Página Sobre com abas (sistema + atualizações) e versão **v0.0.4**
+- Login no estilo do sistema; Congregação Alpinópolis
+- Tema dark/light **por usuário**
+- Logo, menu mobile, tooltips Apple
+- Histórico de finalizados e fluxo do território do dia
+- Mapa: tela cheia, busca por endereço, refazer/limpar destaque
+- Escala de dirigentes e RBAC
+- Endurecimento de auth (rate limit, senha forte, sem cadastro público)
+
+Tag no repositório: [`v0.0.4`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.4)
 
 ---
 
@@ -188,4 +252,4 @@ Projeto privado / sob demanda. Ajuste conforme o acordo do freela.
 
 ## Autor
 
-Desenvolvido para gestão de territórios de campo das Testemunhas de Jeová
+Desenvolvido para gestão de territórios de campo das Testemunhas de Jeová · Congregação Alpinópolis.
