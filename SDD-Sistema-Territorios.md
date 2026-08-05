@@ -10,6 +10,7 @@
 | **Status** | Implementado e alinhado ao código atual |
 | **Repositório** | https://github.com/EuFreela/territory_management_system |
 | **Tag** | [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5) |
+| **Domínio de produção** | **https://analp.tec.br** |
 
 **Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
 
@@ -42,6 +43,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 | Frontend | Vite + React SPA |
 | Backend | Express + TypeScript (mesmo monorepo) |
 | Deploy | Build único; API serve o `dist` em produção |
+| Domínio | https://analp.tec.br (Cloudflare Tunnel → app na VM) |
 
 ---
 
@@ -415,8 +417,9 @@ Todas exigem `user:manage`:
 | `JWT_SECRET` | Assinatura JWT |
 | `JWT_EXPIRES` | Ex.: `12h`, `1d` |
 | `PORT` | Porta da API (padrão 3001) |
-| `VITE_APP_URL` | Origin do front (CORS) |
-| `COOKIE_SECURE` | `true` só com HTTPS |
+| `VITE_APP_URL` | Origin do front (CORS). Produção: `https://analp.tec.br` |
+| `COOKIE_SECURE` | `true` só com HTTPS (produção em analp.tec.br) |
+| Domínio público | **https://analp.tec.br** — Cloudflare Tunnel para o serviço Node |
 | `APP_TIMEZONE` | Ex.: `America/Sao_Paulo` |
 | `TERRITORY_CEP` | CEP base do mapa |
 
@@ -496,7 +499,7 @@ Editar/cartão → blocks (quadra/rua/casas)
 
 Alinhado à aba **Sobre → Atualizações** no produto:
 
-1. **Cartografia (v0.0.5)** — basemap Google Maps no Leaflet (GoogleMutant); `VITE_GOOGLE_MAPS_API_KEY`; fallback OSM  
+1. **Cartografia e domínio (v0.0.5)** — basemap Google Maps no Leaflet; `VITE_GOOGLE_MAPS_API_KEY`; produção em **https://analp.tec.br** (Cloudflare Tunnel)  
 2. **Sobre, login e preferências** — página Sobre, login do design system, tema por usuário, Congregação Alpinópolis  
 3. **UI** — logo, menu mobile, dark mode visual, tooltips Apple, ações por ícone  
 4. **Territórios / dia** — histórico de finalizados, finalizar com pessoas, busca de endereço no mapa  
@@ -530,7 +533,7 @@ Alinhado à aba **Sobre → Atualizações** no produto:
 | 1.x–2.x | 2025–2026 | Versões iniciais (Next/legado) |
 | 3.0 | 02/08/2026 | SPA Vite; território do dia; não em casa |
 | 4.0 | 03/08/2026 | Estado real v0.0.4: RBAC, dirigentes, finalizados, tema, Sobre |
-| **5.0** | **04/08/2026** | **v0.0.5:** basemap Google Maps no Leaflet; Sobre e docs |
+| **5.0** | **04/08/2026** | **v0.0.5:** basemap Google Maps no Leaflet; domínio **analp.tec.br**; Sobre e docs |
 
 ---
 
