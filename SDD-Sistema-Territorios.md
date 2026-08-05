@@ -4,12 +4,12 @@
 |-------|--------|
 | **Produto** | CAMPO |
 | **Cliente / contexto** | Congregação Alpinópolis — gestão de territórios de campo |
-| **Versão do software** | **v0.0.5** |
-| **Versão deste documento** | **5.0** |
-| **Data** | 04/08/2026 |
+| **Versão do software** | **v0.0.5.1** |
+| **Versão deste documento** | **5.1** |
+| **Data** | 05/08/2026 |
 | **Status** | Implementado e alinhado ao código atual |
 | **Repositório** | https://github.com/EuFreela/territory_management_system |
-| **Tag** | [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5) |
+| **Tag** | [`v0.0.5.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5.1) |
 | **Domínio de produção** | **https://analp.tec.br** |
 
 **Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
@@ -37,7 +37,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 
 | Item | Valor |
 |------|--------|
-| Versão | v0.0.5 |
+| Versão | v0.0.5.1 |
 | Banco | MySQL 8+ (local ou servidor) |
 | Nome do banco (padrão) | `campo` (`DB_NAME`) |
 | Frontend | Vite + React SPA |
@@ -155,7 +155,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 ### 3.9 Sobre (`/sobre`)
 
 - Aba **O sistema**: o que é o CAMPO, o que faz, para quem é
-- Aba **Atualizações**: versão **v0.0.5** + changelog agrupado (incl. cartografia Google Maps)
+- Aba **Atualizações**: versão **v0.0.5.1** + changelog (imagem do cartão, seleção por id, cartografia Google)
 
 ### 3.10 UI / UX global
 
@@ -455,7 +455,7 @@ campo/
 ├── scripts/             # migrações auxiliares
 ├── public/logo.webp
 ├── migration.sql
-├── package.json         # version 0.0.5
+├── package.json         # version 0.0.5.1
 ├── README.md
 └── SDD-Sistema-Territorios.md   # este documento
 ```
@@ -495,34 +495,34 @@ Editar/cartão → blocks (quadra/rua/casas)
 
 ---
 
-## 14. Changelog resumido (v0.0.5)
+## 14. Changelog resumido (v0.0.5.1)
 
 Alinhado à aba **Sobre → Atualizações** no produto:
 
-1. **Cartografia e domínio (v0.0.5)** — basemap Google Maps no Leaflet; `VITE_GOOGLE_MAPS_API_KEY`; produção em **https://analp.tec.br** (Cloudflare Tunnel)  
-2. **Sobre, login e preferências** — página Sobre, login do design system, tema por usuário, Congregação Alpinópolis  
-3. **UI** — logo, menu mobile, dark mode visual, tooltips Apple, ações por ícone  
-4. **Territórios / dia** — histórico de finalizados, finalizar com pessoas, busca de endereço no mapa  
-5. **Mapa / não em casa** — tela cheia, refazer, limpar destaque, destaque mapa↔card, multi-rua  
-6. **Dirigentes** — escala, horários, card hoje, fuso SP  
-7. **Segurança / RBAC** — papéis, rate limit, senha forte, sem cadastro público  
-8. **Infra** — Express 5 SPA fallback, limpeza de código morto  
+1. **Cartão v0.0.5.1** — abas Mapa/Imagem; imagem no Leaflet (zoom, tela cheia, centralizar); `public/territories/t{N}.*`; seleção por id; sair da edição  
+2. **Cartografia e domínio (v0.0.5)** — basemap Google Maps no Leaflet; `VITE_GOOGLE_MAPS_API_KEY`; **https://analp.tec.br**  
+3. **Sobre, login e preferências** — página Sobre, tema por usuário, Congregação Alpinópolis  
+4. **UI** — logo, menu mobile, dark mode, tooltips Apple  
+5. **Territórios / dia** — finalizados, finalizar com pessoas, busca de endereço  
+6. **Mapa / não em casa** — multi-rua, destaque mapa↔card  
+7. **Dirigentes / RBAC / Infra** — escala, papéis, Express 5 SPA  
 
 ---
 
-## 15. Critérios de aceite (regressão v0.0.5)
+## 15. Critérios de aceite (regressão v0.0.5.1)
 
 - [ ] Login com usuário admin seed; senha fraca força troca se aplicável  
 - [ ] Menu: Início, Territórios (lista + Finalizados), Dirigentes, Usuários (admin), Sobre  
 - [ ] Criar território com ≥ 1 área no mapa e salvar  
 - [ ] Basemap Google Maps visível com `VITE_GOOGLE_MAPS_API_KEY` após `npm run build`  
+- [ ] Cartão: abas Mapa e Imagem; imagem com zoom/tela cheia/centralizar (se `t{N}.*` existir)  
+- [ ] Selecionar duas áreas com o mesmo rótulo edita a correta (id)  
 - [ ] NÃO EM CASA: marcar/desmarcar casa com confirmação  
 - [ ] Marcar território do dia; finalizar com pessoas; ver em Finalizados  
 - [ ] Escala de dirigentes e card “hoje” no fuso correto  
 - [ ] Toggle tema grava e reaparece após logout/login no mesmo usuário  
-- [ ] Outro usuário mantém preferência de tema independente  
 - [ ] Viewer não vê ações de edição/exclusão indevidas  
-- [ ] Sobre: abas “O sistema” e “Atualizações” com **v0.0.5** e bloco de cartografia  
+- [ ] Sobre: abas com **v0.0.5.1** e bloco “Cartão: imagem, edição e seleção”  
 
 ---
 
@@ -533,8 +533,9 @@ Alinhado à aba **Sobre → Atualizações** no produto:
 | 1.x–2.x | 2025–2026 | Versões iniciais (Next/legado) |
 | 3.0 | 02/08/2026 | SPA Vite; território do dia; não em casa |
 | 4.0 | 03/08/2026 | Estado real v0.0.4: RBAC, dirigentes, finalizados, tema, Sobre |
-| **5.0** | **04/08/2026** | **v0.0.5:** basemap Google Maps no Leaflet; domínio **analp.tec.br**; Sobre e docs |
+| 5.0 | 04/08/2026 | v0.0.5: Google Maps no Leaflet; domínio analp.tec.br |
+| **5.1** | **05/08/2026** | **v0.0.5.1:** aba imagem do cartão; seleção por id; sair da edição |
 
 ---
 
-*Fim do SDD — CAMPO v0.0.5*
+*Fim do SDD — CAMPO v0.0.5.1*

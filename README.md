@@ -2,7 +2,7 @@
 
 **Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5)
+**Versão:** [`v0.0.5.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5.1)
 
 **Produção:** [https://analp.tec.br](https://analp.tec.br)
 
@@ -252,24 +252,21 @@ Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na 
 
 ---
 
-## Changelog (v0.0.5)
+## Changelog (v0.0.5.1)
 
 Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
 
-- **Cartografia atualizada** com a API do Google Maps no Leaflet (GoogleMutant)
-- Basemap com ruas e nomes alinhados ao Google; desenho de áreas permanece no Leaflet
-- Chave `VITE_GOOGLE_MAPS_API_KEY` (build de produção embute a chave no front)
-- Fallback para OpenStreetMap se a API não estiver disponível
-- **Domínio de produção** [https://analp.tec.br](https://analp.tec.br) (Cloudflare Tunnel, HTTPS)
-- Página Sobre e documentação alinhadas à **v0.0.5**
+- Abas **Mapa / Imagem** no cartão de território
+- Imagem do cartão no Leaflet (zoom, tela cheia, centralizar) — `public/territories/t{N}.*`
+- Seleção de áreas por **id** (sem conflito de nomes iguais) e rótulos únicos
+- Correção da nomeação após apagar/recriar áreas; botão **Sair da edição**
 
-### Histórico (v0.0.4)
+### Histórico (v0.0.5)
 
-- Página Sobre, login, tema por usuário, Congregação Alpinópolis
-- Mapa: tela cheia, busca de endereço, não em casa multi-rua
-- Dirigentes, finalizados, RBAC e endurecimento de auth
+- Cartografia Google Maps no Leaflet; domínio **https://analp.tec.br**
+- Fallback OSM; `VITE_GOOGLE_MAPS_API_KEY`
 
-Tag no repositório: [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5)
+Tag no repositório: [`v0.0.5.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5.1)
 
 ---
 
