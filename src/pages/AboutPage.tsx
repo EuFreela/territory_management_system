@@ -37,11 +37,20 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'GPS e rota no mapa (v0.0.6.1)',
+    items: [
+      'Rota de carro mais curta até a quadra mais próxima (distância e tempo de carro)',
+      'Com GPS ativo o mapa fica livre para pan/zoom (não “gruda” na posição)',
+      'Botão voltar ao início: com GPS on → volta ao ponto GPS; com GPS off → enquadra as quadras',
+      'Tempo de rota realista para carro (não usa duração pedestre do OSRM)',
+    ],
+  },
+  {
     title: 'GPS, rota e campo no mapa (v0.0.6)',
     items: [
       'Botão no mapa para ativar/desativar a minha localização (GPS)',
       'Pin com o nome do usuário logado na posição atual',
-      'Rota a pé mais curta até a quadra (área) mais próxima do GPS',
+      'Rota até a quadra (área) mais próxima do GPS',
       'Distância e tempo estimados na barra da rota',
       'Notas de atenção (ícone !) com lista abaixo do mapa e edição com salvar/remover',
       'Match exato de quadra e casa no não em casa (1 não finaliza 11, 12…)',

@@ -14,7 +14,7 @@ import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
-  fetchShortestWalkingRoute,
+  fetchShortestDrivingRoute,
   findNearestArea,
   formatRouteDistance,
   formatRouteDuration,
@@ -548,7 +548,10 @@ function FitToAreasOn({
   return null;
 }
 
-/** Voa até a posição GPS do usuário (quando localizar / atualizar) */
+/**
+ * Voa até o GPS só quando o token muda (ligar GPS ou “voltar ao início”).
+ * NÃO reage a cada tick do watchPosition — senão o mapa “gruda” e impede pan.
+ */
 function FlyToUserGps({
   position,
   token,
@@ -557,10 +560,15 @@ function FlyToUserGps({
   token: number;
 }) {
   const map = useMap();
+  const positionRef = useRef(position);
+  positionRef.current = position;
+
   useEffect(() => {
-    if (!position || token <= 0) return;
-    map.flyTo(position, Math.max(map.getZoom(), 16), { animate: true, duration: 0.8 });
-  }, [position, token, map]);
+    if (token <= 0) return;
+    const pos = positionRef.current;
+    if (!pos) return;
+    map.flyTo(pos, Math.max(map.getZoom(), 16), { animate: true, duration: 0.8 });
+  }, [token, map]);
   return null;
 }
 
@@ -989,7 +997,16 @@ export default function TerritoryMap({
     setSizeToken((t) => t + 1);
   }
 
-  function fitToAreas() {
+  /**
+   * Mesmo botão, comportamento depende do GPS:
+   * - GPS ativo → volta ao ponto da localização
+   * - GPS off → enquadra as quadras/áreas do território
+   */
+  function fitToStart() {
+    if (gpsEnabled && gpsPosition) {
+      setGpsFlyToken((t) => t + 1);
+      return;
+    }
     setFitAreasToken((t) => t + 1);
   }
 
@@ -1041,12 +1058,17 @@ export default function TerritoryMap({
     setGpsLoading(true);
     setGpsError('');
 
+    // Só voa na 1ª leitura ao ativar — depois o mapa fica livre para pan/zoom
+    let firstFix = true;
     const onOk = (pos: GeolocationPosition) => {
       const next: LatLng = [pos.coords.latitude, pos.coords.longitude];
       setGpsPosition(next);
       setGpsLoading(false);
       setGpsError('');
-      setGpsFlyToken((t) => t + 1);
+      if (firstFix) {
+        firstFix = false;
+        setGpsFlyToken((t) => t + 1);
+      }
     };
 
     const onErr = (err: GeolocationPositionError) => {
@@ -1104,7 +1126,7 @@ export default function TerritoryMap({
   }, []);
 
   /**
-   * Com GPS ativo: encontra a quadra (área) mais próxima e traça a rota a pé mais curta (OSRM).
+   * Com GPS ativo: encontra a quadra (área) mais próxima e traça a rota de carro mais curta (OSRM driving).
    * Só recalcula se o usuário se moveu ~40 m ou se as áreas mudaram.
    */
   useEffect(() => {
@@ -1141,7 +1163,7 @@ export default function TerritoryMap({
 
     void (async () => {
       try {
-        const route = await fetchShortestWalkingRoute(
+        const route = await fetchShortestDrivingRoute(
           gpsPosition as LatLngTuple,
           nearest.dest as LatLngTuple,
           ac.signal,
@@ -1919,11 +1941,24 @@ export default function TerritoryMap({
           </button>
           <button
             type="button"
-            data-tooltip="Voltar ao início — enquadrar as áreas do mapa"
+            data-tooltip={
+              gpsEnabled && gpsPosition
+                ? 'Voltar à minha localização (GPS)'
+                : 'Voltar ao início — enquadrar as áreas/quadras do mapa'
+            }
             data-tooltip-side="left"
-            aria-label="Voltar ao início e enquadrar as áreas"
-            onClick={fitToAreas}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
+            aria-label={
+              gpsEnabled && gpsPosition
+                ? 'Voltar à minha localização'
+                : 'Voltar ao início e enquadrar as áreas'
+            }
+            onClick={fitToStart}
+            className={[
+              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              gpsEnabled && gpsPosition
+                ? 'border-sky-500/40 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-200 dark:hover:bg-sky-500/25'
+                : 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill',
+            ].join(' ')}
           >
             <IconFocusAreas />
           </button>
@@ -1979,13 +2014,13 @@ export default function TerritoryMap({
         {gpsEnabled && !gpsError && (routeAreaLabel || routeLoading) ? (
           <div className="absolute bottom-3 left-3 right-14 z-[1000] rounded-lg border border-sky-500/30 bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white shadow-md">
             {routeLoading && !routePath ? (
-              <span>Calculando rota mais curta até a quadra mais próxima…</span>
+              <span>Calculando rota de carro até a quadra mais próxima…</span>
             ) : routeAreaLabel ? (
               <span>
-                Rota até a quadra <strong>{routeAreaLabel}</strong>
+                Rota de carro até a quadra <strong>{routeAreaLabel}</strong>
                 {routeDistanceM != null ? ` · ${formatRouteDistance(routeDistanceM)}` : ''}
                 {routeDurationS != null && routeDurationS > 0
-                  ? ` · ${formatRouteDuration(routeDurationS)} a pé`
+                  ? ` · ${formatRouteDuration(routeDurationS)} de carro`
                   : ''}
                 {!routeFromRouter && routePath ? ' · linha reta (sem rede de vias)' : ''}
                 {routeLoading ? ' · atualizando…' : ''}
