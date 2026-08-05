@@ -3,6 +3,7 @@
   Polygon,
   Marker,
   CircleMarker,
+  Popup,
   useMap,
   useMapEvents,
 } from 'react-leaflet';
@@ -17,6 +18,7 @@ import {
   IconExpand,
   IconFocusAreas,
   IconLock,
+  IconNote,
   IconPencil,
   IconRedo,
   IconSearch,
@@ -34,6 +36,13 @@ export type MapArea = {
   label: string;
 };
 
+/** Comentário / balão de atenção no mapa (Point no GeoJSON) */
+export type MapNote = {
+  id: string;
+  position: LatLng;
+  text: string;
+};
+
 const DEFAULT_CENTER: LatLng = [-15.793889, -47.882778];
 
 const AREA_COLORS = [
@@ -47,6 +56,10 @@ const AREA_COLORS = [
 
 function newId() {
   return `area-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function newNoteId() {
+  return `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function ringToPoints(coords: number[][]): LatLng[] {
@@ -160,7 +173,7 @@ export function uniqueAreaLabel(areas: MapArea[], areaId: string, desired: strin
   return `${base} (${n})`;
 }
 
-/** Converte GeoJSON (Feature, FeatureCollection ou Polygon) → áreas com rótulo */
+/** Converte GeoJSON (Feature, FeatureCollection ou Polygon) → áreas com rótulo (ignora notas Point) */
 export function parseGeoJsonToAreas(value?: string | null): MapArea[] {
   if (!value) return [];
   try {
@@ -170,11 +183,13 @@ export function parseGeoJsonToAreas(value?: string | null): MapArea[] {
       return parsed.features
         .map((feature: {
           id?: string;
-          properties?: { label?: string; name?: string };
+          properties?: { label?: string; name?: string; kind?: string };
           geometry?: { type?: string; coordinates?: number[][][] };
         }, index: number) => {
+          if (feature?.geometry?.type && feature.geometry.type !== 'Polygon') return null;
+          if (feature?.properties?.kind === 'note') return null;
           const ring = feature?.geometry?.coordinates?.[0];
-          if (!ring) return null;
+          if (!ring || !Array.isArray(ring) || !Array.isArray(ring[0])) return null;
           const points = ringToPoints(ring);
           if (points.length < 3) return null;
           return {
@@ -186,11 +201,13 @@ export function parseGeoJsonToAreas(value?: string | null): MapArea[] {
         .filter(Boolean) as MapArea[];
     }
 
+    if (parsed?.geometry?.type === 'Point' || parsed?.type === 'Point') return [];
+
     const ring =
       parsed?.geometry?.coordinates?.[0] ??
       (parsed?.type === 'Polygon' ? parsed.coordinates?.[0] : null);
 
-    if (!Array.isArray(ring)) return [];
+    if (!Array.isArray(ring) || !Array.isArray(ring[0])) return [];
     const points = ringToPoints(ring);
     if (points.length < 3) return [];
 
@@ -206,30 +223,92 @@ export function parseGeoJsonToAreas(value?: string | null): MapArea[] {
   }
 }
 
+/** Notas / balões de atenção (GeoJSON Point com properties.kind = "note") */
+export function parseGeoJsonToNotes(value?: string | null): MapNote[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed?.type !== 'FeatureCollection' || !Array.isArray(parsed.features)) return [];
+
+    return parsed.features
+      .map((feature: {
+        id?: string;
+        properties?: { kind?: string; text?: string; note?: string; label?: string };
+        geometry?: { type?: string; coordinates?: number[] };
+      }, index: number) => {
+        const isNote =
+          feature?.properties?.kind === 'note' || feature?.geometry?.type === 'Point';
+        if (!isNote || feature?.geometry?.type !== 'Point') return null;
+        const coords = feature.geometry.coordinates;
+        if (!Array.isArray(coords) || coords.length < 2) return null;
+        const lng = Number(coords[0]);
+        const lat = Number(coords[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        const text = String(
+          feature.properties?.text ?? feature.properties?.note ?? feature.properties?.label ?? '',
+        );
+        return {
+          id: String(feature.id ?? `note-${index}`),
+          position: [lat, lng] as LatLng,
+          text,
+        } satisfies MapNote;
+      })
+      .filter(Boolean) as MapNote[];
+  } catch {
+    return [];
+  }
+}
+
 /** Compat: primeiro polígono (páginas antigas) */
 export function parseGeoJsonToPoints(value?: string | null): LatLng[] {
   return parseGeoJsonToAreas(value)[0]?.points ?? [];
 }
 
-export function areasToGeoJson(areas: MapArea[]): string | null {
-  const valid = areas.filter((a) => a.points.length >= 3);
-  if (valid.length === 0) return null;
-
-  return JSON.stringify({
-    type: 'FeatureCollection',
-    features: valid.map((area) => ({
-      type: 'Feature',
+/** Serializa áreas (Polygon) + notas (Point) no mesmo FeatureCollection */
+export function mapDataToGeoJson(areas: MapArea[], notes: MapNote[] = []): string | null {
+  const areaFeatures = areas
+    .filter((a) => a.points.length >= 3)
+    .map((area) => ({
+      type: 'Feature' as const,
       id: area.id,
       properties: {
+        kind: 'area',
         label: area.label || 'Área',
         name: area.label || 'Área',
       },
       geometry: {
-        type: 'Polygon',
+        type: 'Polygon' as const,
         coordinates: [pointsToRing(area.points)],
       },
-    })),
+    }));
+
+  const noteFeatures = notes
+    .filter((n) => Number.isFinite(n.position[0]) && Number.isFinite(n.position[1]))
+    .map((note) => ({
+      type: 'Feature' as const,
+      id: note.id,
+      properties: {
+        kind: 'note',
+        text: note.text || '',
+        label: note.text || 'Nota',
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [note.position[1], note.position[0]],
+      },
+    }));
+
+  const features = [...areaFeatures, ...noteFeatures];
+  if (features.length === 0) return null;
+
+  return JSON.stringify({
+    type: 'FeatureCollection',
+    features,
   });
+}
+
+export function areasToGeoJson(areas: MapArea[]): string | null {
+  return mapDataToGeoJson(areas, []);
 }
 
 export function pointsToGeoJson(points: LatLng[], label = '1'): string | null {
@@ -255,6 +334,100 @@ function MapClickDraw({
     },
   });
   return null;
+}
+
+/**
+ * Ícone redondo de atenção no mapa.
+ * O texto só aparece no popup ao clicar (melhor UX — não polui o mapa).
+ */
+function NoteAttentionMarker({
+  note,
+  selected = false,
+  interactive = true,
+  showPopup = true,
+  onSelect,
+}: {
+  note: MapNote;
+  selected?: boolean;
+  interactive?: boolean;
+  /** Popup de leitura ao clicar (modo cartão / quando não está editando) */
+  showPopup?: boolean;
+  onSelect?: () => void;
+}) {
+  const text = (note.text || '').trim();
+
+  const icon = useMemo(() => {
+    const size = selected ? 40 : 34;
+    const bg = selected ? '#b45309' : '#ea580c';
+    const ring = selected ? '0 0 0 3px rgba(255,255,255,0.95), 0 0 0 6px rgba(234,88,12,0.45)' : '0 0 0 3px rgba(255,255,255,0.9)';
+    return L.divIcon({
+      className: 'territorio-map-note-pin',
+      html: `<div style="
+        width:${size}px;height:${size}px;border-radius:9999px;
+        background:${bg};color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:${selected ? 18 : 16}px;font-weight:800;line-height:1;
+        box-shadow:${ring}, 0 4px 14px rgba(180,83,9,0.45);
+        border:2px solid #fff;
+        font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+        cursor:pointer;
+      " title="Atenção">!</div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -(size / 2 + 4)],
+    });
+  }, [selected]);
+
+  return (
+    <Marker
+      position={note.position}
+      icon={icon}
+      interactive={interactive}
+      zIndexOffset={selected ? 1400 : 900}
+      eventHandlers={
+        onSelect
+          ? {
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                onSelect();
+              },
+            }
+          : undefined
+      }
+    >
+      {showPopup ? (
+        <Popup className="territorio-note-popup" maxWidth={280} minWidth={160} closeButton>
+          <div style={{ fontFamily: 'system-ui,-apple-system,Segoe UI,sans-serif' }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#b45309',
+              }}
+            >
+              Atenção
+            </p>
+            <p
+              style={{
+                margin: '6px 0 0',
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: 1.35,
+                color: '#1c1917',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {text || 'Sem comentário ainda.'}
+            </p>
+          </div>
+        </Popup>
+      ) : null}
+    </Marker>
+  );
 }
 
 /** Zoom com scroll só com o mouse em cima do mapa (evita “roubar” o scroll da página) */
@@ -309,21 +482,25 @@ function FocusOnSelected({
 function FitToAreasOn({
   token,
   areas,
+  notes = [],
   draftPoints,
   centerLat,
   centerLng,
 }: {
   token: number;
   areas: MapArea[];
+  notes?: MapNote[];
   draftPoints: LatLng[];
   centerLat?: number | null;
   centerLng?: number | null;
 }) {
   const map = useMap();
   const areasRef = useRef(areas);
+  const notesRef = useRef(notes);
   const draftRef = useRef(draftPoints);
   const centerRef = useRef({ centerLat, centerLng });
   areasRef.current = areas;
+  notesRef.current = notes;
   draftRef.current = draftPoints;
   centerRef.current = { centerLat, centerLng };
 
@@ -332,6 +509,7 @@ function FitToAreasOn({
 
     const allPoints: LatLng[] = [
       ...areasRef.current.flatMap((a) => a.points),
+      ...notesRef.current.map((n) => n.position),
       ...draftRef.current,
     ];
 
@@ -669,6 +847,7 @@ export default function TerritoryMap({
 }: TerritoryMapProps) {
   const confirm = useConfirm();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
+  const [notes, setNotes] = useState<MapNote[]>(() => parseGeoJsonToNotes(value));
   const [draftPoints, setDraftPoints] = useState<LatLng[]>([]);
   /** Pilha de refazer (ordem LIFO: ponto do rascunho ou área removida) */
   const [redoStack, setRedoStack] = useState<
@@ -676,7 +855,12 @@ export default function TerritoryMap({
   >([]);
   /** false = mapa travado (só navegar); true = desenhar */
   const [drawMode, setDrawMode] = useState(false);
+  /** true = próximo clique no mapa cria balão de atenção */
+  const [noteMode, setNoteMode] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  /** Rascunho do comentário enquanto edita (só grava no mapa ao “Salvar e fechar”) */
+  const [noteDraft, setNoteDraft] = useState('');
   const [seedGeoJson, setSeedGeoJson] = useState<string | null>(() => value ?? null);
   const [mapHovered, setMapHovered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -695,7 +879,11 @@ export default function TerritoryMap({
   const [searchFlyToken, setSearchFlyToken] = useState(0);
 
   const drawingLocally = useRef(false);
-  const seededFromServer = useRef(Boolean(value && parseGeoJsonToAreas(value).length > 0));
+  const seededFromServer = useRef(
+    Boolean(
+      value && (parseGeoJsonToAreas(value).length > 0 || parseGeoJsonToNotes(value).length > 0),
+    ),
+  );
   const addressBoxRef = useRef<HTMLDivElement>(null);
 
   function toggleFullscreen() {
@@ -709,6 +897,8 @@ export default function TerritoryMap({
 
   function clearSelection() {
     setSelectedId(null);
+    setSelectedNoteId(null);
+    setNoteDraft('');
     onClearSelection?.();
   }
 
@@ -796,8 +986,10 @@ export default function TerritoryMap({
   useEffect(() => {
     if (drawingLocally.current || seededFromServer.current) return;
     const parsed = parseGeoJsonToAreas(value);
-    if (parsed.length > 0) {
+    const parsedNotes = parseGeoJsonToNotes(value);
+    if (parsed.length > 0 || parsedNotes.length > 0) {
       setAreas(parsed);
+      setNotes(parsedNotes);
       setSeedGeoJson(value ?? null);
       seededFromServer.current = true;
       // Em edição: pré-seleciona a 1ª área. Em leitura: só destaca quando o usuário escolher.
@@ -851,6 +1043,7 @@ export default function TerritoryMap({
     selectedKey != null && selectedKey !== ''
       ? (selectedFromKey ?? selectedById)
       : selectedById;
+  const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
   const areaReady = areas.some((a) => a.points.length >= 3);
 
   function syncExternalSelection(area: MapArea | null) {
@@ -863,27 +1056,103 @@ export default function TerritoryMap({
 
   function selectArea(area: MapArea) {
     setSelectedId(area.id);
+    setSelectedNoteId(null);
+    setNoteDraft('');
+    setNoteMode(false);
     syncExternalSelection(area);
   }
 
-  function emit(nextAreas: MapArea[]) {
+  function selectNote(note: MapNote) {
+    setSelectedNoteId(note.id);
+    setNoteDraft(note.text ?? '');
+    setSelectedId(null);
+    setNoteMode(false);
+    setDrawMode(false);
+  }
+
+  function emit(nextAreas: MapArea[], nextNotes?: MapNote[]) {
     drawingLocally.current = true;
     setAreas(nextAreas);
-    onChange?.(areasToGeoJson(nextAreas));
+    const notesToSave = nextNotes ?? notes;
+    if (nextNotes) setNotes(nextNotes);
+    onChange?.(mapDataToGeoJson(nextAreas, notesToSave));
+  }
+
+  function emitNotes(nextNotes: MapNote[]) {
+    emit(areas, nextNotes);
   }
 
   function setDrawModeOn() {
     if (!editable) return;
     setDrawMode(true);
+    setNoteMode(false);
+    setSelectedNoteId(null);
   }
 
   function setDrawModeOff() {
     setDrawMode(false);
+    setNoteMode(false);
     // se estava no meio de um desenho incompleto, descarta rascunho
     if (draftPoints.length > 0 && draftPoints.length < 3) {
       setDraftPoints([]);
       setRedoStack([]);
     }
+  }
+
+  function setNoteModeOn() {
+    if (!editable) return;
+    setNoteMode(true);
+    setDrawMode(false);
+    setSelectedId(null);
+    if (draftPoints.length > 0 && draftPoints.length < 3) {
+      setDraftPoints([]);
+      setRedoStack([]);
+    }
+  }
+
+  function setNoteModeOff() {
+    setNoteMode(false);
+  }
+
+  function placeNote(point: LatLng) {
+    if (!editable || !noteMode) return;
+    const note: MapNote = {
+      id: newNoteId(),
+      position: point,
+      text: '',
+    };
+    const next = [...notes, note];
+    emitNotes(next);
+    setSelectedNoteId(note.id);
+    setNoteDraft('');
+    setNoteMode(false);
+  }
+
+  function saveAndCloseNote() {
+    if (!selectedNoteId) return;
+    const text = noteDraft;
+    emitNotes(notes.map((n) => (n.id === selectedNoteId ? { ...n, text } : n)));
+    setSelectedNoteId(null);
+    setNoteDraft('');
+  }
+
+  async function removeSelectedNote() {
+    if (!selectedNoteId || !editable) return;
+    const note = notes.find((n) => n.id === selectedNoteId);
+    const label = (noteDraft || note?.text || '').trim();
+    const ok = await confirm({
+      title: 'Remover atenção',
+      message: label
+        ? `Remover o aviso “${label.slice(0, 60)}${label.length > 60 ? '…' : ''}”?`
+        : 'Remover este ponto de atenção do mapa?',
+      confirmLabel: 'Remover',
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    emitNotes(notes.filter((n) => n.id !== selectedNoteId));
+    setSelectedNoteId(null);
+    setNoteDraft('');
   }
 
   function addPoint(point: LatLng) {
@@ -951,12 +1220,12 @@ export default function TerritoryMap({
 
   async function clearAll() {
     if (!editable) return;
-    if (areas.length === 0 && draftPoints.length === 0) return;
+    if (areas.length === 0 && draftPoints.length === 0 && notes.length === 0) return;
 
     const ok = await confirm({
-      title: 'Apagar todas as áreas',
+      title: 'Apagar todas as áreas e notas',
       message:
-        'Todas as áreas desenhadas no mapa serão removidas. Essa ação não pode ser desfeita (até você salvar de novo com novas áreas). Deseja continuar?',
+        'Todas as áreas e balões de atenção do mapa serão removidos. Essa ação não pode ser desfeita (até você salvar de novo). Deseja continuar?',
       confirmLabel: 'Apagar tudo',
       cancelLabel: 'Cancelar',
       tone: 'danger',
@@ -966,9 +1235,11 @@ export default function TerritoryMap({
     setDraftPoints([]);
     setRedoStack([]);
     setSelectedId(null);
-    emit([]);
+    setSelectedNoteId(null);
+    emit([], []);
     syncExternalSelection(null);
     setDrawMode(false);
+    setNoteMode(false);
   }
 
   function updateSelectedLabel(rawLabel: string) {
@@ -1030,7 +1301,7 @@ export default function TerritoryMap({
         >
           <ToolButton
             title="Mapa travado — só navegar / zoom (não desenha)"
-            active={!drawMode}
+            active={!drawMode && !noteMode}
             onClick={setDrawModeOff}
           >
             <IconLock />
@@ -1038,10 +1309,18 @@ export default function TerritoryMap({
 
           <ToolButton
             title="Desenhar área — clique no mapa para marcar vértices"
-            active={drawMode}
+            active={drawMode && !noteMode}
             onClick={setDrawModeOn}
           >
             <IconPencil />
+          </ToolButton>
+
+          <ToolButton
+            title="Atenção — clique no mapa para colocar um ícone de aviso (texto ao clicar)"
+            active={noteMode}
+            onClick={() => (noteMode ? setNoteModeOff() : setNoteModeOn())}
+          >
+            <IconNote />
           </ToolButton>
 
           <ToolButton
@@ -1070,9 +1349,9 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Apagar todas as áreas"
+            title="Apagar todas as áreas e notas"
             tone="danger"
-            disabled={areas.length === 0 && draftPoints.length === 0}
+            disabled={areas.length === 0 && draftPoints.length === 0 && notes.length === 0}
             onClick={() => void clearAll()}
           >
             <IconTrash />
@@ -1081,7 +1360,12 @@ export default function TerritoryMap({
           <div className="ml-1 hidden h-6 w-px bg-slate-300 sm:block" />
 
           <p className="text-xs text-slate-600 sm:text-sm">
-            {drawMode ? (
+            {noteMode ? (
+              <>
+                <span className="font-semibold text-amber-700">Atenção</span>
+                {' — clique no mapa para colocar o ícone de aviso.'}
+              </>
+            ) : drawMode ? (
               <>
                 <span className="font-semibold text-sky-700">Desenhando</span>
                 {draftPoints.length < 3
@@ -1091,10 +1375,56 @@ export default function TerritoryMap({
             ) : (
               <>
                 <span className="font-semibold text-slate-800">Mapa travado</span>
-                {' — zoom só com o mouse em cima do mapa. Clique no lápis para desenhar.'}
+                {' — lápis = área · ! = aviso (clique no ícone para ler).'}
               </>
             )}
           </p>
+        </div>
+      ) : null}
+
+      {/* Diálogo de edição da nota — só quando um ícone está selecionado */}
+      {editable && selectedNote ? (
+        <div
+          className={`rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-500/35 dark:bg-amber-500/10 ${
+            isFullscreen ? 'shrink-0' : ''
+          }`}
+          role="dialog"
+          aria-labelledby="note-edit-title"
+        >
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-950 dark:text-amber-50">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-600 text-sm font-extrabold text-white shadow">
+              !
+            </span>
+            <span id="note-edit-title">Comentário de atenção</span>
+          </div>
+          <textarea
+            key={selectedNote.id}
+            value={noteDraft}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            placeholder="Ex.: Cão no fundo, portão trancado, cuidado com a rampa…"
+            rows={3}
+            autoFocus
+            className="mb-3 w-full resize-y rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-amber-500/40 dark:bg-apple-surface dark:text-apple-ink"
+          />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => void removeSelectedNote()}
+              data-tooltip="Remover"
+              aria-label="Remover nota"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 transition hover:bg-red-50"
+            >
+              <IconTrash className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={saveAndCloseNote}
+              className="app-btn-primary gap-2 px-4"
+            >
+              <IconCheck className="h-4 w-4" />
+              Salvar e fechar
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -1257,7 +1587,15 @@ export default function TerritoryMap({
       <div
         className={`relative z-0 isolate w-full overflow-hidden rounded-xl border border-apple-line bg-apple-surface ${
           isFullscreen ? 'min-h-0 flex-1' : heightClass
-        } ${drawMode ? 'ring-2 ring-apple-blue/60' : selected ? 'ring-2 ring-apple-blue/40' : ''}`}
+        } ${
+          noteMode
+            ? 'ring-2 ring-amber-500/60'
+            : drawMode
+              ? 'ring-2 ring-apple-blue/60'
+              : selected || selectedNote
+                ? 'ring-2 ring-apple-blue/40'
+                : ''
+        }`}
         onMouseEnter={() => setMapHovered(true)}
         onMouseLeave={() => setMapHovered(false)}
       >
@@ -1346,6 +1684,7 @@ export default function TerritoryMap({
           <FitToAreasOn
             token={fitAreasToken}
             areas={areas}
+            notes={notes}
             draftPoints={draftPoints}
             centerLat={centerLat}
             centerLng={centerLng}
@@ -1476,7 +1815,26 @@ export default function TerritoryMap({
             />
           ))}
 
-          <MapClickDraw enabled={editable && drawMode} onAdd={addPoint} />
+          {notes.map((note) => (
+            <NoteAttentionMarker
+              key={note.id}
+              note={note}
+              selected={note.id === selectedNoteId}
+              interactive={!drawMode && !noteMode}
+              /* Em edição com painel aberto: sem popup; no cartão/leitura: popup ao clicar */
+              showPopup={!editable || note.id !== selectedNoteId}
+              onSelect={() => {
+                if (drawMode || noteMode) return;
+                if (editable) {
+                  selectNote(note);
+                }
+                /* leitura: o Popup do Leaflet abre sozinho no clique */
+              }}
+            />
+          ))}
+
+          <MapClickDraw enabled={editable && drawMode && !noteMode} onAdd={addPoint} />
+          <MapClickDraw enabled={editable && noteMode && !drawMode} onAdd={placeNote} />
         </MapContainer>
       </div>
 
@@ -1491,13 +1849,13 @@ export default function TerritoryMap({
               }`}
             >
               {areaReady
-                ? `✓ ${areas.length} área(s) pronta(s) para salvar`
+                ? `✓ ${areas.length} área(s)${notes.length ? ` · ${notes.length} nota(s)` : ''} pronta(s) para salvar`
                 : '⚠ Ative o lápis, desenhe um contorno (3+ pontos) e conclua com ✓'}
             </p>
           ) : (
             <p className="text-sm text-apple-secondary">
               {areaReady
-                ? `${areas.length} área(s) no território.`
+                ? `${areas.length} área(s) no território${notes.length ? ` · ${notes.length} nota(s) de atenção` : ''}.`
                 : 'Este território ainda não tem área definida.'}
             </p>
           )}

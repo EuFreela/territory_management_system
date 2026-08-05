@@ -201,6 +201,27 @@ export function IconInfo({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+/** Balão / comentário de atenção no mapa */
+export function IconNote({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M21 11.5a8.4 8.4 0 0 1-1.9 5.4 8.5 8.5 0 0 1-6.6 3.1 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 1 1 16.1-3.8Z" />
+      <path d="M8 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M16 12h.01" />
+    </svg>
+  );
+}
+
 export function IconSun({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg
@@ -253,6 +274,26 @@ export function IconMap({ className = 'h-5 w-5' }: IconProps) {
       <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
       <path d="M9 3v15" />
       <path d="M15 6v15" />
+    </svg>
+  );
+}
+
+/** Imagem / foto do cartão de mapa */
+export function IconImage({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2.5" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.5-3.5a2 2 0 0 0-2.8 0L6 20" />
     </svg>
   );
 }

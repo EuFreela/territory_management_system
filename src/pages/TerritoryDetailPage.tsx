@@ -339,7 +339,7 @@ export default function TerritoryDetailPage() {
           <div id="territorio-mapa" className="mb-2 scroll-mt-6">
             <h2 className="app-section-title mb-2">Área no mapa</h2>
 
-            {/* Abas: mapa interativo × imagem do cartão (public/territories/t{N}.*) */}
+            {/* Abas: mapa interativo × imagem do cartão */}
             <div
               className="mb-3 inline-flex w-full rounded-full border border-apple-line bg-apple-fill p-1 sm:w-auto"
               role="tablist"
