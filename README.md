@@ -4,6 +4,8 @@
 
 **Versão:** [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5)
 
+**Produção:** [https://analp.tec.br](https://analp.tec.br)
+
 Aplicação web para planejar, acompanhar e registrar o trabalho de campo: cartões de território no mapa, checklist de casas (não em casa), escala de dirigentes, território do dia, histórico de finalizações e controle de acesso por papéis.
 
 ---
@@ -136,6 +138,26 @@ npm start
 
 A API serve o frontend buildado (`dist`) e o fallback SPA (Express 5).
 
+#### Domínio de produção
+
+| Item | Valor |
+|------|--------|
+| URL pública | **https://analp.tec.br** |
+| App (origin) | `VITE_APP_URL=https://analp.tec.br` |
+| Cookie HTTPS | `COOKIE_SECURE=true` |
+| Google Maps (chave) | Restringir referrer a `https://analp.tec.br/*` |
+| Túnel / exposição | Cloudflare Tunnel → serviço local (ex.: porta da API / `npm start`) |
+
+Exemplo de trecho do `.env` na VM:
+
+```env
+VITE_APP_URL=https://analp.tec.br
+COOKIE_SECURE=true
+VITE_GOOGLE_MAPS_API_KEY=sua_chave
+```
+
+Após alterar `VITE_*`, rode **`npm run build`** e reinicie o processo Node.
+
 ---
 
 ## Scripts
@@ -238,6 +260,7 @@ Resumo das entregas desta versão (detalhes também em **Sobre → Atualizaçõe
 - Basemap com ruas e nomes alinhados ao Google; desenho de áreas permanece no Leaflet
 - Chave `VITE_GOOGLE_MAPS_API_KEY` (build de produção embute a chave no front)
 - Fallback para OpenStreetMap se a API não estiver disponível
+- **Domínio de produção** [https://analp.tec.br](https://analp.tec.br) (Cloudflare Tunnel, HTTPS)
 - Página Sobre e documentação alinhadas à **v0.0.5**
 
 ### Histórico (v0.0.4)

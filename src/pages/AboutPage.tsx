@@ -37,13 +37,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
-    title: 'Cartografia e mapa (v0.0.5)',
+    title: 'Cartografia, domínio e publicação (v0.0.5)',
     items: [
       'Basemap atualizado com a API do Google Maps (Maps JavaScript API)',
       'Leaflet mantido para áreas, marcadores e desenho de territórios',
       'Integração via GoogleMutant — ruas e nomes alinhados à cartografia do Google',
       'Configuração por VITE_GOOGLE_MAPS_API_KEY (rebuild necessário em produção)',
       'Fallback automático para OpenStreetMap se a chave ou o Google não estiver disponível',
+      'Publicação em produção no domínio https://analp.tec.br',
+      'Acesso externo via Cloudflare Tunnel apontando para o serviço da aplicação',
+      'CORS e cookies alinhados ao origin do domínio (VITE_APP_URL + COOKIE_SECURE em HTTPS)',
     ],
   },
   {
@@ -116,6 +119,7 @@ const updates: { title: string; items: string[] }[] = [
       'Fallback SPA compatível com Express 5',
       'Correções de build do server (dashboard blocks)',
       'Remoção de arquivos e scripts não utilizados',
+      'Domínio de produção: analp.tec.br (HTTPS)',
     ],
   },
 ];
