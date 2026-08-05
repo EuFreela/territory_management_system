@@ -35,7 +35,7 @@ Interface no estilo Apple (tokens, menu responsivo, tooltips, dark mode).
 | API | Express 5, TypeScript (`tsx`) |
 | Banco | MySQL (`mysql2`) |
 | Auth | JWT (`jose`) + cookie httpOnly |
-| Mapa | Leaflet + react-leaflet |
+| Mapa | Leaflet + react-leaflet + Google Maps (basemap) |
 | Validação | Zod |
 
 ---
@@ -79,6 +79,9 @@ JWT_EXPIRES=12h
 
 PORT=3001
 VITE_APP_URL=http://localhost:3000
+
+# Google Maps no Leaflet (Maps JavaScript API no Google Cloud)
+VITE_GOOGLE_MAPS_API_KEY=sua_chave_google_maps
 
 # true só com HTTPS; false em HTTP local/LAN
 # COOKIE_SECURE=false

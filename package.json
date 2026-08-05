@@ -16,6 +16,7 @@
     "migrate:block-description": "node scripts/migrate-block-description.js"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -23,6 +24,7 @@
     "express": "^5.1.0",
     "jose": "^6.2.7",
     "leaflet": "^1.9.4",
+    "leaflet.gridlayer.googlemutant": "^0.16.0",
     "mysql2": "^3.23.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -35,6 +37,7 @@
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/google.maps": "^3.65.4",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",

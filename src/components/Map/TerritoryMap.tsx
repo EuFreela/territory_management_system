@@ -1,6 +1,5 @@
 ﻿import {
   MapContainer,
-  TileLayer,
   Polygon,
   Marker,
   CircleMarker,
@@ -11,6 +10,7 @@ import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
+import { GoogleMapsTileLayer } from './GoogleMapsTileLayer';
 import {
   IconCheck,
   IconCompress,
@@ -1269,10 +1269,7 @@ export default function TerritoryMap({
           />
           <FlyToSearchResult result={searchPin} token={searchFlyToken} />
           <FocusOnSelected area={selected} focusToken={focusToken} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <GoogleMapsTileLayer type="roadmap" />
 
           <InitialMapView
             centerLat={centerLat}
