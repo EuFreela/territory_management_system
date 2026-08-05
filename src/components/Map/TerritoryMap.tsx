@@ -121,6 +121,18 @@ export function findBlockForArea<T extends { name: string }>(blocks: T[], areaLa
   return blocks.find((block) => areaMatchesBlock(areaLabel, block.name)) ?? null;
 }
 
+/** Próximo rótulo numérico livre (1, 2, 3…) — evita duplicar após apagar uma área no meio. */
+export function nextAreaLabel(areas: MapArea[]): string {
+  const used = new Set(
+    areas
+      .map((a) => normalizeAreaKey(a.label || ''))
+      .filter(Boolean),
+  );
+  let n = 1;
+  while (used.has(String(n))) n += 1;
+  return String(n);
+}
+
 /** Converte GeoJSON (Feature, FeatureCollection ou Polygon) → áreas com rótulo */
 export function parseGeoJsonToAreas(value?: string | null): MapArea[] {
   if (!value) return [];
@@ -775,7 +787,13 @@ export default function TerritoryMap({
     );
   }, [selectedKey, areas]);
 
-  // Mantém selectedId alinhado (edição de rótulo / toolbar)
+  const selectedById = useMemo(
+    () => (selectedId ? areas.find((a) => a.id === selectedId) ?? null : null),
+    [areas, selectedId],
+  );
+
+  // Mantém selectedId alinhado ao card externo quando a chave ainda existe no mapa.
+  // Se a área foi apagada (chave órfã), NÃO zera selectedId — senão some o campo de nome.
   useEffect(() => {
     if (selectedKey == null || selectedKey === '') {
       if (!editable) setSelectedId(null);
@@ -799,16 +817,27 @@ export default function TerritoryMap({
   const mapStartCenter = cepCenter ?? DEFAULT_CENTER;
   const mapStartZoom = cepCenter ? 15 : 5;
 
-  // Com chave externa (card NÃO EM CASA): prioriza o match do card no mesmo frame
+  /**
+   * Prioriza match do card (selectedKey). Se a chave ficou órfã (área apagada/renomeada),
+   * cai no selectedId local — senão o input “Nome da área” some e o chip parece “morto”.
+   */
   const selected =
     selectedKey != null && selectedKey !== ''
-      ? selectedFromKey
-      : (areas.find((a) => a.id === selectedId) ?? null);
+      ? (selectedFromKey ?? selectedById)
+      : selectedById;
   const areaReady = areas.some((a) => a.points.length >= 3);
+
+  function syncExternalSelection(area: MapArea | null) {
+    if (area) {
+      onAreaSelect?.({ id: area.id, label: area.label });
+    } else {
+      onClearSelection?.();
+    }
+  }
 
   function selectArea(area: MapArea) {
     setSelectedId(area.id);
-    onAreaSelect?.({ id: area.id, label: area.label });
+    syncExternalSelection(area);
   }
 
   function emit(nextAreas: MapArea[]) {
@@ -851,7 +880,9 @@ export default function TerritoryMap({
       const removed = areas[areas.length - 1];
       const next = areas.slice(0, -1);
       emit(next);
-      setSelectedId(next[next.length - 1]?.id ?? null);
+      const nextSel = next[next.length - 1] ?? null;
+      setSelectedId(nextSel?.id ?? null);
+      syncExternalSelection(nextSel);
       setRedoStack((prev) => [...prev, { type: 'area', area: removed }]);
     }
   }
@@ -870,11 +901,13 @@ export default function TerritoryMap({
     const next = [...areas, entry.area];
     emit(next);
     setSelectedId(entry.area.id);
+    syncExternalSelection(entry.area);
   }
 
   function finishArea() {
     if (!editable || draftPoints.length < 3) return;
-    const label = String(areas.length + 1);
+    // Número livre (não areas.length+1) — evita “2” e “3” duplicados após apagar no meio
+    const label = nextAreaLabel(areas);
     const area: MapArea = {
       id: newId(),
       points: draftPoints,
@@ -885,6 +918,7 @@ export default function TerritoryMap({
     setDraftPoints([]);
     setRedoStack([]);
     setSelectedId(area.id);
+    syncExternalSelection(area);
     setDrawMode(false);
   }
 
@@ -906,6 +940,7 @@ export default function TerritoryMap({
     setRedoStack([]);
     setSelectedId(null);
     emit([]);
+    syncExternalSelection(null);
     setDrawMode(false);
   }
 
@@ -913,6 +948,8 @@ export default function TerritoryMap({
     if (!selectedId) return;
     const next = areas.map((a) => (a.id === selectedId ? { ...a, label } : a));
     emit(next);
+    // Atualiza selectedKey no pai — senão, após renomear, a chave antiga some e o input some
+    onAreaSelect?.({ id: selectedId, label });
   }
 
   async function removeSelected() {
@@ -931,7 +968,9 @@ export default function TerritoryMap({
 
     const next = areas.filter((a) => a.id !== selectedId);
     emit(next);
-    setSelectedId(next[0]?.id ?? null);
+    const nextSel = next[0] ?? null;
+    setSelectedId(nextSel?.id ?? null);
+    syncExternalSelection(nextSel);
     setRedoStack([]);
   }
 
@@ -1035,13 +1074,14 @@ export default function TerritoryMap({
           <div className="mb-3 flex flex-wrap gap-2">
             {areas.map((area, index) => {
               const palette = AREA_COLORS[index % AREA_COLORS.length];
+              const isChipSelected = selected != null && area.id === selected.id;
               return (
                 <button
                   key={area.id}
                   type="button"
                   onClick={() => selectArea(area)}
                   className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                    area.id === selectedId
+                    isChipSelected
                       ? 'ring-2 ring-sky-500 ring-offset-1'
                       : 'opacity-80 hover:opacity-100'
                   }`}
@@ -1056,10 +1096,12 @@ export default function TerritoryMap({
           {selected ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <input
+                key={selected.id}
                 value={selected.label}
                 onChange={(e) => updateSelectedLabel(e.target.value)}
                 placeholder="Ex: 1, Quadra A, Norte…"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                autoComplete="off"
               />
               <button
                 type="button"
