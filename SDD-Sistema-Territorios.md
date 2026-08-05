@@ -4,12 +4,12 @@
 |-------|--------|
 | **Produto** | CAMPO |
 | **Cliente / contexto** | Congregação Alpinópolis — gestão de territórios de campo |
-| **Versão do software** | **v0.0.6** |
-| **Versão deste documento** | **6.0** |
+| **Versão do software** | **v0.0.6.1** |
+| **Versão deste documento** | **6.1** |
 | **Data** | 05/08/2026 |
 | **Status** | Implementado e alinhado ao código atual |
 | **Repositório** | https://github.com/EuFreela/territory_management_system |
-| **Tag** | [`v0.0.6`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6) |
+| **Tag** | [`v0.0.6.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6.1) |
 | **Domínio de produção** | **https://analp.tec.br** |
 
 **Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
@@ -37,7 +37,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 
 | Item | Valor |
 |------|--------|
-| Versão | v0.0.6 |
+| Versão | v0.0.6.1 |
 | Banco | MySQL 8+ (local ou servidor) |
 | Nome do banco (padrão) | `campo` (`DB_NAME`) |
 | Frontend | Vite + React SPA |
@@ -155,7 +155,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 ### 3.9 Sobre (`/sobre`)
 
 - Aba **O sistema**: o que é o CAMPO, o que faz, para quem é
-- Aba **Atualizações**: versão **v0.0.6** + changelog (GPS, rota, notas, cartografia Google)
+- Aba **Atualizações**: versão **v0.0.6.1** + changelog (GPS carro, pan livre, cartografia Google)
 
 ### 3.10 UI / UX global
 
@@ -455,7 +455,7 @@ campo/
 ├── scripts/             # migrações auxiliares
 ├── public/logo.webp
 ├── migration.sql
-├── package.json         # version 0.0.6
+├── package.json         # version 0.0.6.1
 ├── README.md
 └── SDD-Sistema-Territorios.md   # este documento
 ```
@@ -495,28 +495,23 @@ Editar/cartão → blocks (quadra/rua/casas)
 
 ---
 
-## 14. Changelog resumido (v0.0.6)
+## 14. Changelog resumido (v0.0.6.1)
 
 Alinhado à aba **Sobre → Atualizações** no produto:
 
-1. **GPS e rota (v0.0.6)** — toggle localização; pin com nome; rota a pé mais curta até a quadra mais próxima  
-2. **Notas / checklist** — avisos no mapa; match exato de quadra/casa; mapa montado entre abas  
-3. **Cartão v0.0.5.1** — abas Mapa/Imagem; seleção por id; sair da edição  
-4. **Cartografia e domínio (v0.0.5)** — Google Maps no Leaflet; **https://analp.tec.br**  
-5. **UI / RBAC / territórios** — design Apple, papéis, finalizados, dirigentes  
+1. **v0.0.6.1** — rota de carro; pan livre com GPS; voltar ao início → GPS ou quadras  
+2. **v0.0.6** — toggle GPS; pin com nome; rota; notas; match exato  
+3. **v0.0.5.x** — abas Mapa/Imagem; Google Maps; domínio analp.tec.br  
 
 ---
 
-## 15. Critérios de aceite (regressão v0.0.6)
+## 15. Critérios de aceite (regressão v0.0.6.1)
 
-- [ ] Login com usuário admin seed; senha fraca força troca se aplicável  
-- [ ] Basemap Google Maps com chave após build  
-- [ ] Toggle GPS: pin com nome; desligar remove pin e rota  
-- [ ] Com áreas no mapa, rota até a quadra mais próxima (distância/tempo)  
-- [ ] Nota de atenção: criar, listar, editar, remover  
-- [ ] Finalizar quadra 1 não marca 11/12/13 como finalizadas  
-- [ ] Abas Mapa/Imagem sem recarregar tiles a cada troca  
-- [ ] Sobre com **v0.0.6** e bloco GPS/rota  
+- [ ] Toggle GPS: pin com nome; mapa livre para pan após ativar  
+- [ ] Voltar ao início com GPS on → posição GPS; com GPS off → enquadra áreas  
+- [ ] Rota de carro (distância/tempo) até quadra mais próxima  
+- [ ] Desligar GPS remove pin e rota  
+- [ ] Sobre com **v0.0.6.1**  
 
 ---
 
@@ -529,8 +524,9 @@ Alinhado à aba **Sobre → Atualizações** no produto:
 | 4.0 | 03/08/2026 | Estado real v0.0.4 |
 | 5.0 | 04/08/2026 | v0.0.5: Google Maps; analp.tec.br |
 | 5.1 | 05/08/2026 | v0.0.5.1: imagem do cartão; seleção por id |
-| **6.0** | **05/08/2026** | **v0.0.6:** GPS, rota, notas, match exato |
+| 6.0 | 05/08/2026 | v0.0.6: GPS, rota, notas, match exato |
+| **6.1** | **05/08/2026** | **v0.0.6.1:** carro, pan livre, voltar ao GPS |
 
 ---
 
-*Fim do SDD — CAMPO v0.0.6*
+*Fim do SDD — CAMPO v0.0.6.1*

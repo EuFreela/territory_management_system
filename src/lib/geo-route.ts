@@ -72,17 +72,31 @@ export type RouteResult = {
 };
 
 /**
- * Rota a pé mais curta (OSRM público).
- * Em falha de rede/CORS, devolve linha reta GPS → destino.
+ * Velocidade média em área urbana para estimar tempo quando só há linha reta.
+ * Com OSRM driving usamos o duration do motor (mais realista com semáforos/vias).
  */
-export async function fetchShortestWalkingRoute(
+export const DRIVING_SPEED_KM_H = 40;
+const DRIVING_SPEED_M_PER_S = (DRIVING_SPEED_KM_H * 1000) / 3600;
+
+/** Tempo de carro estimado só pela distância (fallback sem router). */
+export function estimateDrivingDurationSeconds(distanceM: number): number {
+  if (!distanceM || distanceM <= 0) return 0;
+  return distanceM / DRIVING_SPEED_M_PER_S;
+}
+
+/**
+ * Rota de **carro** mais curta (OSRM público — vias do OpenStreetMap, perfil driving).
+ * Distância = comprimento no asfalto; duração = tempo do OSRM (carro).
+ * Em falha, linha reta + tempo estimado a ~40 km/h.
+ */
+export async function fetchShortestDrivingRoute(
   from: LatLngTuple,
   to: LatLngTuple,
   signal?: AbortSignal,
 ): Promise<RouteResult> {
   const coords = `${from[1]},${from[0]};${to[1]},${to[0]}`;
   const url =
-    `https://router.project-osrm.org/route/v1/walking/${coords}` +
+    `https://router.project-osrm.org/route/v1/driving/${coords}` +
     `?overview=full&geometries=geojson&alternatives=true`;
 
   try {
@@ -98,7 +112,7 @@ export async function fetchShortestWalkingRoute(
     };
     if (data.code !== 'Ok' || !data.routes?.length) throw new Error('OSRM sem rota');
 
-    // Entre alternativas, escolhe a de menor distância (rota mais curta)
+    // Entre alternativas, escolhe a de menor distância (rota mais curta de carro)
     const best = data.routes.reduce((a, b) => (b.distance < a.distance ? b : a));
     const line = best.geometry?.coordinates ?? [];
     if (line.length < 2) throw new Error('Geometria vazia');
@@ -107,18 +121,27 @@ export async function fetchShortestWalkingRoute(
     return {
       path,
       distanceM: best.distance,
-      durationS: best.duration,
+      durationS: best.duration > 0 ? best.duration : estimateDrivingDurationSeconds(best.distance),
       fromRouter: true,
     };
   } catch {
-    // Fallback: reta (sem depender de API)
+    const distanceM = haversineMeters(from, to);
     return {
       path: [from, to],
-      distanceM: haversineMeters(from, to),
-      durationS: 0,
+      distanceM,
+      durationS: estimateDrivingDurationSeconds(distanceM),
       fromRouter: false,
     };
   }
+}
+
+/** @deprecated use fetchShortestDrivingRoute — mantido por compatibilidade de imports */
+export async function fetchShortestWalkingRoute(
+  from: LatLngTuple,
+  to: LatLngTuple,
+  signal?: AbortSignal,
+): Promise<RouteResult> {
+  return fetchShortestDrivingRoute(from, to, signal);
 }
 
 export function formatRouteDistance(meters: number): string {
