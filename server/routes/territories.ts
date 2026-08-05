@@ -686,22 +686,28 @@ router.patch(
       return;
     }
 
-    const houses = parseHouseNumbers(block.house_numbers);
-    if (!houses.includes(house_number)) {
+    const houseKey = String(house_number).trim();
+    const houses = parseHouseNumbers(block.house_numbers).map((h) => String(h).trim());
+    // Match estrito: "1" não é "11" / "12" / "15"
+    if (!houses.includes(houseKey)) {
       res.status(400).json({ error: 'Este número não pertence a esta quadra.' });
       return;
     }
 
-    let completed = parseHouseNumbers(block.completed_houses);
+    let completed = parseHouseNumbers(block.completed_houses)
+      .map((h) => String(h).trim())
+      .filter((h) => houses.includes(h));
     if (done) {
-      if (!completed.includes(house_number)) completed = [...completed, house_number];
+      if (!completed.includes(houseKey)) completed = [...completed, houseKey];
     } else {
-      completed = completed.filter((n) => n !== house_number);
+      completed = completed.filter((n) => n !== houseKey);
     }
 
-    await pool.execute('UPDATE blocks SET completed_houses = ? WHERE id = ?', [
+    // Atualiza só este block.id — cada rua/quadra tem id único no banco
+    await pool.execute('UPDATE blocks SET completed_houses = ? WHERE id = ? AND territory_id = ?', [
       JSON.stringify(completed),
       blockId,
+      id,
     ]);
 
     // Se o território ficou 100% feito, registra no histórico (1x por dia)

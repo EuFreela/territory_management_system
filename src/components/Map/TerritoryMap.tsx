@@ -110,23 +110,20 @@ export function normalizeAreaKey(text: string) {
     .trim();
 }
 
+/**
+ * Compara rótulo da área com nome da quadra.
+ * Só match **exato** após normalizar (Quadra 1 / Q1 / "1" → "1").
+ * NÃO usa includes: "1" batia em "11", "12", "15"… e finalizava quadras erradas.
+ */
 export function areaMatchesBlock(areaLabel: string, blockName: string) {
   const a = normalizeAreaKey(areaLabel || '');
   const b = normalizeAreaKey(blockName || '');
   if (!a || !b) return false;
-  return a === b || a.includes(b) || b.includes(a);
+  return a === b;
 }
 
 export function findAreaForBlock(areas: MapArea[], blockName: string) {
   if (!blockName?.trim() || areas.length === 0) return null;
-  // 1) match exato normalizado
-  const exact = areas.find((area) => {
-    const a = normalizeAreaKey(area.label);
-    const b = normalizeAreaKey(blockName);
-    return a && b && a === b;
-  });
-  if (exact) return exact;
-  // 2) match parcial (Quadra 1 ↔ 1, etc.)
   return areas.find((area) => areaMatchesBlock(area.label, blockName)) ?? null;
 }
 
@@ -828,7 +825,8 @@ type TerritoryMapProps = {
 
 function areaIsFinished(areaLabel: string, finishedKeys: string[]) {
   if (!finishedKeys.length) return false;
-  return finishedKeys.some((key) => areaMatchesBlock(areaLabel, key) || areaLabel === key);
+  // Apenas igualdade normalizada (nunca substring — evita 1 ≈ 11)
+  return finishedKeys.some((key) => areaMatchesBlock(areaLabel, key));
 }
 
 export default function TerritoryMap({
