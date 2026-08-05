@@ -5,9 +5,9 @@ import {
   IconMap,
   IconUsers,
 } from '@/components/Map/mapIcons';
+import { APP_VERSION } from '@/lib/version';
 
-/** Versão atual do CAMPO (exibida em Sobre → Atualizações) */
-export const APP_VERSION = 'v0.0.5.1';
+export { APP_VERSION };
 
 const features = [
   {
