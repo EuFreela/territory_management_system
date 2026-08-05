@@ -5,6 +5,7 @@ import {
   IconCheck,
   IconCheckCircle,
   IconHome,
+  IconImage,
   IconMap,
   IconPencil,
   IconStar,
@@ -374,6 +375,7 @@ export default function TerritoryDetailPage() {
                     : 'text-apple-secondary hover:text-apple-ink',
                 ].join(' ')}
               >
+                <IconImage className="h-3.5 w-3.5 shrink-0" />
                 Imagem
               </button>
             </div>
