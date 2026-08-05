@@ -90,13 +90,20 @@ export default function TerritoryDetailPage() {
     setTerritory(refreshed);
   }
 
+  /** Igualdade estrita de número de casa (nunca substring: "1" ≠ "11") */
+  function houseEquals(a: string, b: string) {
+    return String(a).trim() === String(b).trim();
+  }
+
   function isHouseDone(block: Block, house: string) {
-    return (block.completed_houses ?? []).includes(house);
+    return (block.completed_houses ?? []).some((h) => houseEquals(h, house));
   }
 
   function blockProgress(block: Block) {
     const total = block.house_numbers.length;
-    const done = (block.completed_houses ?? []).filter((h) => block.house_numbers.includes(h)).length;
+    const done = (block.completed_houses ?? []).filter((h) =>
+      block.house_numbers.some((n) => houseEquals(h, n)),
+    ).length;
     const finished = total > 0 && done >= total;
     return { total, done, finished };
   }
@@ -188,14 +195,17 @@ export default function TerritoryDetailPage() {
       return {
         ...prev,
         blocks: prev.blocks.map((b) => {
+          // Sempre por id da rua/quadra no banco — nunca por nome parcial
           if (b.id !== block.id) return b;
           const current = b.completed_houses ?? [];
           const nextCompleted = done
-            ? current.includes(house)
+            ? current.some((h) => houseEquals(h, house))
               ? current
               : [...current, house]
-            : current.filter((h) => h !== house);
-          const doneCount = nextCompleted.filter((h) => b.house_numbers.includes(h)).length;
+            : current.filter((h) => !houseEquals(h, house));
+          const doneCount = nextCompleted.filter((h) =>
+            b.house_numbers.some((n) => houseEquals(h, n)),
+          ).length;
           return {
             ...b,
             completed_houses: nextCompleted,
@@ -577,7 +587,7 @@ export default function TerritoryDetailPage() {
                                 const busy = togglingKey === `${block.id}:${house}`;
                                 return (
                                   <button
-                                    key={house}
+                                    key={`${block.id}:${house}`}
                                     type="button"
                                     disabled={busy || !can('block:manage')}
                                     onClick={(e) => {
