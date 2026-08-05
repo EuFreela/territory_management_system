@@ -69,7 +69,9 @@ export function SaveActionBar({
           <p className="text-sm font-semibold text-slate-900">Salvar alterações</p>
           <p className="mt-0.5 text-xs text-slate-500 sm:max-w-md">{hint}</p>
         </div>
-        <div className="flex shrink-0 justify-end">{children}</div>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+          {children}
+        </div>
       </div>
     </div>
   );

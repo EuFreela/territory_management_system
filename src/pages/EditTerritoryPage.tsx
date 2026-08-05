@@ -833,6 +833,14 @@ export default function EditTerritoryPage() {
 
         {/* 3. Salvar por último (localidade + áreas do mapa) */}
         <SaveActionBar hint="Grava localidade, Terr. N.º e áreas do mapa. Os registros de não em casa já são salvos ao adicionar/editar cada quadra.">
+          <Link
+            to={`/territories/${id}`}
+            className="app-btn-secondary gap-2 px-5 py-3"
+            data-tooltip="Voltar ao cartão sem salvar localidade/mapa"
+          >
+            <IconArrowLeft className="h-4 w-4 shrink-0" />
+            Sair da edição
+          </Link>
           <SaveButton
             form="territory-form"
             loading={saving}
