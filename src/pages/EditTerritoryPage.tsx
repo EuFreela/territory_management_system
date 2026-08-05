@@ -5,6 +5,7 @@ import TerritoryMap, {
   areaMatchesBlock,
   hasValidMapArea,
   parseGeoJsonToAreas,
+  resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
@@ -170,15 +171,28 @@ export default function EditTerritoryPage() {
     setMapFocusToken((n) => n + 1);
   }
 
-  /** Clique na área do mapa → destaca / prepara formulário (sem rolar para não em casa) */
+  /** Clique na área do mapa → destaca por **id** (único; nomes iguais não colidem) */
   function onMapAreaSelect(area: { id: string; label: string }) {
-    setMapSelectedKey(area.label);
+    setMapSelectedKey(area.id);
     setMapFocusToken((n) => n + 1);
     // pré-preenche a quadra para nova rua (pode já existir outra rua nessa quadra)
     setEditingBlockId(null);
     setBlockName(area.label);
     setStreetRows([newStreetRow()]);
     setBlockError('');
+  }
+
+  /** Card de quadra destacado? Aceita selectedKey = id da área ou rótulo da quadra. */
+  function isQuadraSelectedOnMap(quadraName: string) {
+    if (mapSelectedKey == null || mapSelectedKey === '') return false;
+    if (
+      mapSelectedKey.trim().toLowerCase() === quadraName.trim().toLowerCase() ||
+      areaMatchesBlock(mapSelectedKey, quadraName)
+    ) {
+      return true;
+    }
+    const area = resolveAreaByKey(parseGeoJsonToAreas(geojson), mapSelectedKey);
+    return area ? areaMatchesBlock(area.label, quadraName) || area.label === quadraName : false;
   }
 
   function parseHouseList(raw: string) {
@@ -684,10 +698,7 @@ export default function EditTerritoryPage() {
                 );
               }, 0);
               const totalSum = streetBlocks.reduce((s, b) => s + b.house_numbers.length, 0);
-              const onMap =
-                mapSelectedKey != null &&
-                (mapSelectedKey.trim().toLowerCase() === quadraName.trim().toLowerCase() ||
-                  areaMatchesBlock(mapSelectedKey, quadraName));
+              const onMap = isQuadraSelectedOnMap(quadraName);
 
               return (
                 <div

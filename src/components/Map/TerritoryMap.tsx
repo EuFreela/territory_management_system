@@ -117,6 +117,17 @@ export function findAreaForBlock(areas: MapArea[], blockName: string) {
   return areas.find((area) => areaMatchesBlock(area.label, blockName)) ?? null;
 }
 
+/**
+ * Resolve seleção externa: **id da área primeiro** (único), depois rótulo (cards de não em casa).
+ * Evita pegar sempre a primeira área quando duas têm o mesmo nome (ex.: “4” e “4”).
+ */
+export function resolveAreaByKey(areas: MapArea[], key?: string | null): MapArea | null {
+  if (key == null || key === '' || areas.length === 0) return null;
+  const byId = areas.find((a) => a.id === key);
+  if (byId) return byId;
+  return findAreaForBlock(areas, key);
+}
+
 export function findBlockForArea<T extends { name: string }>(blocks: T[], areaLabel: string) {
   return blocks.find((block) => areaMatchesBlock(areaLabel, block.name)) ?? null;
 }
@@ -131,6 +142,22 @@ export function nextAreaLabel(areas: MapArea[]): string {
   let n = 1;
   while (used.has(String(n))) n += 1;
   return String(n);
+}
+
+/**
+ * Garante rótulo único entre áreas (exceto a própria).
+ * Se “4” já existir, vira “4 (2)”, “4 (3)”, …
+ */
+export function uniqueAreaLabel(areas: MapArea[], areaId: string, desired: string): string {
+  const base = (desired || '').trim() || nextAreaLabel(areas.filter((a) => a.id !== areaId));
+  const others = areas.filter((a) => a.id !== areaId);
+  const taken = (candidate: string) =>
+    others.some((a) => normalizeAreaKey(a.label) === normalizeAreaKey(candidate));
+
+  if (!taken(base)) return base;
+  let n = 2;
+  while (taken(`${base} (${n})`)) n += 1;
+  return `${base} (${n})`;
 }
 
 /** Converte GeoJSON (Feature, FeatureCollection ou Polygon) → áreas com rótulo */
@@ -606,7 +633,10 @@ type TerritoryMapProps = {
   cepLabel?: string | null;
   editable?: boolean;
   heightClass?: string;
-  /** Seleção externa (ex.: nome da quadra / rótulo da área) */
+  /**
+   * Seleção externa: preferir **id** da área (único).
+   * Aceita também rótulo/nome da quadra (cards de não em casa).
+   */
   selectedKey?: string | null;
   /** Incrementar para reenquadrar a área selecionada no mapa */
   focusToken?: number;
@@ -777,15 +807,11 @@ export default function TerritoryMap({
     }
   }, [value, selectedKey, editable]);
 
-  // Seleção controlada pelo card (selectedKey) — resolvida no mesmo render (sem atraso de useEffect)
-  const selectedFromKey = useMemo(() => {
-    if (selectedKey == null || selectedKey === '') return null;
-    return (
-      findAreaForBlock(areas, selectedKey) ??
-      areas.find((a) => a.id === selectedKey) ??
-      null
-    );
-  }, [selectedKey, areas]);
+  // Seleção externa: id único primeiro; rótulo só como fallback (cards)
+  const selectedFromKey = useMemo(
+    () => resolveAreaByKey(areas, selectedKey),
+    [selectedKey, areas],
+  );
 
   const selectedById = useMemo(
     () => (selectedId ? areas.find((a) => a.id === selectedId) ?? null : null),
@@ -906,10 +932,11 @@ export default function TerritoryMap({
 
   function finishArea() {
     if (!editable || draftPoints.length < 3) return;
-    // Número livre (não areas.length+1) — evita “2” e “3” duplicados após apagar no meio
+    // id estável + rótulo numérico livre (nunca colide com outra área)
+    const id = newId();
     const label = nextAreaLabel(areas);
     const area: MapArea = {
-      id: newId(),
+      id,
       points: draftPoints,
       label,
     };
@@ -917,7 +944,7 @@ export default function TerritoryMap({
     emit(next);
     setDraftPoints([]);
     setRedoStack([]);
-    setSelectedId(area.id);
+    setSelectedId(id);
     syncExternalSelection(area);
     setDrawMode(false);
   }
@@ -944,12 +971,24 @@ export default function TerritoryMap({
     setDrawMode(false);
   }
 
-  function updateSelectedLabel(label: string) {
+  function updateSelectedLabel(rawLabel: string) {
     if (!selectedId) return;
-    const next = areas.map((a) => (a.id === selectedId ? { ...a, label } : a));
+    // Mantém o que o usuário digita; ao sair do campo (blur) normalizamos unicidade.
+    // Aqui só grava o texto e seleciona por **id** (não por nome) no pai.
+    const next = areas.map((a) => (a.id === selectedId ? { ...a, label: rawLabel } : a));
     emit(next);
-    // Atualiza selectedKey no pai — senão, após renomear, a chave antiga some e o input some
-    onAreaSelect?.({ id: selectedId, label });
+    onAreaSelect?.({ id: selectedId, label: rawLabel });
+  }
+
+  function commitSelectedLabel() {
+    if (!selectedId) return;
+    const current = areas.find((a) => a.id === selectedId);
+    if (!current) return;
+    const unique = uniqueAreaLabel(areas, selectedId, current.label);
+    if (unique === current.label) return;
+    const next = areas.map((a) => (a.id === selectedId ? { ...a, label: unique } : a));
+    emit(next);
+    onAreaSelect?.({ id: selectedId, label: unique });
   }
 
   async function removeSelected() {
@@ -1099,9 +1138,11 @@ export default function TerritoryMap({
                 key={selected.id}
                 value={selected.label}
                 onChange={(e) => updateSelectedLabel(e.target.value)}
+                onBlur={() => commitSelectedLabel()}
                 placeholder="Ex: 1, Quadra A, Norte…"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 autoComplete="off"
+                title="Se o nome já existir em outra área, será ajustado para ficar único (ex.: 4 → 4 (2))"
               />
               <button
                 type="button"

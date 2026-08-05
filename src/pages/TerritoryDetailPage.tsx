@@ -5,20 +5,26 @@ import {
   IconCheck,
   IconCheckCircle,
   IconHome,
+  IconMap,
   IconPencil,
   IconStar,
   IconTrash,
   IconUnlink,
 } from '@/components/Map/mapIcons';
+import TerritoryImageLeafletMap from '@/components/Map/TerritoryImageLeafletMap';
 import TerritoryMap, {
   areaMatchesBlock,
   findAreaForBlock,
   parseGeoJsonToAreas,
+  resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
 import type { Block, CepLocation, Territory } from '@/lib/types';
+
+type MapViewTab = 'mapa' | 'imagem';
 
 export default function TerritoryDetailPage() {
   const { id } = useParams();
@@ -33,6 +39,8 @@ export default function TerritoryDetailPage() {
   const [linkedKey, setLinkedKey] = useState<string | null>(null);
   const [mapFocusToken, setMapFocusToken] = useState(0);
   const [linkHint, setLinkHint] = useState('');
+  /** Aba: mapa interativo (Leaflet) ou imagem estática do cartão */
+  const [mapViewTab, setMapViewTab] = useState<MapViewTab>('mapa');
 
   useEffect(() => {
     if (!id) return;
@@ -94,7 +102,15 @@ export default function TerritoryDetailPage() {
 
   function isBlockLinked(block: Block) {
     if (!linkedKey) return false;
-    return areaMatchesBlock(linkedKey, block.name) || linkedKey === String(block.id);
+    if (linkedKey === String(block.id)) return true;
+    if (areaMatchesBlock(linkedKey, block.name) || linkedKey === (block.name ?? '').trim()) {
+      return true;
+    }
+    // linkedKey pode ser o id estável da área no mapa
+    const area = resolveAreaByKey(parseGeoJsonToAreas(territory?.geojson), linkedKey);
+    return area
+      ? areaMatchesBlock(area.label, block.name) || area.label === (block.name ?? '').trim()
+      : false;
   }
 
   /** Agrupa ruas pela mesma quadra (name) */
@@ -109,9 +125,9 @@ export default function TerritoryDetailPage() {
     return [...map.entries()];
   }, [territory?.blocks]);
 
-  /** Clique no polígono do mapa → destaca card (sem rolar a página) */
+  /** Clique no polígono do mapa → destaca por **id** da área (nomes iguais não colidem) */
   function onMapAreaSelect(area: { id: string; label: string }) {
-    setLinkedKey(area.label);
+    setLinkedKey(area.id);
     setMapFocusToken((n) => n + 1);
     const blocks = territory?.blocks ?? [];
     const match = blocks.find((b) => areaMatchesBlock(area.label, b.name));
@@ -322,50 +338,107 @@ export default function TerritoryDetailPage() {
 
           <div id="territorio-mapa" className="mb-2 scroll-mt-6">
             <h2 className="app-section-title mb-2">Área no mapa</h2>
-            <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
-              Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
-              correspondente. A página não rola sozinha — suba ou desça quando quiser. Use o botão
-              ✕ no mapa para limpar o destaque.
-            </p>
-            {linkHint ? (
-              <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                {linkHint}
-              </p>
-            ) : null}
-            <TerritoryMap
-              value={territory.geojson}
-              centerLat={
-                territory.map_lat != null
-                  ? Number(territory.map_lat)
-                  : mapConfig?.lat ?? null
-              }
-              centerLng={
-                territory.map_lng != null
-                  ? Number(territory.map_lng)
-                  : mapConfig?.lng ?? null
-              }
-              cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
-              editable={false}
-              selectedKey={linkedKey}
-              focusToken={mapFocusToken}
-              onAreaSelect={onMapAreaSelect}
-              onClearSelection={() => {
-                setLinkedKey(null);
-                setMapFocusToken(0);
-                setLinkHint('');
-              }}
-              finishedKeys={blocksByQuadra
-                .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
-                .map(([name]) => name)}
-            />
-            {!hasArea ? (
-              <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                Ainda não há polígono salvo.{' '}
-                <Link to={`/territories/${id}/edit`} className="app-link">
-                  Desenhar área agora
-                </Link>
-              </p>
-            ) : null}
+
+            {/* Abas: mapa interativo × imagem do cartão (public/territories/t{N}.*) */}
+            <div
+              className="mb-3 inline-flex w-full rounded-full border border-apple-line bg-apple-fill p-1 sm:w-auto"
+              role="tablist"
+              aria-label="Visualização do mapa"
+            >
+              <button
+                type="button"
+                role="tab"
+                id="tab-mapa-interativo"
+                aria-selected={mapViewTab === 'mapa'}
+                onClick={() => setMapViewTab('mapa')}
+                className={[
+                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+                  mapViewTab === 'mapa'
+                    ? 'bg-apple-surface text-apple-ink shadow-soft'
+                    : 'text-apple-secondary hover:text-apple-ink',
+                ].join(' ')}
+              >
+                <IconMap className="h-3.5 w-3.5 shrink-0" />
+                Mapa
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-mapa-imagem"
+                aria-selected={mapViewTab === 'imagem'}
+                onClick={() => setMapViewTab('imagem')}
+                className={[
+                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+                  mapViewTab === 'imagem'
+                    ? 'bg-apple-surface text-apple-ink shadow-soft'
+                    : 'text-apple-secondary hover:text-apple-ink',
+                ].join(' ')}
+              >
+                Imagem
+              </button>
+            </div>
+
+            {mapViewTab === 'mapa' ? (
+              <div role="tabpanel" aria-labelledby="tab-mapa-interativo">
+                <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
+                  Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
+                  correspondente. A página não rola sozinha — suba ou desça quando quiser. Use o
+                  botão ✕ no mapa para limpar o destaque.
+                </p>
+                {linkHint ? (
+                  <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                    {linkHint}
+                  </p>
+                ) : null}
+                <TerritoryMap
+                  value={territory.geojson}
+                  centerLat={
+                    territory.map_lat != null
+                      ? Number(territory.map_lat)
+                      : mapConfig?.lat ?? null
+                  }
+                  centerLng={
+                    territory.map_lng != null
+                      ? Number(territory.map_lng)
+                      : mapConfig?.lng ?? null
+                  }
+                  cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                  editable={false}
+                  selectedKey={linkedKey}
+                  focusToken={mapFocusToken}
+                  onAreaSelect={onMapAreaSelect}
+                  onClearSelection={() => {
+                    setLinkedKey(null);
+                    setMapFocusToken(0);
+                    setLinkHint('');
+                  }}
+                  finishedKeys={blocksByQuadra
+                    .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
+                    .map(([name]) => name)}
+                />
+                {!hasArea ? (
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                    Ainda não há polígono salvo.{' '}
+                    <Link to={`/territories/${id}/edit`} className="app-link">
+                      Desenhar área agora
+                    </Link>
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div role="tabpanel" aria-labelledby="tab-mapa-imagem">
+                {hasTerritoryStaticMapCandidate(territory) ? (
+                  <TerritoryImageLeafletMap territory={territory} />
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-apple-line bg-apple-fill px-4 py-10 text-center text-[14px] text-apple-secondary">
+                    Defina o <strong className="text-apple-ink">Terr. N.º</strong> do cartão para
+                    associar a imagem (ex.: N.º 28 →{' '}
+                    <code className="text-[12px]">t28.webp</code> ou{' '}
+                    <code className="text-[12px]">t28.jpg</code>).
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
