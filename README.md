@@ -2,7 +2,7 @@
 
 **Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** [`v0.0.4`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.4)
+**Versão:** [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5)
 
 Aplicação web para planejar, acompanhar e registrar o trabalho de campo: cartões de território no mapa, checklist de casas (não em casa), escala de dirigentes, território do dia, histórico de finalizações e controle de acesso por papéis.
 
@@ -230,20 +230,23 @@ Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na 
 
 ---
 
-## Changelog (v0.0.4)
+## Changelog (v0.0.5)
 
 Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
 
-- Página Sobre com abas (sistema + atualizações) e versão **v0.0.4**
-- Login no estilo do sistema; Congregação Alpinópolis
-- Tema dark/light **por usuário**
-- Logo, menu mobile, tooltips Apple
-- Histórico de finalizados e fluxo do território do dia
-- Mapa: tela cheia, busca por endereço, refazer/limpar destaque
-- Escala de dirigentes e RBAC
-- Endurecimento de auth (rate limit, senha forte, sem cadastro público)
+- **Cartografia atualizada** com a API do Google Maps no Leaflet (GoogleMutant)
+- Basemap com ruas e nomes alinhados ao Google; desenho de áreas permanece no Leaflet
+- Chave `VITE_GOOGLE_MAPS_API_KEY` (build de produção embute a chave no front)
+- Fallback para OpenStreetMap se a API não estiver disponível
+- Página Sobre e documentação alinhadas à **v0.0.5**
 
-Tag no repositório: [`v0.0.4`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.4)
+### Histórico (v0.0.4)
+
+- Página Sobre, login, tema por usuário, Congregação Alpinópolis
+- Mapa: tela cheia, busca de endereço, não em casa multi-rua
+- Dirigentes, finalizados, RBAC e endurecimento de auth
+
+Tag no repositório: [`v0.0.5`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5)
 
 ---
 
