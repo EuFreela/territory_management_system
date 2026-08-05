@@ -1425,10 +1425,11 @@ export default function TerritoryMap({
             <button
               type="button"
               onClick={saveAndCloseNote}
-              className="app-btn-primary gap-2 px-4"
+              data-tooltip="Salvar e fechar"
+              aria-label="Salvar e fechar"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
             >
-              <IconCheck className="h-4 w-4" />
-              Salvar e fechar
+              <IconCheck className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -1865,6 +1866,51 @@ export default function TerritoryMap({
                 : 'Este território ainda não tem área definida.'}
             </p>
           )}
+
+          {notes.length > 0 ? (
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-3 py-2.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+              <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.05em] text-amber-800 dark:text-amber-200">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[11px] font-extrabold text-white">
+                  !
+                </span>
+                Atenções no mapa
+              </p>
+              <ul className="space-y-1.5">
+                {notes.map((note, index) => {
+                  const text = (note.text || '').trim() || 'Sem comentário';
+                  const isActive = note.id === selectedNoteId;
+                  return (
+                    <li key={note.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editable) {
+                            selectNote(note);
+                          } else {
+                            setSelectedNoteId(note.id);
+                          }
+                          // leve “foco”: o pin já destaca via selectedNoteId
+                        }}
+                        className={[
+                          'flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition',
+                          isActive
+                            ? 'bg-amber-200/70 text-amber-950 ring-1 ring-amber-400/60 dark:bg-amber-500/25 dark:text-amber-50'
+                            : 'text-amber-950/90 hover:bg-amber-100/80 dark:text-amber-50/90 dark:hover:bg-amber-500/15',
+                        ].join(' ')}
+                      >
+                        <span className="mt-0.5 shrink-0 tabular-nums text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                          {index + 1}.
+                        </span>
+                        <span className="min-w-0 flex-1 whitespace-pre-wrap break-words font-medium leading-snug">
+                          {text}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
 
           {cepLabel && editable ? (
             <p className="text-xs text-apple-tertiary">Base do mapa (CEP): {cepLabel}</p>
