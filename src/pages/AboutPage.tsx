@@ -7,13 +7,13 @@ import {
 } from '@/components/Map/mapIcons';
 
 /** Versão atual do CAMPO (exibida em Sobre → Atualizações) */
-export const APP_VERSION = 'v0.0.4';
+export const APP_VERSION = 'v0.0.5';
 
 const features = [
   {
     icon: IconMap,
     title: 'Territórios e mapa',
-    text: 'Cadastre cartões de território com localidade e número, desenhe áreas no mapa e organize o trabalho de campo com clareza visual.',
+    text: 'Cadastre cartões de território com localidade e número, desenhe áreas no mapa com cartografia atualizada (Google Maps no Leaflet) e organize o trabalho de campo com clareza visual.',
   },
   {
     icon: IconCheckCircle,
@@ -36,6 +36,16 @@ type TabId = 'sistema' | 'atualizacoes';
 
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
+  {
+    title: 'Cartografia e mapa (v0.0.5)',
+    items: [
+      'Basemap atualizado com a API do Google Maps (Maps JavaScript API)',
+      'Leaflet mantido para áreas, marcadores e desenho de territórios',
+      'Integração via GoogleMutant — ruas e nomes alinhados à cartografia do Google',
+      'Configuração por VITE_GOOGLE_MAPS_API_KEY (rebuild necessário em produção)',
+      'Fallback automático para OpenStreetMap se a chave ou o Google não estiver disponível',
+    ],
+  },
   {
     title: 'Sobre, login e preferências',
     items: [
