@@ -7,13 +7,13 @@ import {
 } from '@/components/Map/mapIcons';
 
 /** Versão atual do CAMPO (exibida em Sobre → Atualizações) */
-export const APP_VERSION = 'v0.0.5';
+export const APP_VERSION = 'v0.0.5.1';
 
 const features = [
   {
     icon: IconMap,
     title: 'Territórios e mapa',
-    text: 'Cadastre cartões de território com localidade e número, desenhe áreas no mapa com cartografia atualizada (Google Maps no Leaflet) e organize o trabalho de campo com clareza visual.',
+    text: 'Cadastre cartões com localidade e número, desenhe áreas no mapa (Google Maps no Leaflet) e confira a imagem do cartão em papel com zoom — abas Mapa e Imagem.',
   },
   {
     icon: IconCheckCircle,
@@ -36,6 +36,18 @@ type TabId = 'sistema' | 'atualizacoes';
 
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
+  {
+    title: 'Cartão: imagem, edição e seleção (v0.0.5.1)',
+    items: [
+      'Abas Mapa e Imagem no cartão de território',
+      'Imagem do cartão no Leaflet (zoom, arrastar, tela cheia e centralizar)',
+      'Arquivos estáticos em public/territories/t{N}.webp|jpg|png (ex.: Terr. 28 → t28.webp)',
+      'Seleção de áreas por id estável — nomes iguais não colidem mais',
+      'Rótulos únicos ao renomear (ex.: 4 → 4 (2) se já existir)',
+      'Correção da nomeação após apagar e recriar retângulos no mapa',
+      'Botão Sair da edição ao lado de Salvar localidade e área',
+    ],
+  },
   {
     title: 'Cartografia, domínio e publicação (v0.0.5)',
     items: [
