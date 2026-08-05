@@ -43,7 +43,14 @@ function FitImageBounds({
  * Imagem do cartão no Leaflet (CRS.Simple + ImageOverlay).
  * Controles iguais ao mapa: tela cheia e centralizar/enquadrar.
  */
-export default function TerritoryImageLeafletMap({ territory }: { territory: Territory }) {
+export default function TerritoryImageLeafletMap({
+  territory,
+  /** Incrementar ao reexibir a aba (sem desmontar) */
+  resizeToken = 0,
+}: {
+  territory: Territory;
+  resizeToken?: number;
+}) {
   const candidates = useMemo(() => territoryStaticMapCandidates(territory), [territory]);
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [failed, setFailed] = useState(false);
@@ -51,6 +58,7 @@ export default function TerritoryImageLeafletMap({ territory }: { territory: Ter
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sizeToken, setSizeToken] = useState(0);
   const [fitToken, setFitToken] = useState(0);
+  const layoutToken = sizeToken + resizeToken;
 
   useEffect(() => {
     let cancelled = false;
@@ -200,7 +208,7 @@ export default function TerritoryImageLeafletMap({ territory }: { territory: Ter
             attributionControl={false}
           >
             <ImageOverlay url={loaded.url} bounds={bounds} opacity={1} zIndex={1} />
-            <FitImageBounds bounds={bounds} fitToken={fitToken} sizeToken={sizeToken} />
+            <FitImageBounds bounds={bounds} fitToken={fitToken} sizeToken={layoutToken} />
           </MapContainer>
         </div>
       </div>
