@@ -16,21 +16,29 @@ function isValidTerritoryGeoJson(geojson: string): boolean {
   try {
     const parsed = JSON.parse(geojson) as {
       type?: string;
-      features?: Array<{ geometry?: { coordinates?: number[][][] } }>;
-      geometry?: { coordinates?: number[][][] };
-      coordinates?: number[][][];
+      features?: Array<{
+        geometry?: { type?: string; coordinates?: unknown };
+        properties?: { kind?: string };
+      }>;
+      geometry?: { type?: string; coordinates?: unknown };
+      coordinates?: unknown;
     };
 
     const rings: number[][][] = [];
 
     if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
       for (const feature of parsed.features) {
-        const ring = feature?.geometry?.coordinates?.[0];
-        if (Array.isArray(ring)) rings.push(ring);
+        // Notas (Point) e outros tipos não contam como área do território
+        if (feature?.properties?.kind === 'note') continue;
+        if (feature?.geometry?.type && feature.geometry.type !== 'Polygon') continue;
+        const coords = feature?.geometry?.coordinates;
+        const ring = Array.isArray(coords) ? (coords as number[][][])[0] : null;
+        if (Array.isArray(ring) && Array.isArray(ring[0])) rings.push(ring);
       }
-    } else {
-      const ring = parsed?.geometry?.coordinates?.[0] ?? parsed?.coordinates?.[0];
-      if (Array.isArray(ring)) rings.push(ring);
+    } else if (parsed?.geometry?.type !== 'Point') {
+      const coords = parsed?.geometry?.coordinates ?? parsed?.coordinates;
+      const ring = Array.isArray(coords) ? (coords as number[][][])[0] : null;
+      if (Array.isArray(ring) && Array.isArray(ring[0])) rings.push(ring);
     }
 
     return rings.some((ring) => ring.length >= 4);
