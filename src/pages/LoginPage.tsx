@@ -4,6 +4,7 @@ import { IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
+import { APP_VERSION } from '@/lib/version';
 
 export default function LoginPage() {
   const { user, loading, setUser } = useAuth();
@@ -44,7 +45,14 @@ export default function LoginPage() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-apple-bg">
-      <header className="flex h-14 shrink-0 items-center justify-end border-b border-apple-line bg-apple-surface/75 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-apple-line bg-apple-surface/75 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6">
+        <p
+          className="text-[12px] font-semibold tracking-tightish text-apple-tertiary"
+          title="Versão do sistema"
+        >
+          <span className="text-apple-secondary">CAMPO</span>{' '}
+          <span className="tabular-nums text-apple-ink">{APP_VERSION}</span>
+        </p>
         <button
           type="button"
           onClick={toggleTheme}
