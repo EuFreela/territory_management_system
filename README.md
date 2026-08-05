@@ -2,7 +2,7 @@
 
 **Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** [`v0.0.5.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5.1)
+**Versão:** [`v0.0.6`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6)
 
 **Produção:** [https://analp.tec.br](https://analp.tec.br)
 
@@ -252,21 +252,20 @@ Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na 
 
 ---
 
-## Changelog (v0.0.5.1)
+## Changelog (v0.0.6)
 
 Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
 
-- Abas **Mapa / Imagem** no cartão de território
-- Imagem do cartão no Leaflet (zoom, tela cheia, centralizar) — `public/territories/t{N}.*`
-- Seleção de áreas por **id** (sem conflito de nomes iguais) e rótulos únicos
-- Correção da nomeação após apagar/recriar áreas; botão **Sair da edição**
+- **GPS** no mapa: toggle ativa/desativa localização com pin e nome do usuário
+- **Rota** a pé mais curta até a quadra (área) mais próxima
+- Notas de atenção (lista + pin `!`); match exato no não em casa
+- Mapa montado ao trocar aba Mapa/Imagem (menos requests)
 
-### Histórico (v0.0.5)
+### Histórico (v0.0.5.1)
 
-- Cartografia Google Maps no Leaflet; domínio **https://analp.tec.br**
-- Fallback OSM; `VITE_GOOGLE_MAPS_API_KEY`
+- Abas Mapa/Imagem; seleção por id; sair da edição
 
-Tag no repositório: [`v0.0.5.1`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.5.1)
+Tag no repositório: [`v0.0.6`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6)
 
 ---
 

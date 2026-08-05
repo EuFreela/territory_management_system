@@ -13,7 +13,7 @@ const features = [
   {
     icon: IconMap,
     title: 'Territórios e mapa',
-    text: 'Cadastre cartões com localidade e número, desenhe áreas no mapa (Google Maps no Leaflet) e confira a imagem do cartão em papel com zoom — abas Mapa e Imagem.',
+    text: 'Cadastre cartões com localidade e número, desenhe áreas no mapa (Google Maps no Leaflet), confira a imagem do cartão, use sua localização GPS e a rota mais curta até a quadra mais próxima.',
   },
   {
     icon: IconCheckCircle,
@@ -36,6 +36,18 @@ type TabId = 'sistema' | 'atualizacoes';
 
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
+  {
+    title: 'GPS, rota e campo no mapa (v0.0.6)',
+    items: [
+      'Botão no mapa para ativar/desativar a minha localização (GPS)',
+      'Pin com o nome do usuário logado na posição atual',
+      'Rota a pé mais curta até a quadra (área) mais próxima do GPS',
+      'Distância e tempo estimados na barra da rota',
+      'Notas de atenção (ícone !) com lista abaixo do mapa e edição com salvar/remover',
+      'Match exato de quadra e casa no não em casa (1 não finaliza 11, 12…)',
+      'Mapa permanece montado ao trocar aba Mapa/Imagem (menos requests)',
+    ],
+  },
   {
     title: 'Cartão: imagem, edição e seleção (v0.0.5.1)',
     items: [
