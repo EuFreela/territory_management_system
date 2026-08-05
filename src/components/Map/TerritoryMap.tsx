@@ -1,6 +1,7 @@
 ﻿import {
   MapContainer,
   Polygon,
+  Polyline,
   Marker,
   CircleMarker,
   Popup,
@@ -12,6 +13,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import {
+  fetchShortestWalkingRoute,
+  findNearestArea,
+  formatRouteDistance,
+  formatRouteDuration,
+  type LatLngTuple,
+} from '@/lib/geo-route';
 import { GoogleMapsTileLayer } from './GoogleMapsTileLayer';
 import {
   IconCheck,
@@ -956,6 +964,18 @@ export default function TerritoryMap({
   const [gpsFlyToken, setGpsFlyToken] = useState(0);
   const gpsWatchIdRef = useRef<number | null>(null);
 
+  /** Rota mais curta GPS → quadra (área) mais próxima */
+  const [routePath, setRoutePath] = useState<LatLng[] | null>(null);
+  const [routeDest, setRouteDest] = useState<LatLng | null>(null);
+  const [routeAreaLabel, setRouteAreaLabel] = useState<string | null>(null);
+  const [routeAreaId, setRouteAreaId] = useState<string | null>(null);
+  const [routeDistanceM, setRouteDistanceM] = useState<number | null>(null);
+  const [routeDurationS, setRouteDurationS] = useState<number | null>(null);
+  const [routeFromRouter, setRouteFromRouter] = useState(false);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const lastRouteGpsRef = useRef<LatLng | null>(null);
+  const routeAbortRef = useRef<AbortController | null>(null);
+
   const drawingLocally = useRef(false);
   const seededFromServer = useRef(
     Boolean(
@@ -987,12 +1007,27 @@ export default function TerritoryMap({
     }
   }
 
+  function clearRoute() {
+    routeAbortRef.current?.abort();
+    routeAbortRef.current = null;
+    setRoutePath(null);
+    setRouteDest(null);
+    setRouteAreaLabel(null);
+    setRouteAreaId(null);
+    setRouteDistanceM(null);
+    setRouteDurationS(null);
+    setRouteFromRouter(false);
+    setRouteLoading(false);
+    lastRouteGpsRef.current = null;
+  }
+
   function disableGps() {
     stopGpsWatch();
     setGpsEnabled(false);
     setGpsPosition(null);
     setGpsError('');
     setGpsLoading(false);
+    clearRoute();
   }
 
   function enableGps() {
@@ -1064,8 +1099,75 @@ export default function TerritoryMap({
   useEffect(() => {
     return () => {
       stopGpsWatch();
+      routeAbortRef.current?.abort();
     };
   }, []);
+
+  /**
+   * Com GPS ativo: encontra a quadra (área) mais próxima e traça a rota a pé mais curta (OSRM).
+   * Só recalcula se o usuário se moveu ~40 m ou se as áreas mudaram.
+   */
+  useEffect(() => {
+    if (!gpsEnabled || !gpsPosition) {
+      return;
+    }
+
+    const validAreas = areas.filter((a) => a.points.length >= 3);
+    if (validAreas.length === 0) {
+      clearRoute();
+      return;
+    }
+
+    const nearest = findNearestArea(gpsPosition as LatLngTuple, validAreas);
+    if (!nearest) {
+      clearRoute();
+      return;
+    }
+
+    const last = lastRouteGpsRef.current;
+    const movedEnough =
+      !last ||
+      Math.hypot(gpsPosition[0] - last[0], gpsPosition[1] - last[1]) * 111_320 > 40 ||
+      routeAreaId !== nearest.area.id;
+
+    if (!movedEnough && routePath && routePath.length >= 2) {
+      return;
+    }
+
+    const ac = new AbortController();
+    routeAbortRef.current?.abort();
+    routeAbortRef.current = ac;
+    setRouteLoading(true);
+
+    void (async () => {
+      try {
+        const route = await fetchShortestWalkingRoute(
+          gpsPosition as LatLngTuple,
+          nearest.dest as LatLngTuple,
+          ac.signal,
+        );
+        if (ac.signal.aborted) return;
+        lastRouteGpsRef.current = gpsPosition;
+        setRoutePath(route.path);
+        setRouteDest(nearest.dest);
+        setRouteAreaLabel(nearest.area.label || 'Quadra');
+        setRouteAreaId(nearest.area.id);
+        setRouteDistanceM(route.distanceM);
+        setRouteDurationS(route.durationS);
+        setRouteFromRouter(route.fromRouter);
+      } catch {
+        if (ac.signal.aborted) return;
+        // mantém última rota se houver
+      } finally {
+        if (!ac.signal.aborted) setRouteLoading(false);
+      }
+    })();
+
+    return () => {
+      ac.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- movedEnough usa refs/estado de rota de propósito
+  }, [gpsEnabled, gpsPosition, areas]);
 
   function goToAddress(hit: AddressHit) {
     setSearchPin(hit);
@@ -1874,6 +1976,24 @@ export default function TerritoryMap({
           </div>
         ) : null}
 
+        {gpsEnabled && !gpsError && (routeAreaLabel || routeLoading) ? (
+          <div className="absolute bottom-3 left-3 right-14 z-[1000] rounded-lg border border-sky-500/30 bg-sky-600 px-3 py-2 text-[12px] font-semibold text-white shadow-md">
+            {routeLoading && !routePath ? (
+              <span>Calculando rota mais curta até a quadra mais próxima…</span>
+            ) : routeAreaLabel ? (
+              <span>
+                Rota até a quadra <strong>{routeAreaLabel}</strong>
+                {routeDistanceM != null ? ` · ${formatRouteDistance(routeDistanceM)}` : ''}
+                {routeDurationS != null && routeDurationS > 0
+                  ? ` · ${formatRouteDuration(routeDurationS)} a pé`
+                  : ''}
+                {!routeFromRouter && routePath ? ' · linha reta (sem rede de vias)' : ''}
+                {routeLoading ? ' · atualizando…' : ''}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         <MapContainer
           center={mapStartCenter}
           zoom={mapStartZoom}
@@ -2040,6 +2160,46 @@ export default function TerritoryMap({
               position={gpsPosition}
               name={user?.name?.trim() || 'Você'}
             />
+          ) : null}
+
+          {gpsEnabled && routePath && routePath.length >= 2 ? (
+            <Polyline
+              positions={routePath}
+              pathOptions={{
+                color: '#0284c7',
+                weight: 5,
+                opacity: 0.9,
+                lineJoin: 'round',
+                lineCap: 'round',
+                dashArray: routeFromRouter ? undefined : '8 10',
+              }}
+            />
+          ) : null}
+
+          {gpsEnabled && routeDest ? (
+            <CircleMarker
+              center={routeDest}
+              radius={8}
+              pathOptions={{
+                color: '#0369a1',
+                fillColor: '#38bdf8',
+                fillOpacity: 1,
+                weight: 3,
+              }}
+            >
+              <Popup>
+                Destino · quadra {routeAreaLabel || '—'}
+                {routeDistanceM != null ? (
+                  <>
+                    <br />
+                    {formatRouteDistance(routeDistanceM)}
+                    {routeDurationS != null && routeDurationS > 0
+                      ? ` · ${formatRouteDuration(routeDurationS)}`
+                      : ''}
+                  </>
+                ) : null}
+              </Popup>
+            </CircleMarker>
           ) : null}
 
           <MapClickDraw enabled={editable && drawMode && !noteMode} onAdd={addPoint} />
