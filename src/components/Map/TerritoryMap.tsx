@@ -821,6 +821,11 @@ type TerritoryMapProps = {
   onClearSelection?: () => void;
   /** Nomes de quadras finalizadas (não em casa 100%) — cor/balão no mapa */
   finishedKeys?: string[];
+  /**
+   * Incrementar ao reexibir o mapa (ex.: trocar aba Imagem → Mapa) para invalidateSize
+   * sem desmontar o Leaflet/Google (evita novos requests de tiles).
+   */
+  resizeToken?: number;
 };
 
 function areaIsFinished(areaLabel: string, finishedKeys: string[]) {
@@ -842,6 +847,7 @@ export default function TerritoryMap({
   onAreaSelect,
   onClearSelection,
   finishedKeys = [],
+  resizeToken = 0,
 }: TerritoryMapProps) {
   const confirm = useConfirm();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
@@ -864,6 +870,8 @@ export default function TerritoryMap({
   const [isFullscreen, setIsFullscreen] = useState(false);
   /** Incrementa a cada toggle de tela cheia para forçar invalidateSize no Leaflet */
   const [sizeToken, setSizeToken] = useState(0);
+  /** fullscreen + reexibir aba (sem desmontar) */
+  const layoutToken = sizeToken + resizeToken;
   /** Incrementa ao clicar em “voltar às áreas” */
   const [fitAreasToken, setFitAreasToken] = useState(0);
 
@@ -1678,7 +1686,7 @@ export default function TerritoryMap({
           className="h-full w-full"
         >
           <ScrollWheelOnHover enabled={mapHovered || isFullscreen} />
-          <InvalidateSizeOn token={sizeToken} />
+          <InvalidateSizeOn token={layoutToken} />
           <FitToAreasOn
             token={fitAreasToken}
             areas={areas}
