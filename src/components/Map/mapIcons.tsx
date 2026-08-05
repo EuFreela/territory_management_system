@@ -146,6 +146,29 @@ export function IconSearch({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+/** Localização GPS do usuário no mapa */
+export function IconLocate({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3" />
+      <path d="M12 19v3" />
+      <path d="M2 12h3" />
+      <path d="M19 12h3" />
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  );
+}
+
 export function IconArrowLeft({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>

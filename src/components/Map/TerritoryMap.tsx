@@ -11,12 +11,14 @@ import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { GoogleMapsTileLayer } from './GoogleMapsTileLayer';
 import {
   IconCheck,
   IconCompress,
   IconExpand,
   IconFocusAreas,
+  IconLocate,
   IconLock,
   IconNote,
   IconPencil,
@@ -538,6 +540,67 @@ function FitToAreasOn({
   return null;
 }
 
+/** Voa até a posição GPS do usuário (quando localizar / atualizar) */
+function FlyToUserGps({
+  position,
+  token,
+}: {
+  position: LatLng | null;
+  token: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!position || token <= 0) return;
+    map.flyTo(position, Math.max(map.getZoom(), 16), { animate: true, duration: 0.8 });
+  }, [position, token, map]);
+  return null;
+}
+
+/**
+ * Ponto GPS do usuário logado — pin azul + nome no balão acima.
+ * Só aparece com a opção “Minha localização” ativa.
+ */
+function UserGpsMarker({ position, name }: { position: LatLng; name: string }) {
+  const label = (name || 'Você').trim() || 'Você';
+
+  const icon = useMemo(() => {
+    const approxWidth = Math.min(220, Math.max(72, label.length * 8 + 36));
+    const height = 44;
+    return L.divIcon({
+      className: 'territorio-user-gps-marker',
+      html: `<div style="
+        display:flex;flex-direction:column;align-items:center;pointer-events:none;
+        font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+      ">
+        <div style="
+          max-width:200px;padding:5px 10px 6px;border-radius:9999px;
+          background:#0284c7;color:#fff;border:2px solid #fff;
+          font-size:12px;font-weight:800;line-height:1.2;
+          box-shadow:0 4px 14px rgba(3,105,161,0.45),0 0 0 2px rgba(14,165,233,0.35);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        ">${escapeHtml(label)}</div>
+        <div style="
+          width:16px;height:16px;margin-top:4px;border-radius:9999px;
+          background:#0ea5e9;border:3px solid #fff;
+          box-shadow:0 0 0 2px #0284c7,0 2px 8px rgba(3,105,161,0.4);
+        "></div>
+      </div>`,
+      iconSize: [approxWidth, height + 20],
+      iconAnchor: [approxWidth / 2, height + 18],
+    });
+  }, [label]);
+
+  return (
+    <Marker position={position} icon={icon} interactive={false} zIndexOffset={1600}>
+      <Popup>
+        <strong>{label}</strong>
+        <br />
+        <span style={{ fontSize: 12, color: '#64748b' }}>Sua localização atual</span>
+      </Popup>
+    </Marker>
+  );
+}
+
 /** Voa até o endereço encontrado na busca */
 function FlyToSearchResult({
   result,
@@ -850,6 +913,7 @@ export default function TerritoryMap({
   resizeToken = 0,
 }: TerritoryMapProps) {
   const confirm = useConfirm();
+  const { user } = useAuth();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
   const [notes, setNotes] = useState<MapNote[]>(() => parseGeoJsonToNotes(value));
   const [draftPoints, setDraftPoints] = useState<LatLng[]>([]);
@@ -884,6 +948,14 @@ export default function TerritoryMap({
   const [searchPin, setSearchPin] = useState<AddressHit | null>(null);
   const [searchFlyToken, setSearchFlyToken] = useState(0);
 
+  /** Minha localização (GPS) — toggle no mapa */
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState<LatLng | null>(null);
+  const [gpsError, setGpsError] = useState('');
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsFlyToken, setGpsFlyToken] = useState(0);
+  const gpsWatchIdRef = useRef<number | null>(null);
+
   const drawingLocally = useRef(false);
   const seededFromServer = useRef(
     Boolean(
@@ -907,6 +979,93 @@ export default function TerritoryMap({
     setNoteDraft('');
     onClearSelection?.();
   }
+
+  function stopGpsWatch() {
+    if (gpsWatchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+      gpsWatchIdRef.current = null;
+    }
+  }
+
+  function disableGps() {
+    stopGpsWatch();
+    setGpsEnabled(false);
+    setGpsPosition(null);
+    setGpsError('');
+    setGpsLoading(false);
+  }
+
+  function enableGps() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGpsError('Seu navegador não suporta geolocalização.');
+      setGpsEnabled(false);
+      return;
+    }
+
+    setGpsEnabled(true);
+    setGpsLoading(true);
+    setGpsError('');
+
+    const onOk = (pos: GeolocationPosition) => {
+      const next: LatLng = [pos.coords.latitude, pos.coords.longitude];
+      setGpsPosition(next);
+      setGpsLoading(false);
+      setGpsError('');
+      setGpsFlyToken((t) => t + 1);
+    };
+
+    const onErr = (err: GeolocationPositionError) => {
+      setGpsLoading(false);
+      setGpsPosition(null);
+      setGpsEnabled(false);
+      stopGpsWatch();
+      if (err.code === err.PERMISSION_DENIED) {
+        setGpsError(
+          'Localização negada. Ative a localização do aparelho e permita o acesso neste site.',
+        );
+      } else if (err.code === err.POSITION_UNAVAILABLE) {
+        setGpsError('Posição indisponível. Verifique se a localização do aparelho está ligada.');
+      } else if (err.code === err.TIMEOUT) {
+        setGpsError('Tempo esgotado ao obter a localização. Tente de novo.');
+      } else {
+        setGpsError('Não foi possível obter sua localização.');
+      }
+    };
+
+    const opts: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 10000,
+    };
+
+    // Leitura inicial + acompanhamento enquanto o toggle estiver ativo
+    navigator.geolocation.getCurrentPosition(onOk, onErr, opts);
+    stopGpsWatch();
+    gpsWatchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setGpsPosition([pos.coords.latitude, pos.coords.longitude]);
+        setGpsLoading(false);
+        setGpsError('');
+      },
+      onErr,
+      opts,
+    );
+  }
+
+  function toggleGps() {
+    if (gpsEnabled) {
+      disableGps();
+    } else {
+      enableGps();
+    }
+  }
+
+  // Limpa watch ao desmontar
+  useEffect(() => {
+    return () => {
+      stopGpsWatch();
+    };
+  }, []);
 
   function goToAddress(hit: AddressHit) {
     setSearchPin(hit);
@@ -1666,6 +1825,35 @@ export default function TerritoryMap({
           >
             <IconFocusAreas />
           </button>
+          <button
+            type="button"
+            data-tooltip={
+              gpsEnabled
+                ? 'Desativar minha localização'
+                : 'Ativar minha localização (GPS) — mostra seu nome no mapa'
+            }
+            data-tooltip-side="left"
+            aria-label={gpsEnabled ? 'Desativar minha localização' : 'Ativar minha localização'}
+            aria-pressed={gpsEnabled}
+            disabled={gpsLoading}
+            onClick={toggleGps}
+            className={[
+              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              gpsEnabled
+                ? 'border-sky-500/40 bg-sky-600 text-white hover:bg-sky-700'
+                : 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill',
+              gpsLoading ? 'opacity-60' : '',
+            ].join(' ')}
+          >
+            {gpsLoading ? (
+              <span
+                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden
+              />
+            ) : (
+              <IconLocate className="h-5 w-5" />
+            )}
+          </button>
           {selected && !drawMode ? (
             <button
               type="button"
@@ -1679,6 +1867,12 @@ export default function TerritoryMap({
             </button>
           ) : null}
         </div>
+
+        {gpsError ? (
+          <div className="absolute bottom-3 left-3 right-14 z-[1000] rounded-lg border border-amber-500/35 bg-amber-50 px-3 py-2 text-[12px] font-medium text-amber-900 shadow-md dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-100">
+            {gpsError}
+          </div>
+        ) : null}
 
         <MapContainer
           center={mapStartCenter}
@@ -1697,6 +1891,7 @@ export default function TerritoryMap({
             centerLng={centerLng}
           />
           <FlyToSearchResult result={searchPin} token={searchFlyToken} />
+          <FlyToUserGps position={gpsEnabled ? gpsPosition : null} token={gpsFlyToken} />
           <FocusOnSelected area={selected} focusToken={focusToken} />
           <GoogleMapsTileLayer type="roadmap" />
 
@@ -1839,6 +2034,13 @@ export default function TerritoryMap({
               }}
             />
           ))}
+
+          {gpsEnabled && gpsPosition ? (
+            <UserGpsMarker
+              position={gpsPosition}
+              name={user?.name?.trim() || 'Você'}
+            />
+          ) : null}
 
           <MapClickDraw enabled={editable && drawMode && !noteMode} onAdd={addPoint} />
           <MapClickDraw enabled={editable && noteMode && !drawMode} onAdd={placeNote} />
