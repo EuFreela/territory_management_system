@@ -88,14 +88,29 @@ function paramId(value: string | string[]): string {
 }
 
 router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
-  const [rows] = await pool.execute('SELECT * FROM territories ORDER BY created_at DESC');
+  // Lista por Terr. N.º (numérico); sem número por último; desempate por nome
+  const [rows] = await pool.execute(
+    `SELECT * FROM territories
+     ORDER BY
+       CASE WHEN number IS NULL OR TRIM(number) = '' THEN 1 ELSE 0 END ASC,
+       CAST(number AS UNSIGNED) ASC,
+       number ASC,
+       name ASC`,
+  );
   res.json(rows);
 });
 
 router.get('/dashboard', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const user = (req as AuthedRequest).user;
 
-  const [territories] = await pool.execute('SELECT * FROM territories ORDER BY created_at DESC');
+  const [territories] = await pool.execute(
+    `SELECT * FROM territories
+     ORDER BY
+       CASE WHEN number IS NULL OR TRIM(number) = '' THEN 1 ELSE 0 END ASC,
+       CAST(number AS UNSIGNED) ASC,
+       number ASC,
+       name ASC`,
+  );
   const territoryList = territories as Array<Record<string, unknown>>;
 
   const [dailyRows] = await pool.execute(

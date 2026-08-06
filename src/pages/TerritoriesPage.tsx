@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  IconArrowUp,
   IconEye,
   IconPencil,
   IconPlus,
@@ -11,6 +12,7 @@ import {
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { tooltipText } from '@/lib/tooltip';
 import type { Territory } from '@/lib/types';
 
 function normalize(text: string) {
@@ -21,6 +23,8 @@ function normalize(text: string) {
     .trim();
 }
 
+type SortDir = 'asc' | 'desc';
+
 export default function TerritoriesPage() {
   const confirm = useConfirm();
   const { can } = useAuth();
@@ -28,6 +32,8 @@ export default function TerritoriesPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  /** Ordenação por Terr. N.º — um botão alterna crescente/decrescente */
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   async function load() {
     setLoading(true);
@@ -46,19 +52,41 @@ export default function TerritoriesPage() {
     void load();
   }, []);
 
+  /** Ordena por Terr. N.º (numérico). asc: 1→N (sem número no fim); desc: N→1 (sem número no fim). */
+  function sortByTerritoryNumber(list: Territory[], dir: SortDir) {
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const na = String(a.number ?? '').trim();
+      const nb = String(b.number ?? '').trim();
+      const aEmpty = !na;
+      const bEmpty = !nb;
+      // Sem número sempre por último, em qualquer direção
+      if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+      const ia = parseInt(na.replace(/\D/g, ''), 10);
+      const ib = parseInt(nb.replace(/\D/g, ''), 10);
+      const aNum = Number.isFinite(ia) ? ia : Number.POSITIVE_INFINITY;
+      const bNum = Number.isFinite(ib) ? ib : Number.POSITIVE_INFINITY;
+      if (aNum !== bNum) return (aNum - bNum) * sign;
+      const byNumStr = na.localeCompare(nb, 'pt-BR') * sign;
+      if (byNumStr !== 0) return byNumStr;
+      return (a.name || '').localeCompare(b.name || '', 'pt-BR') * sign;
+    });
+  }
+
   const filtered = useMemo(() => {
     const q = normalize(query);
-    if (!q) return territories;
-
-    return territories.filter((t) => {
-      const haystack = normalize(
-        [t.name, t.number ?? '', t.cep ?? '', t.is_daily ? 'territorio do dia diario' : '']
-          .filter(Boolean)
-          .join(' '),
-      );
-      return haystack.includes(q);
-    });
-  }, [territories, query]);
+    const base = !q
+      ? territories
+      : territories.filter((t) => {
+          const haystack = normalize(
+            [t.name, t.number ?? '', t.cep ?? '', t.is_daily ? 'territorio do dia diario' : '']
+              .filter(Boolean)
+              .join(' '),
+          );
+          return haystack.includes(q);
+        });
+    return sortByTerritoryNumber(base, sortDir);
+  }, [territories, query, sortDir]);
 
   async function setDaily(id: number) {
     await api(`/api/territories/${id}/daily`, { method: 'POST' });
@@ -88,17 +116,41 @@ export default function TerritoriesPage() {
             <p className="app-subtitle">Localidade, Terr. N.º</p>
           </div>
 
-          {can('territory:create') ? (
-            <Link
-              to="/territories/new"
-              data-tooltip="Novo território"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+              data-tooltip={tooltipText(
+                sortDir === 'asc' ? 'N.º crescente · clique: decrescente' : 'N.º decrescente · clique: crescente',
+              )}
               data-tooltip-side="bottom"
-              aria-label="Novo território"
-              className="app-icon-btn-ink"
+              aria-label={
+                sortDir === 'asc'
+                  ? 'Ordenar Terr. N.º decrescente'
+                  : 'Ordenar Terr. N.º crescente'
+              }
+              aria-pressed={sortDir === 'desc'}
+              className="app-icon-btn"
             >
-              <IconPlus className="h-4 w-4" />
-            </Link>
-          ) : null}
+              <IconArrowUp
+                className={[
+                  'h-4 w-4 transition-transform duration-200',
+                  sortDir === 'desc' ? 'rotate-180' : '',
+                ].join(' ')}
+              />
+            </button>
+            {can('territory:create') ? (
+              <Link
+                to="/territories/new"
+                data-tooltip="Novo território"
+                data-tooltip-side="bottom"
+                aria-label="Novo território"
+                className="app-icon-btn-ink"
+              >
+                <IconPlus className="h-4 w-4" />
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         <div className="mb-6">
