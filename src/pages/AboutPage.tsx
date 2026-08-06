@@ -37,6 +37,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Lista e tooltips (v0.0.6.2)',
+    items: [
+      'Territórios listados por Terr. N.º (ordem numérica)',
+      'Botão único ao lado de criar: alterna ordenação crescente/decrescente',
+      'Tooltips mais legíveis: uma linha, limite de 40 caracteres, textos objetivos',
+    ],
+  },
+  {
     title: 'GPS e rota no mapa (v0.0.6.1)',
     items: [
       'Rota de carro mais curta até a quadra mais próxima (distância e tempo de carro)',
