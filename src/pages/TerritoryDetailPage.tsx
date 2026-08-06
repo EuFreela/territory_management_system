@@ -23,6 +23,7 @@ import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
+import { tooltipText } from '@/lib/tooltip';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
 type MapViewTab = 'mapa' | 'imagem';
@@ -620,13 +621,13 @@ export default function TerritoryDetailPage() {
                                       e.stopPropagation();
                                       void toggleHouse(block, house);
                                     }}
-                                    data-tooltip={
+                                    data-tooltip={tooltipText(
                                       !can('block:manage')
-                                        ? 'Sem permissão para alterar checklist'
+                                        ? 'Sem permissão para alterar'
                                         : doneHouse
-                                          ? 'Clique para desmarcar (pede confirmação)'
-                                          : 'Marcar como feito'
-                                    }
+                                          ? 'Desmarcar (pede confirmação)'
+                                          : 'Marcar como feito',
+                                    )}
                                     className={[
                                       'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
                                       'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',

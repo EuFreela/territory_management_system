@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { IconCheckCircle, IconMap, IconSearch, IconTrash } from '@/components/Map/mapIcons';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import { api } from '@/lib/api';
+import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
 import type { FinishedTerritoryHistory } from '@/lib/types';
 
@@ -219,7 +220,9 @@ export default function FinishedTerritoriesPage() {
                         {row.territory_id ? (
                           <Link
                             to={`/territories/${row.territory_id}`}
-                            data-tooltip={`Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
+                            data-tooltip={tooltipText(
+                              `Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                            )}
                             aria-label={`Abrir território ${row.territory_name}`}
                             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
                           >
@@ -227,7 +230,9 @@ export default function FinishedTerritoriesPage() {
                           </Link>
                         ) : (
                           <span
-                            data-tooltip={`${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`}
+                            data-tooltip={tooltipText(
+                              `${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                            )}
                             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
                           >
                             <IconMap className="h-4 w-4" />

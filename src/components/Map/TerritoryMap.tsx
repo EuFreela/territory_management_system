@@ -20,6 +20,7 @@ import {
   formatRouteDuration,
   type LatLngTuple,
 } from '@/lib/geo-route';
+import { tooltipText } from '@/lib/tooltip';
 import { GoogleMapsTileLayer } from './GoogleMapsTileLayer';
 import {
   IconCheck,
@@ -863,10 +864,11 @@ function ToolButton({
     success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700',
   };
 
+  const tip = tooltipText(title);
   return (
     <button
       type="button"
-      data-tooltip={title}
+      data-tooltip={tip}
       aria-label={title}
       disabled={disabled}
       onClick={onClick}
@@ -1589,7 +1591,7 @@ export default function TerritoryMap({
           }`}
         >
           <ToolButton
-            title="Mapa travado — só navegar / zoom (não desenha)"
+            title="Mapa travado — só navegar"
             active={!drawMode && !noteMode}
             onClick={setDrawModeOff}
           >
@@ -1597,7 +1599,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Desenhar área — clique no mapa para marcar vértices"
+            title="Desenhar área no mapa"
             active={drawMode && !noteMode}
             onClick={setDrawModeOn}
           >
@@ -1605,7 +1607,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Atenção — clique no mapa para colocar um ícone de aviso (texto ao clicar)"
+            title="Colocar aviso de atenção"
             active={noteMode}
             onClick={() => (noteMode ? setNoteModeOff() : setNoteModeOn())}
           >
@@ -1613,7 +1615,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Concluir área atual (mín. 3 pontos)"
+            title="Concluir área (mín. 3 pontos)"
             tone="success"
             disabled={draftPoints.length < 3}
             onClick={finishArea}
@@ -1622,7 +1624,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Desfazer último ponto (ou última área, se não houver rascunho)"
+            title="Desfazer ponto ou área"
             disabled={draftPoints.length === 0 && areas.length === 0}
             onClick={undoPoint}
           >
@@ -1630,7 +1632,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Refazer último ponto (ou última área desfeita)"
+            title="Refazer ponto ou área"
             disabled={redoStack.length === 0}
             onClick={redoPoint}
           >
@@ -1638,7 +1640,7 @@ export default function TerritoryMap({
           </ToolButton>
 
           <ToolButton
-            title="Apagar todas as áreas e notas"
+            title="Apagar áreas e notas"
             tone="danger"
             disabled={areas.length === 0 && draftPoints.length === 0 && notes.length === 0}
             onClick={() => void clearAll()}
@@ -1941,11 +1943,9 @@ export default function TerritoryMap({
           </button>
           <button
             type="button"
-            data-tooltip={
-              gpsEnabled && gpsPosition
-                ? 'Voltar à minha localização (GPS)'
-                : 'Voltar ao início — enquadrar as áreas/quadras do mapa'
-            }
+            data-tooltip={tooltipText(
+              gpsEnabled && gpsPosition ? 'Voltar à minha localização' : 'Enquadrar áreas do mapa',
+            )}
             data-tooltip-side="left"
             aria-label={
               gpsEnabled && gpsPosition
@@ -1964,11 +1964,9 @@ export default function TerritoryMap({
           </button>
           <button
             type="button"
-            data-tooltip={
-              gpsEnabled
-                ? 'Desativar minha localização'
-                : 'Ativar minha localização (GPS) — mostra seu nome no mapa'
-            }
+            data-tooltip={tooltipText(
+              gpsEnabled ? 'Desativar minha localização' : 'Ativar minha localização (GPS)',
+            )}
             data-tooltip-side="left"
             aria-label={gpsEnabled ? 'Desativar minha localização' : 'Ativar minha localização'}
             aria-pressed={gpsEnabled}
