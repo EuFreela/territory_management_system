@@ -184,7 +184,7 @@ export default function TerritoryImageLeafletMap({
           </button>
           <button
             type="button"
-            data-tooltip="Centralizar e enquadrar a imagem"
+            data-tooltip="Centralizar imagem"
             data-tooltip-side="left"
             aria-label="Centralizar e enquadrar a imagem"
             onClick={fitToImage}

@@ -847,7 +847,7 @@ export default function EditTerritoryPage() {
           <Link
             to={`/territories/${id}`}
             className="app-btn-secondary gap-2 px-5 py-3"
-            data-tooltip="Voltar ao cartão sem salvar localidade/mapa"
+            data-tooltip="Sair sem salvar localidade/mapa"
           >
             <IconArrowLeft className="h-4 w-4 shrink-0" />
             Sair da edição
