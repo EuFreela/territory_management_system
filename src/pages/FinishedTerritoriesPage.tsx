@@ -1,7 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IconCheckCircle, IconMap, IconSearch, IconTrash } from '@/components/Map/mapIcons';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
@@ -49,7 +50,6 @@ const thClass =
   'px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary';
 
 export default function FinishedTerritoriesPage() {
-  const confirm = useConfirm();
   const { isAdmin } = useAuth();
   const [rows, setRows] = useState<FinishedTerritoryHistory[]>([]);
   const [query, setQuery] = useState('');
@@ -68,27 +68,27 @@ export default function FinishedTerritoriesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function removeHistoryRow(row: FinishedTerritoryHistory) {
+  function removeHistoryRow(row: FinishedTerritoryHistory) {
     if (!isAdmin) return;
-    const ok = await confirm({
+    confirmToast({
       title: 'Remover do histórico?',
-      message: `Remover a finalização de “${row.territory_name}” (${formatDateBr(row.field_date)})? Esta ação não pode ser desfeita.`,
+      description: `Remover a finalização de “${row.territory_name}” (${formatDateBr(row.field_date)})? Esta ação não pode ser desfeita.`,
       confirmLabel: 'Remover',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: async () => {
+        setDeletingId(row.id);
+        setError('');
+        try {
+          await api(`/api/territories/finished-history/${row.id}`, { method: 'DELETE' });
+          setRows((prev) => prev.filter((r) => r.id !== row.id));
+          toast.success('Registro removido do histórico.');
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Erro ao remover.');
+        } finally {
+          setDeletingId(null);
+        }
+      },
     });
-    if (!ok) return;
-
-    setDeletingId(row.id);
-    setError('');
-    try {
-      await api(`/api/territories/finished-history/${row.id}`, { method: 'DELETE' });
-      setRows((prev) => prev.filter((r) => r.id !== row.id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover.');
-    } finally {
-      setDeletingId(null);
-    }
   }
 
   const filtered = useMemo(() => {

@@ -6,8 +6,10 @@ import {
   IconTrash,
   IconX,
 } from '@/components/Map/mapIcons';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import type { FieldAssignment } from '@/lib/types';
 
 /** Todos os dias da semana (ordem de exibição e opções do formulário) */
@@ -93,25 +95,25 @@ function ScheduleTimeBadge({
   );
 }
 
-function AssignmentTableColgroup() {
+function AssignmentTableColgroup({ canManage }: { canManage: boolean }) {
   return (
     <colgroup>
-      <col style={{ width: '28%' }} />
-      <col style={{ width: '16%' }} />
-      <col style={{ width: '44%' }} />
-      <col style={{ width: '12%' }} />
+      <col style={{ width: canManage ? '28%' : '30%' }} />
+      <col style={{ width: canManage ? '16%' : '18%' }} />
+      <col style={{ width: canManage ? '44%' : '52%' }} />
+      {canManage ? <col style={{ width: '12%' }} /> : null}
     </colgroup>
   );
 }
 
-function AssignmentTableHead() {
+function AssignmentTableHead({ canManage }: { canManage: boolean }) {
   return (
     <thead>
       <tr className="border-b border-apple-line bg-apple-fill">
         <th className={`${TH_CLASS} text-left`}>Dia</th>
         <th className={`${TH_CLASS} text-left`}>Horário</th>
         <th className={`${TH_CLASS} text-left`}>Designado</th>
-        <th className={`${TH_CLASS} text-right`}>Ações</th>
+        {canManage ? <th className={`${TH_CLASS} text-right`}>Ações</th> : null}
       </tr>
     </thead>
   );
@@ -203,7 +205,8 @@ function matchesQuery(row: FieldAssignment, q: string) {
 }
 
 export default function FieldLeadersPage() {
-  const confirm = useConfirm();
+  const { can } = useAuth();
+  const canManage = can('block:manage');
   const [rows, setRows] = useState<FieldAssignment[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -358,17 +361,22 @@ export default function FieldLeadersPage() {
     }
   }
 
-  async function removeRow(id: number) {
-    const ok = await confirm({
+  function removeRow(id: number) {
+    confirmToast({
       title: 'Remover designação',
-      message: 'Esta linha da escala será apagada.',
+      description: 'Esta linha da escala será apagada.',
       confirmLabel: 'Remover',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: async () => {
+        try {
+          await api(`/api/field-assignments/${id}`, { method: 'DELETE' });
+          setRows((prev) => prev.filter((r) => r.id !== id));
+          toast.success('Designação removida.');
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao remover designação.');
+        }
+      },
     });
-    if (!ok) return;
-    await api(`/api/field-assignments/${id}`, { method: 'DELETE' });
-    setRows((prev) => prev.filter((r) => r.id !== id));
   }
 
   async function addDated(event: FormEvent) {
@@ -461,84 +469,86 @@ export default function FieldLeadersPage() {
         </div>
 
         {/* Nova linha datada */}
-        <section className="app-card-pad">
-          <h2 className="app-section-title mb-4">Adicionar designação (por data)</h2>
-          <form onSubmit={addDated} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div>
-              <label htmlFor="new-assignment-date" className="app-label">
-                Data
-              </label>
-              <input
-                id="new-assignment-date"
-                type="date"
-                value={newDate}
-                onChange={(e) => onDateChange(e.target.value)}
-                className="app-input"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="new-assignment-weekday" className="app-label">
-                Dia da semana
-              </label>
-              <select
-                id="new-assignment-weekday"
-                value={newWeekday}
-                onChange={(e) => onWeekdayChange(e.target.value)}
-                className="app-input"
-                required
-              >
-                {WEEKDAYS_ALL.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="new-assignment-time" className="app-label">
-                Horário
-              </label>
-              <select
-                id="new-assignment-time"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                className="app-input"
-                required
-              >
-                {TIME_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="new-assignment-name" className="app-label">
-                Designado
-              </label>
-              <input
-                id="new-assignment-name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nome do dirigente"
-                className="app-input"
-                required
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                type="submit"
-                disabled={adding}
-                data-tooltip="Adicionar"
-                aria-label="Adicionar"
-                className="app-btn-primary h-11 w-11 !rounded-full !px-0 disabled:opacity-60"
-              >
-                <IconPlus className="h-5 w-5" />
-              </button>
-            </div>
-          </form>
-        </section>
+        {canManage ? (
+          <section className="app-card-pad">
+            <h2 className="app-section-title mb-4">Adicionar designação (por data)</h2>
+            <form onSubmit={addDated} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div>
+                <label htmlFor="new-assignment-date" className="app-label">
+                  Data
+                </label>
+                <input
+                  id="new-assignment-date"
+                  type="date"
+                  value={newDate}
+                  onChange={(e) => onDateChange(e.target.value)}
+                  className="app-input"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="new-assignment-weekday" className="app-label">
+                  Dia da semana
+                </label>
+                <select
+                  id="new-assignment-weekday"
+                  value={newWeekday}
+                  onChange={(e) => onWeekdayChange(e.target.value)}
+                  className="app-input"
+                  required
+                >
+                  {WEEKDAYS_ALL.map((w) => (
+                    <option key={w} value={w}>
+                      {w}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="new-assignment-time" className="app-label">
+                  Horário
+                </label>
+                <select
+                  id="new-assignment-time"
+                  value={newTime}
+                  onChange={(e) => setNewTime(e.target.value)}
+                  className="app-input"
+                  required
+                >
+                  {TIME_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="new-assignment-name" className="app-label">
+                  Designado
+                </label>
+                <input
+                  id="new-assignment-name"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Nome do dirigente"
+                  className="app-input"
+                  required
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={adding}
+                  data-tooltip="Adicionar"
+                  aria-label="Adicionar"
+                  className="app-btn-primary h-11 w-11 !rounded-full !px-0 disabled:opacity-60"
+                >
+                  <IconPlus className="h-5 w-5" />
+                </button>
+              </div>
+            </form>
+          </section>
+        ) : null}
 
         {!loading && rows.length > 0 && filteredRows.length === 0 ? (
           <div className="app-empty text-apple-secondary">
@@ -577,8 +587,8 @@ export default function FieldLeadersPage() {
                 </div>
                 <div className="w-full">
                   <table className={TABLE_CLASS}>
-                    <AssignmentTableColgroup />
-                    <AssignmentTableHead />
+                    <AssignmentTableColgroup canManage={canManage} />
+                    <AssignmentTableHead canManage={canManage} />
                     <tbody>
                       {group.items.map((row) => {
                         const isToday = isTodayRow(row, today, todayWeekday);
@@ -619,7 +629,7 @@ export default function FieldLeadersPage() {
                               <ScheduleTimeBadge value={row.fixed_time} muted={isPast} />
                             </td>
                             <td className={TD_CLASS}>
-                              {editingId === row.id ? (
+                              {canManage && editingId === row.id ? (
                                 <div className="flex flex-wrap items-center gap-2">
                                   <input
                                     value={editName}
@@ -647,7 +657,7 @@ export default function FieldLeadersPage() {
                                     <IconX className="h-4 w-4" />
                                   </button>
                                 </div>
-                              ) : (
+                              ) : canManage ? (
                                 <button
                                   type="button"
                                   onClick={() => startEdit(row)}
@@ -662,23 +672,37 @@ export default function FieldLeadersPage() {
                                 >
                                   {row.assignee_name}
                                 </button>
+                              ) : (
+                                <span
+                                  className={`truncate font-semibold ${
+                                    isToday
+                                      ? 'text-sky-900 dark:text-sky-300'
+                                      : isPast
+                                        ? 'text-apple-tertiary'
+                                        : 'text-apple-ink'
+                                  }`}
+                                >
+                                  {row.assignee_name}
+                                </span>
                               )}
                             </td>
-                            <td className={`${TD_CLASS} text-right`}>
-                              <button
-                                type="button"
-                                onClick={() => void removeRow(row.id)}
-                                data-tooltip="Remover"
-                                aria-label="Remover"
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
-                                  isPast
-                                    ? 'border-apple-line text-apple-tertiary'
-                                    : 'border-apple-red/25 text-apple-red hover:bg-apple-red/10'
-                                }`}
-                              >
-                                <IconTrash className="h-4 w-4" />
-                              </button>
-                            </td>
+                            {canManage ? (
+                              <td className={`${TD_CLASS} text-right`}>
+                                <button
+                                  type="button"
+                                  onClick={() => void removeRow(row.id)}
+                                  data-tooltip="Remover"
+                                  aria-label="Remover"
+                                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
+                                    isPast
+                                      ? 'border-apple-line text-apple-tertiary'
+                                      : 'border-apple-red/25 text-apple-red hover:bg-apple-red/10'
+                                  }`}
+                                >
+                                  <IconTrash className="h-4 w-4" />
+                                </button>
+                              </td>
+                            ) : null}
                           </tr>
                         );
                       })}
@@ -713,12 +737,12 @@ export default function FieldLeadersPage() {
               </div>
               <div className="w-full">
                 <table className={TABLE_CLASS}>
-                  <AssignmentTableColgroup />
-                  <AssignmentTableHead />
+                  <AssignmentTableColgroup canManage={canManage} />
+                  <AssignmentTableHead canManage={canManage} />
                   <tbody>
                     {fixedRows.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-apple-tertiary">
+                        <td colSpan={canManage ? 4 : 3} className="px-4 py-6 text-center text-sm text-apple-tertiary">
                           Nenhum dia fixo neste filtro.
                         </td>
                       </tr>
@@ -748,7 +772,7 @@ export default function FieldLeadersPage() {
                             <ScheduleTimeBadge value={row.fixed_time} />
                           </td>
                           <td className={TD_CLASS}>
-                            {editingId === row.id ? (
+                            {canManage && editingId === row.id ? (
                               <div className="flex flex-wrap items-center gap-2">
                                 <input
                                   value={editName}
@@ -776,32 +800,40 @@ export default function FieldLeadersPage() {
                                   <IconX className="h-4 w-4" />
                                 </button>
                               </div>
-                            ) : (
+                            ) : canManage ? (
                               <button
                                 type="button"
                                 onClick={() => startEdit(row)}
                                 className={`truncate font-semibold hover:text-apple-blue ${
-                                  isToday
-                                    ? 'text-emerald-900 dark:text-emerald-300'
-                                    : 'text-apple-ink'
+                                  isToday ? 'text-emerald-900 dark:text-emerald-300' : 'text-apple-ink'
                                 }`}
                                 data-tooltip="Clique para editar"
                               >
                                 {row.assignee_name}
                               </button>
+                            ) : (
+                              <span
+                                className={`truncate font-semibold ${
+                                  isToday ? 'text-emerald-900 dark:text-emerald-300' : 'text-apple-ink'
+                                }`}
+                              >
+                                {row.assignee_name}
+                              </span>
                             )}
                           </td>
-                          <td className={`${TD_CLASS} text-right`}>
-                            <button
-                              type="button"
-                              onClick={() => void removeRow(row.id)}
-                              data-tooltip="Remover"
-                              aria-label="Remover"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 text-apple-red hover:bg-apple-red/10"
-                            >
-                              <IconTrash className="h-4 w-4" />
-                            </button>
-                          </td>
+                          {canManage ? (
+                            <td className={`${TD_CLASS} text-right`}>
+                              <button
+                                type="button"
+                                onClick={() => void removeRow(row.id)}
+                                data-tooltip="Remover"
+                                aria-label="Remover"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 text-apple-red hover:bg-apple-red/10"
+                              >
+                                <IconTrash className="h-4 w-4" />
+                              </button>
+                            </td>
+                          ) : null}
                         </tr>
                       );
                     })}

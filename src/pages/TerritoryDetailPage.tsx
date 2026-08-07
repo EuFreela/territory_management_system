@@ -19,7 +19,8 @@ import TerritoryMap, {
   parseGeoJsonToAreas,
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { confirmToast, infoIcon } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
@@ -31,7 +32,6 @@ type MapViewTab = 'mapa' | 'imagem';
 export default function TerritoryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const confirm = useConfirm();
   const { can } = useAuth();
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
@@ -69,41 +69,54 @@ export default function TerritoryDetailPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar.'));
   }, [id]);
 
-  async function onDelete() {
+  function onDelete() {
     if (!id) return;
-    const ok = await confirm({
+    confirmToast({
       title: 'Excluir território',
-      message:
+      description:
         'O cartão, as áreas no mapa e os registros de não em casa serão apagados permanentemente.',
       confirmLabel: 'Excluir',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: async () => {
+        try {
+          await api(`/api/territories/${id}`, { method: 'DELETE' });
+          navigate('/territories', { replace: true });
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Erro ao excluir território.');
+        }
+      },
     });
-    if (!ok) return;
-    await api(`/api/territories/${id}`, { method: 'DELETE' });
-    navigate('/territories', { replace: true });
   }
 
   async function setDaily() {
     if (!id) return;
-    await api(`/api/territories/${id}/daily`, { method: 'POST' });
-    const refreshed = await api<Territory>(`/api/territories/${id}`);
-    setTerritory(refreshed);
+    try {
+      await api(`/api/territories/${id}/daily`, { method: 'POST' });
+      const refreshed = await api<Territory>(`/api/territories/${id}`);
+      setTerritory(refreshed);
+      toast('Território vinculado ao dia.', { icon: infoIcon });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao vincular.');
+    }
   }
 
-  async function unlinkDaily() {
+  function unlinkDaily() {
     if (!id) return;
-    const ok = await confirm({
+    confirmToast({
       title: 'Desvincular território do dia',
-      message: 'Este território deixará de ser o destaque do dia. Você poderá marcar outro quando quiser.',
+      description:
+        'Este território deixará de ser o destaque do dia. Você poderá marcar outro quando quiser.',
       confirmLabel: 'Desvincular',
-      cancelLabel: 'Cancelar',
-      tone: 'warning',
+      onConfirm: async () => {
+        try {
+          await api(`/api/territories/${id}/daily`, { method: 'DELETE' });
+          const refreshed = await api<Territory>(`/api/territories/${id}`);
+          setTerritory(refreshed);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Erro ao desvincular.');
+        }
+      },
     });
-    if (!ok) return;
-    await api(`/api/territories/${id}/daily`, { method: 'DELETE' });
-    const refreshed = await api<Territory>(`/api/territories/${id}`);
-    setTerritory(refreshed);
   }
 
   /** Igualdade estrita de número de casa (nunca substring: "1" ≠ "11") */
@@ -190,18 +203,22 @@ export default function TerritoryDetailPage() {
     // Desmarcar (voltar ao normal) exige confirmação — marcar como feito é imediato
     if (currentlyDone) {
       const street = block.street_name?.trim();
-      const ok = await confirm({
+      confirmToast({
         title: 'Desmarcar casa como pendente?',
-        message: street
+        description: street
           ? `A casa nº ${house} (${street}) voltará ao estado normal (ainda não feita). Deseja continuar?`
           : `A casa nº ${house} voltará ao estado normal (ainda não feita). Deseja continuar?`,
         confirmLabel: 'Sim, desmarcar',
-        cancelLabel: 'Cancelar',
-        tone: 'warning',
+        onConfirm: () => applyToggleHouse(block, house, done),
       });
-      if (!ok) return;
+      return;
     }
 
+    await applyToggleHouse(block, house, done);
+  }
+
+  async function applyToggleHouse(block: Block, house: string, done: boolean) {
+    if (!id) return;
     const key = `${block.id}:${house}`;
     setTogglingKey(key);
 

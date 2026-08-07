@@ -300,6 +300,178 @@ select {
   .app-empty {
     @apply rounded-apple-lg border border-dashed border-apple-line px-5 py-10 text-center bg-apple-fill;
   }
+
+  /* Sonner toasts (estilo Apple) — sobrepõe as variáveis CSS do sonner com os tokens do app */
+  [data-sonner-toaster] {
+    --width: 350px;
+    --border-radius: 16px;
+    font-family: inherit;
+  }
+
+  [data-sonner-toaster][data-sonner-theme='light'] {
+    --normal-bg: rgb(var(--apple-surface) / 0.8);
+    --normal-border: var(--apple-line);
+    --normal-text: rgb(var(--apple-ink));
+    --success-bg: rgb(var(--apple-green) / 0.12);
+    --success-border: rgb(var(--apple-green) / 0.3);
+    --success-text: rgb(var(--apple-green));
+    --error-bg: rgb(var(--apple-red) / 0.1);
+    --error-border: rgb(var(--apple-red) / 0.3);
+    --error-text: rgb(var(--apple-red));
+  }
+
+  [data-sonner-toaster][data-sonner-theme='dark'] {
+    --normal-bg: rgb(var(--apple-surface) / 0.75);
+    --normal-border: var(--apple-line);
+    --normal-text: rgb(var(--apple-ink));
+    --success-bg: rgb(var(--apple-green) / 0.16);
+    --success-border: rgb(var(--apple-green) / 0.4);
+    --success-text: rgb(var(--apple-green));
+    --error-bg: rgb(var(--apple-red) / 0.14);
+    --error-border: rgb(var(--apple-red) / 0.4);
+    --error-text: rgb(var(--apple-red));
+  }
+
+  [data-sonner-toast][data-styled='true'] {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      var(--shadow-float);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    backdrop-filter: blur(24px) saturate(1.8);
+  }
+
+  [data-sonner-toast][data-styled='true'] [data-title] {
+    font-weight: 600;
+    letter-spacing: -0.011em;
+  }
+
+  [data-sonner-toast][data-styled='true'] [data-icon] {
+    height: 18px;
+    width: 18px;
+  }
+
+  [data-sonner-toast] [data-close-button] {
+    background: var(--apple-fill);
+    border-color: var(--apple-line);
+    color: rgb(var(--apple-secondary));
+  }
+
+  [data-sonner-toast] [data-close-button]:hover {
+    background: var(--apple-line);
+    color: rgb(var(--apple-ink));
+  }
+
+  /* Toaster de confirmação (toasterId: 'confirm') — alerta centralizado na tela,
+     com o mesmo fundo escurecido/desfocado dos modais do app */
+  .app-confirm-toaster {
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+    background: rgb(15 23 42 / 0.5);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  /* Cartão estilo alert (iOS): vidro Apple, texto centralizado, botões empilhados */
+  .app-confirm-toaster [data-sonner-toast] {
+    position: static;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0 !important;
+    width: min(360px, calc(100vw - 2rem)) !important;
+    padding: 0 !important;
+    border-radius: 22px !important;
+    background: rgb(var(--apple-surface) / 0.85) !important;
+    border: 1px solid var(--apple-line) !important;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      var(--shadow-float) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    backdrop-filter: blur(28px) saturate(1.8);
+  }
+
+  /* Ícone de atenção centralizado no topo (sem badge) */
+  .app-confirm-toaster [data-icon] {
+    flex-shrink: 0;
+    align-self: center;
+    margin: 24px 0 16px !important;
+  }
+
+  .app-confirm-toaster [data-icon] svg {
+    width: 26px !important;
+    height: 26px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Conteúdo centralizado */
+  .app-confirm-toaster [data-content] {
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    text-align: center;
+    gap: 4px !important;
+    padding: 0 22px 22px;
+  }
+
+  .app-confirm-toaster [data-title] {
+    font-size: 16px !important;
+    font-weight: 650 !important;
+    letter-spacing: -0.011em;
+    line-height: 1.3 !important;
+    color: rgb(var(--apple-ink)) !important;
+  }
+
+  .app-confirm-toaster [data-description] {
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+    color: rgb(var(--apple-secondary)) !important;
+  }
+
+  /* Botões empilhados em largura total, separados por linha fina (estilo iOS) */
+  .app-confirm-toaster [data-button] {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    justify-content: center;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border-top: 1px solid var(--apple-line) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgb(var(--apple-ink)) !important;
+  }
+
+  .app-confirm-toaster [data-button]:hover {
+    background: var(--apple-fill);
+  }
+
+  .app-confirm-toaster [data-button]:active {
+    background: var(--apple-line);
+  }
+
+  .app-confirm-toaster [data-action] {
+    order: 1;
+    font-weight: 600 !important;
+    color: var(--confirm-accent) !important;
+  }
+
+  .app-confirm-toaster [data-cancel] {
+    order: 2;
+    border-radius: 0 0 22px 22px !important;
+  }
 }
 
 .leaflet-container {
