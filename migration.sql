@@ -144,12 +144,6 @@ WHERE r.slug = 'field';
 INSERT IGNORE INTO role_permissions (role_id, permission)
 SELECT r.id, 'territory:read' FROM roles r WHERE r.slug = 'viewer';
 
--- Senha padrão do admin: 123456 (mínimo 6 caracteres exigido pela API)
-INSERT INTO users (name, email, password_hash, role_id)
-SELECT 'Administrador', 'admin@campo.local',
-       '$2b$10$KpSm9ser0EX5usgs2.1em.TpfvROSW8knZpTPosW2/VD8moPOG.Uy',
-       r.id
-FROM roles r WHERE r.slug = 'admin'
-ON DUPLICATE KEY UPDATE
-  password_hash = VALUES(password_hash),
-  role_id = VALUES(role_id);
+-- Nenhum usuário é criado aqui (sem senha padrão conhecida).
+-- Após aplicar o schema, crie o administrador com senha aleatória forte:
+--   npm run create:admin

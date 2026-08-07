@@ -16,9 +16,11 @@ const DEV_FALLBACK = 'dev-secret-change-me';
 
 function resolveJwtSecret() {
   const fromEnv = (process.env.JWT_SECRET || '').trim();
-  const isProd = process.env.NODE_ENV === 'production';
+  const appUrl = (process.env.VITE_APP_URL || '').trim();
+  // "Produção" = NODE_ENV=production OU app exposto por URL https (ex.: https://analp.tec.br)
+  const looksPublic = process.env.NODE_ENV === 'production' || /^https:\/\//i.test(appUrl);
 
-  if (isProd && (!fromEnv || fromEnv === DEV_FALLBACK || fromEnv.length < 32)) {
+  if (looksPublic && (!fromEnv || fromEnv === DEV_FALLBACK || fromEnv.length < 32)) {
     throw new Error(
       '[auth] JWT_SECRET ausente ou fraco em produção (mín. 32 caracteres, não use o valor de dev).',
     );

@@ -13,7 +13,8 @@
     "migrate:rbac": "node scripts/migrate-rbac.js",
     "migrate:finish-history": "node scripts/migrate-finish-history.js",
     "migrate:theme": "node scripts/migrate-theme-preference.js",
-    "migrate:block-description": "node scripts/migrate-block-description.js"
+    "migrate:block-description": "node scripts/migrate-block-description.js",
+    "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",

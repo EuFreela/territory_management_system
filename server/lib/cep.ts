@@ -19,10 +19,6 @@ export function formatCep(cep: string) {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 }
 
-export function isValidCep(cep: string) {
-  return onlyDigits(cep).length === 8;
-}
-
 export type GeocodeResult = {
   lat: number;
   lng: number;

@@ -2,7 +2,6 @@ import { Router } from 'express';
 import pool from '../lib/db.js';
 import {
   isTerritoryFullyFinished,
-  maybeRecordTerritoryFinished,
   recordTerritoryFinished,
 } from '../lib/finish-history.js';
 import { getMapConfig } from '../lib/map-config.js';
@@ -724,15 +723,6 @@ router.patch(
       blockId,
       id,
     ]);
-
-    // Se o território ficou 100% feito, registra no histórico (1x por dia)
-    if (done) {
-      try {
-        await maybeRecordTerritoryFinished(id);
-      } catch (err) {
-        console.error('[finish-history]', err);
-      }
-    }
 
     res.json(
       mapBlock({
