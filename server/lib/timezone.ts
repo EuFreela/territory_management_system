@@ -21,15 +21,6 @@ export function todayIsoInAppTz(timeZone = APP_TIMEZONE) {
   }).format(new Date());
 }
 
-/** Dia da semana 0=Domingo … 6=Sábado no fuso do app (agora) */
-export function weekdayNowInAppTz(timeZone = APP_TIMEZONE) {
-  const short = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    weekday: 'short',
-  }).format(new Date());
-  return WEEKDAY_SHORT_TO_NUM[short] ?? 0;
-}
-
 /**
  * Dia da semana para uma data civil YYYY-MM-DD no fuso do app.
  * Usa meio-dia local SP (UTC-3, sem horário de verão no Brasil desde 2019).

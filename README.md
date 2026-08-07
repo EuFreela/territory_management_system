@@ -110,6 +110,14 @@ npm run migrate:finish-history    # histórico de finalizações
 npm run migrate:theme             # preferência light/dark por usuário
 ```
 
+Crie o primeiro administrador (senha forte aleatória, exibida uma única vez):
+
+```bash
+npm run create:admin
+```
+
+> O `migration.sql` **não** cria usuário com senha padrão conhecida. Sem `create:admin` não há como logar.
+
 Opcional — seed da escala de dirigentes:
 
 ```bash
@@ -172,6 +180,7 @@ Após alterar `VITE_*`, rode **`npm run build`** e reinicie o processo Node.
 | `npm run migrate:rbac` | Migração RBAC |
 | `npm run migrate:finish-history` | Tabela de histórico de finalizações |
 | `npm run migrate:theme` | Coluna `theme_preference` em `users` |
+| `npm run create:admin` | Cria o primeiro administrador com senha aleatória |
 
 ---
 

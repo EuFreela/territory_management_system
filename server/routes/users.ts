@@ -166,7 +166,6 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
       return;
     }
 
-    const authUser = (req as AuthedRequest).user;
     const { name, email, role_id, password } = parsed.data;
 
     // Não permite rebaixar o último admin
@@ -193,11 +192,6 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
           return;
         }
       }
-    }
-
-    // Não permite o próprio usuário se remover de admin se for o único
-    if (authUser.id === id && role_id !== undefined && authUser.isAdmin) {
-      // ok se ainda restar admin
     }
 
     if (email) {

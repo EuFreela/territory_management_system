@@ -176,12 +176,3 @@ export async function recordTerritoryFinished(
     throw err;
   }
 }
-
-/**
- * Auto-registro ao completar checklist: não grava sozinho no histórico.
- * O histórico só recebe linha no botão Finalizar do território do dia
- * (para não gerar linhas sem pessoas / duplicadas sem ação explícita).
- */
-export async function maybeRecordTerritoryFinished(_territoryId: number | string): Promise<boolean> {
-  return false;
-}
