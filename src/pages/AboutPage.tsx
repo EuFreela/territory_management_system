@@ -37,6 +37,21 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Confirmações, usuários e escala (v0.0.7)',
+    items: [
+      'Confirmações padronizadas em alerta estilo iOS: todas as exclusões (usuário, território, não em casa, quadras, histórico, escala, áreas e notas do mapa) usam a mesma caixa centralizada',
+      'Desvincular o território do dia e desmarcar uma casa confirmam no mesmo padrão de aviso',
+      'Ícone e cor por tipo de ação: azul para informação e vermelho para destrutivas, com fundo acompanhando o tema claro/escuro',
+      'Feedback com toast ao vincular o território do dia e ao excluir/remover registros (sucesso ou erro)',
+      'Modal antiga de confirmação substituída pelo novo padrão',
+      'Gestão de usuários com papéis (RBAC): criar e editar usuários escolhendo papel e senha, com busca',
+      'Campo de senha com medidor de força, checklist de requisitos e gerador de senha forte',
+      'Modal “Papéis e permissões” explica o que cada papel pode fazer',
+      'Escala: adicionar designação por data, com dia da semana e horário',
+      'Permissões de dirigentes/escala: apenas quem gerencia cria, edita e remove designações',
+    ],
+  },
+  {
     title: 'Lista e tooltips (v0.0.6.2)',
     items: [
       'Territórios listados por Terr. N.º (ordem numérica)',

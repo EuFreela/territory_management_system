@@ -2,7 +2,7 @@
 
 **Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** [`v0.0.6.2`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6.2)
+**Versão:** [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7)
 
 **Produção:** [https://analp.tec.br](https://analp.tec.br)
 
@@ -261,9 +261,15 @@ Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na 
 
 ---
 
-## Changelog (v0.0.6.2)
+## Changelog (v0.0.7)
 
 Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
+
+- Confirmações padronizadas em alerta estilo iOS (exclusões, desvincular do dia, desmarcar casa)
+- Gestão de usuários com papéis (RBAC): criar/editar com papel e senha forte; modal de permissões
+- Escala: designação por data; ações de gerenciamento com permissão
+
+### Histórico (v0.0.6.2)
 
 - Lista de territórios por **Terr. N.º** com toggle crescente/decrescente
 - Tooltips compactos (1 linha, máx. 40 caracteres)
@@ -272,7 +278,7 @@ Resumo das entregas desta versão (detalhes também em **Sobre → Atualizaçõe
 
 - Rota de carro; pan livre com GPS; voltar ao GPS ou às quadras
 
-Tag no repositório: [`v0.0.6.2`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6.2)
+Tag no repositório: [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7)
 
 ---
 

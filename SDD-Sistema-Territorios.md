@@ -4,12 +4,12 @@
 |-------|--------|
 | **Produto** | CAMPO |
 | **Cliente / contexto** | Congregação Alpinópolis — gestão de territórios de campo |
-| **Versão do software** | **v0.0.6.2** |
-| **Versão deste documento** | **6.2** |
-| **Data** | 05/08/2026 |
+| **Versão do software** | **v0.0.7** |
+| **Versão deste documento** | **7.0** |
+| **Data** | 07/08/2026 |
 | **Status** | Implementado e alinhado ao código atual |
 | **Repositório** | https://github.com/EuFreela/territory_management_system |
-| **Tag** | [`v0.0.6.2`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.6.2) |
+| **Tag** | [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7) |
 | **Domínio de produção** | **https://analp.tec.br** |
 
 **Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
@@ -37,7 +37,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 
 | Item | Valor |
 |------|--------|
-| Versão | v0.0.6.2 |
+| Versão | v0.0.7 |
 | Banco | MySQL 8+ (local ou servidor) |
 | Nome do banco (padrão) | `campo` (`DB_NAME`) |
 | Frontend | Vite + React SPA |
@@ -155,7 +155,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 ### 3.9 Sobre (`/sobre`)
 
 - Aba **O sistema**: o que é o CAMPO, o que faz, para quem é
-- Aba **Atualizações**: versão **v0.0.6.2** + changelog (ordenação, tooltips, GPS)
+- Aba **Atualizações**: versão **v0.0.7** + changelog (confirmações, usuários, escala)
 
 ### 3.10 UI / UX global
 
@@ -164,7 +164,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 - Tooltips custom (`data-tooltip`) — sem `title` nativo feio
 - Tema light/dark (classe `dark` no `html`)
 - Preferência de tema **persistida no usuário** (`theme_preference`)
-- Modal de confirmação (`ConfirmModal`: default / warning / danger)
+- Confirmações padronizadas em alerta estilo iOS (`confirmToast` via Sonner: info/danger, fundo escurecido)
 - Scroll to top
 - Login com header, card e tipografia do sistema
 
@@ -375,7 +375,7 @@ Todas exigem `user:manage`:
 | `TerritoryMap` | Mapa interativo (draw, fullscreen, geocode…) |
 | `ProtectedRoute` | Auth + shell + troca de senha forçada |
 | `RequirePermission` | Gate de escopo |
-| `ConfirmModal` | Confirmações |
+| `confirm-toast` | Confirmações padronizadas (Sonner) |
 | `theme-context` | Aplica tema; sincroniza com user + API |
 | `auth-context` | Sessão, `can()`, admin |
 
@@ -455,7 +455,7 @@ campo/
 ├── scripts/             # migrações auxiliares
 ├── public/logo.webp
 ├── migration.sql
-├── package.json         # version 0.0.6.2
+├── package.json         # version 0.0.7
 ├── README.md
 └── SDD-Sistema-Territorios.md   # este documento
 ```
@@ -490,27 +490,28 @@ Admin/editor/field marca território do dia
 Editar/cartão → blocks (quadra/rua/casas)
   → PATCH completed_houses
   → todas as casas feitas → visual “finalizado”
-  → desmarcar → ConfirmModal
+  → desmarcar → confirmação padrão (confirmToast)
 ```
 
 ---
 
-## 14. Changelog resumido (v0.0.6.2)
+## 14. Changelog resumido (v0.0.7)
 
 Alinhado à aba **Sobre → Atualizações** no produto:
 
-1. **v0.0.6.2** — lista por Terr. N.º; toggle asc/desc; tooltips 40 chars  
-2. **v0.0.6.1** — rota de carro; pan livre com GPS; voltar ao GPS/quadras  
-3. **v0.0.6** — GPS; notas; match exato  
+1. **v0.0.7** — confirmações padronizadas em alerta iOS; gestão de usuários (papel/senha forte); escala por data  
+2. **v0.0.6.2** — lista por Terr. N.º; toggle asc/desc; tooltips 40 chars  
+3. **v0.0.6.1** — rota de carro; pan livre com GPS; voltar ao GPS/quadras  
+4. **v0.0.6** — GPS; notas; match exato  
 
 ---
 
-## 15. Critérios de aceite (regressão v0.0.6.2)
+## 15. Critérios de aceite (regressão v0.0.7)
 
-- [ ] Lista de territórios ordenada por N.º; botão alterna crescente/decrescente  
-- [ ] Tooltips em uma linha, textos curtos  
-- [ ] GPS e rota de carro (regressão v0.0.6.1)  
-- [ ] Sobre com **v0.0.6.2**  
+- [ ] Confirmações de exclusão/desvincular no novo padrão (ícone e cor por tipo de ação)  
+- [ ] Usuários: criar/editar com papel e senha forte; modal de papéis e permissões  
+- [ ] Escala: designação por data e permissões de gerenciamento  
+- [ ] Sobre com **v0.0.7**  
 
 ---
 
@@ -526,7 +527,8 @@ Alinhado à aba **Sobre → Atualizações** no produto:
 | 6.0 | 05/08/2026 | v0.0.6: GPS, rota, notas, match exato |
 | 6.1 | 05/08/2026 | v0.0.6.1: carro, pan livre, voltar ao GPS |
 | **6.2** | **05/08/2026** | **v0.0.6.2:** ordenação N.º; tooltips compactos |
+| **7.0** | **07/08/2026** | **v0.0.7:** confirmações padronizadas; usuários (papel/senha); escala por data |
 
 ---
 
-*Fim do SDD — CAMPO v0.0.6.2*
+*Fim do SDD — CAMPO v0.0.7*
