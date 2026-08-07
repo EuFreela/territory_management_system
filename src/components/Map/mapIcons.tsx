@@ -115,6 +115,37 @@ export function IconEye({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+export function IconEyeOff({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path d="M3 3 21 21" />
+      <path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.4 4.3" />
+      <path d="M6.6 6.6C3.8 8.5 2 12 2 12s3.5 7 10 7a9.5 9.5 0 0 0 5.4-1.6" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </svg>
+  );
+}
+
+export function IconRefresh({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path d="M20 12a8 8 0 1 1-2.3-5.7" />
+      <path d="M20 4v4h-4" />
+    </svg>
+  );
+}
+
+export function IconKey({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <circle cx="7.5" cy="15.5" r="4.5" />
+      <path d="m11 12 9-9" />
+      <path d="m17 6 3 3" />
+      <path d="m14 9 2 2" />
+    </svg>
+  );
+}
+
 export function IconStar({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
@@ -220,6 +251,26 @@ export function IconInfo({ className = 'h-5 w-5' }: IconProps) {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4" />
       <path d="M12 8h.01" />
+    </svg>
+  );
+}
+
+/** Interrogação (SF Symbols "questionmark.circle") — ajuda de papéis */
+export function IconHelp({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.1 9a3 3 0 1 1 4.4 2.65c-.97.57-1.5 1.06-1.5 2.35" />
+      <path d="M12 17h.01" />
     </svg>
   );
 }

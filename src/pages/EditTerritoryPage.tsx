@@ -7,7 +7,8 @@ import TerritoryMap, {
   parseGeoJsonToAreas,
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { confirmToast } from '@/lib/confirm-toast';
 import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
 import { api } from '@/lib/api';
 import type { Block, CepLocation, Territory } from '@/lib/types';
@@ -15,7 +16,6 @@ import type { Block, CepLocation, Territory } from '@/lib/types';
 export default function EditTerritoryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const confirm = useConfirm();
   const [localidade, setLocalidade] = useState('');
   const [number, setNumber] = useState('');
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
@@ -274,24 +274,25 @@ export default function EditTerritoryPage() {
     }
   }
 
-  async function removeBlock(blockId: number) {
+  function removeBlock(blockId: number) {
     if (!id) return;
-    const ok = await confirm({
+    confirmToast({
       title: 'Remover não em casa',
-      message: 'Este registro de casas sem resposta será apagado. Essa ação não pode ser desfeita.',
+      description: 'Este registro de casas sem resposta será apagado. Essa ação não pode ser desfeita.',
       confirmLabel: 'Remover',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: async () => {
+        try {
+          await api(`/api/territories/${id}/blocks/${blockId}`, { method: 'DELETE' });
+          setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+          setBulkSelectedIds((prev) => prev.filter((x) => x !== blockId));
+          if (editingBlockId === blockId) clearBlockForm();
+          toast.success('Registro removido.');
+        } catch (err) {
+          setBlockError(err instanceof Error ? err.message : 'Erro ao remover.');
+        }
+      },
     });
-    if (!ok) return;
-    try {
-      await api(`/api/territories/${id}/blocks/${blockId}`, { method: 'DELETE' });
-      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
-      setBulkSelectedIds((prev) => prev.filter((x) => x !== blockId));
-      if (editingBlockId === blockId) clearBlockForm();
-    } catch (err) {
-      setBlockError(err instanceof Error ? err.message : 'Erro ao remover.');
-    }
   }
 
   function toggleBulkSelect(blockId: number) {
@@ -308,34 +309,34 @@ export default function EditTerritoryPage() {
     }
   }
 
-  async function bulkDeleteSelected() {
+  function bulkDeleteSelected() {
     if (!id || bulkSelectedIds.length === 0) return;
     const count = bulkSelectedIds.length;
-    const ok = await confirm({
+    confirmToast({
       title: 'Apagar quadras selecionadas',
-      message: `${count} ${count === 1 ? 'quadra será apagada' : 'quadras serão apagadas'} do não em casa (rua e números). Essa ação não pode ser desfeita.`,
+      description: `${count} ${count === 1 ? 'quadra será apagada' : 'quadras serão apagadas'} do não em casa (rua e números). Essa ação não pode ser desfeita.`,
       confirmLabel: count === 1 ? 'Apagar 1 quadra' : `Apagar ${count} quadras`,
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: async () => {
+        setBulkBusy(true);
+        setBlockError('');
+        try {
+          await api(`/api/territories/${id}/blocks/bulk-delete`, {
+            method: 'POST',
+            body: JSON.stringify({ ids: bulkSelectedIds }),
+          });
+          const removed = new Set(bulkSelectedIds);
+          setBlocks((prev) => prev.filter((b) => !removed.has(b.id)));
+          if (editingBlockId != null && removed.has(editingBlockId)) clearBlockForm();
+          setBulkSelectedIds([]);
+          toast.success(count === 1 ? 'Quadra apagada.' : `${count} quadras apagadas.`);
+        } catch (err) {
+          setBlockError(err instanceof Error ? err.message : 'Erro ao apagar em massa.');
+        } finally {
+          setBulkBusy(false);
+        }
+      },
     });
-    if (!ok) return;
-
-    setBulkBusy(true);
-    setBlockError('');
-    try {
-      await api(`/api/territories/${id}/blocks/bulk-delete`, {
-        method: 'POST',
-        body: JSON.stringify({ ids: bulkSelectedIds }),
-      });
-      const removed = new Set(bulkSelectedIds);
-      setBlocks((prev) => prev.filter((b) => !removed.has(b.id)));
-      if (editingBlockId != null && removed.has(editingBlockId)) clearBlockForm();
-      setBulkSelectedIds([]);
-    } catch (err) {
-      setBlockError(err instanceof Error ? err.message : 'Erro ao apagar em massa.');
-    } finally {
-      setBulkBusy(false);
-    }
   }
 
 

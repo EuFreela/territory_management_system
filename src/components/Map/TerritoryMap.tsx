@@ -10,7 +10,7 @@
 } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -930,7 +930,6 @@ export default function TerritoryMap({
   finishedKeys = [],
   resizeToken = 0,
 }: TerritoryMapProps) {
-  const confirm = useConfirm();
   const { user } = useAuth();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
   const [notes, setNotes] = useState<MapNote[]>(() => parseGeoJsonToNotes(value));
@@ -1427,23 +1426,23 @@ export default function TerritoryMap({
     setNoteDraft('');
   }
 
-  async function removeSelectedNote() {
+  function removeSelectedNote() {
     if (!selectedNoteId || !editable) return;
     const note = notes.find((n) => n.id === selectedNoteId);
     const label = (noteDraft || note?.text || '').trim();
-    const ok = await confirm({
+    confirmToast({
       title: 'Remover atenção',
-      message: label
+      description: label
         ? `Remover o aviso “${label.slice(0, 60)}${label.length > 60 ? '…' : ''}”?`
         : 'Remover este ponto de atenção do mapa?',
       confirmLabel: 'Remover',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: () => {
+        emitNotes(notes.filter((n) => n.id !== selectedNoteId));
+        setSelectedNoteId(null);
+        setNoteDraft('');
+      },
     });
-    if (!ok) return;
-    emitNotes(notes.filter((n) => n.id !== selectedNoteId));
-    setSelectedNoteId(null);
-    setNoteDraft('');
   }
 
   function addPoint(point: LatLng) {
@@ -1509,28 +1508,27 @@ export default function TerritoryMap({
     setDrawMode(false);
   }
 
-  async function clearAll() {
+  function clearAll() {
     if (!editable) return;
     if (areas.length === 0 && draftPoints.length === 0 && notes.length === 0) return;
 
-    const ok = await confirm({
+    confirmToast({
       title: 'Apagar todas as áreas e notas',
-      message:
+      description:
         'Todas as áreas e balões de atenção do mapa serão removidos. Essa ação não pode ser desfeita (até você salvar de novo). Deseja continuar?',
       confirmLabel: 'Apagar tudo',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: () => {
+        setDraftPoints([]);
+        setRedoStack([]);
+        setSelectedId(null);
+        setSelectedNoteId(null);
+        emit([], []);
+        syncExternalSelection(null);
+        setDrawMode(false);
+        setNoteMode(false);
+      },
     });
-    if (!ok) return;
-
-    setDraftPoints([]);
-    setRedoStack([]);
-    setSelectedId(null);
-    setSelectedNoteId(null);
-    emit([], []);
-    syncExternalSelection(null);
-    setDrawMode(false);
-    setNoteMode(false);
   }
 
   function updateSelectedLabel(rawLabel: string) {
@@ -1553,26 +1551,25 @@ export default function TerritoryMap({
     onAreaSelect?.({ id: selectedId, label: unique });
   }
 
-  async function removeSelected() {
+  function removeSelected() {
     if (!selectedId || !editable) return;
 
     const label = selected?.label?.trim() || 'esta área';
 
-    const ok = await confirm({
+    confirmToast({
       title: 'Remover área selecionada',
-      message: `A área “${label}” será removida do mapa. Deseja continuar?`,
+      description: `A área “${label}” será removida do mapa. Deseja continuar?`,
       confirmLabel: 'Remover',
-      cancelLabel: 'Cancelar',
       tone: 'danger',
+      onConfirm: () => {
+        const next = areas.filter((a) => a.id !== selectedId);
+        emit(next);
+        const nextSel = next[0] ?? null;
+        setSelectedId(nextSel?.id ?? null);
+        syncExternalSelection(nextSel);
+        setRedoStack([]);
+      },
     });
-    if (!ok) return;
-
-    const next = areas.filter((a) => a.id !== selectedId);
-    emit(next);
-    const nextSel = next[0] ?? null;
-    setSelectedId(nextSel?.id ?? null);
-    syncExternalSelection(nextSel);
-    setRedoStack([]);
   }
 
   return (

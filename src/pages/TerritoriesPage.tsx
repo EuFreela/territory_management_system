@@ -9,7 +9,8 @@ import {
   IconStar,
   IconUnlink,
 } from '@/components/Map/mapIcons';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { toast } from 'sonner';
+import { confirmToast, infoIcon } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { tooltipText } from '@/lib/tooltip';
@@ -26,7 +27,6 @@ function normalize(text: string) {
 type SortDir = 'asc' | 'desc';
 
 export default function TerritoriesPage() {
-  const confirm = useConfirm();
   const { can } = useAuth();
   const [territories, setTerritories] = useState<Territory[]>([]);
   const [query, setQuery] = useState('');
@@ -89,21 +89,30 @@ export default function TerritoriesPage() {
   }, [territories, query, sortDir]);
 
   async function setDaily(id: number) {
-    await api(`/api/territories/${id}/daily`, { method: 'POST' });
-    await load();
+    try {
+      await api(`/api/territories/${id}/daily`, { method: 'POST' });
+      await load();
+      toast('Território vinculado ao dia.', { icon: infoIcon });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao vincular.');
+    }
   }
 
-  async function unlinkDaily(id: number) {
-    const ok = await confirm({
+  function unlinkDaily(id: number) {
+    confirmToast({
       title: 'Desvincular território do dia',
-      message: 'Este território deixará de ser o destaque do dia. Você poderá marcar outro quando quiser.',
+      description:
+        'Este território deixará de ser o destaque do dia. Você poderá marcar outro quando quiser.',
       confirmLabel: 'Desvincular',
-      cancelLabel: 'Cancelar',
-      tone: 'warning',
+      onConfirm: async () => {
+        try {
+          await api(`/api/territories/${id}/daily`, { method: 'DELETE' });
+          await load();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao desvincular.');
+        }
+      },
     });
-    if (!ok) return;
-    await api(`/api/territories/${id}/daily`, { method: 'DELETE' });
-    await load();
   }
 
   return (

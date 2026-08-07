@@ -7,14 +7,13 @@ import {
   IconUnlink,
   IconX,
 } from '@/components/Map/mapIcons';
-import { useConfirm } from '@/components/ui/ConfirmModal';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DashboardData, FieldAssignment, FieldLeadersToday } from '@/lib/types';
 
 export default function DashboardPage() {
   const { can } = useAuth();
-  const confirm = useConfirm();
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [leaders, setLeaders] = useState<FieldLeadersToday | null>(null);
@@ -45,28 +44,26 @@ export default function DashboardPage() {
     load().catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar dashboard.'));
   }, []);
 
-  async function unlinkDaily(event: React.MouseEvent, territoryId: number) {
+  function unlinkDaily(event: React.MouseEvent, territoryId: number) {
     event.preventDefault();
     event.stopPropagation();
-    const ok = await confirm({
+    confirmToast({
       title: 'Desvincular território do dia',
-      message:
+      description:
         'Este território deixará de ser o destaque do dia. Você poderá marcar outro quando quiser.',
       confirmLabel: 'Desvincular',
-      cancelLabel: 'Cancelar',
-      tone: 'warning',
+      onConfirm: async () => {
+        setUnlinking(true);
+        try {
+          await api(`/api/territories/${territoryId}/daily`, { method: 'DELETE' });
+          await load();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Erro ao desvincular.');
+        } finally {
+          setUnlinking(false);
+        }
+      },
     });
-    if (!ok) return;
-
-    setUnlinking(true);
-    try {
-      await api(`/api/territories/${territoryId}/daily`, { method: 'DELETE' });
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao desvincular.');
-    } finally {
-      setUnlinking(false);
-    }
   }
 
   function openFinishModal(event: React.MouseEvent, territoryId: number) {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import pool from '../lib/db.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { requirePermission } from '../middleware/requirePermission.js';
 import { todayIsoInAppTz, weekdayForDateStr } from '../lib/timezone.js';
 
 const router = Router();
@@ -36,7 +37,7 @@ function weekdayLabelPt(day: number) {
 }
 
 /** Lista completa (tabela de designações) */
-router.get('/', requireAuth, async (_req, res) => {
+router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
   const [rows] = await pool.execute(
     `SELECT * FROM field_assignments
      ORDER BY is_fixed ASC,
@@ -52,7 +53,7 @@ router.get('/', requireAuth, async (_req, res) => {
  * Dirigentes do dia (data por query ?date=YYYY-MM-DD ou hoje local)
  * Retorna designação datada + fixa do dia da semana, se houver.
  */
-router.get('/today', requireAuth, async (req, res) => {
+router.get('/today', requireAuth, requirePermission('territory:read'), async (req, res) => {
   // "Hoje" sempre no fuso Brasil (America/Sao_Paulo), não UTC do servidor
   const dateStr =
     typeof req.query.date === 'string' && req.query.date ? req.query.date : todayIsoInAppTz();
@@ -86,7 +87,7 @@ router.get('/today', requireAuth, async (req, res) => {
   });
 });
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const parsed = assignmentSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
@@ -117,7 +118,7 @@ router.post('/', requireAuth, async (req, res) => {
   res.status(201).json({ id: insertResult.insertId, message: 'Designação criada.' });
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const { id } = req.params;
 
   // atalho: só atualizar nome
@@ -185,7 +186,7 @@ router.put('/:id', requireAuth, async (req, res) => {
   res.json((rows as unknown[])[0]);
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const { id } = req.params;
   const [result] = await pool.execute('DELETE FROM field_assignments WHERE id = ?', [id]);
   const deleteResult = result as { affectedRows?: number };
