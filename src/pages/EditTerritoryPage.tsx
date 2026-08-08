@@ -9,6 +9,7 @@ import TerritoryMap, {
 } from '@/components/Map/TerritoryMap';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
+import FieldError from '@/components/ui/FieldError';
 import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
 import { api } from '@/lib/api';
 import type { Block, CepLocation, Territory } from '@/lib/types';
@@ -31,6 +32,10 @@ export default function EditTerritoryPage() {
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [blockError, setBlockError] = useState('');
+  const [blockNameError, setBlockNameError] = useState('');
+  const [streetRowErrors, setStreetRowErrors] = useState<
+    Record<string, { streetName?: string; houseNumbers?: string }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingBlock, setAddingBlock] = useState(false);
@@ -151,6 +156,8 @@ export default function EditTerritoryPage() {
     setBlockName('');
     setStreetRows([newStreetRow()]);
     setBlockError('');
+    setBlockNameError('');
+    setStreetRowErrors({});
     setMapSelectedKey(null);
   }
 
@@ -167,6 +174,8 @@ export default function EditTerritoryPage() {
       },
     ]);
     setBlockError('');
+    setBlockNameError('');
+    setStreetRowErrors({});
     setMapSelectedKey(name || null);
     setMapFocusToken((n) => n + 1);
   }
@@ -206,27 +215,39 @@ export default function EditTerritoryPage() {
     event.preventDefault();
     if (!id) return;
 
+    let nameError = '';
     if (!blockName.trim()) {
-      setBlockError('Selecione a quadra desenhada no mapa.');
-      return;
+      nameError = 'Selecione a quadra desenhada no mapa.';
+    } else if (mapQuadraOptions.length === 0 && editingBlockId == null) {
+      nameError = 'Desenhe e salve as áreas no mapa antes de cadastrar não em casa.';
     }
-    if (mapQuadraOptions.length === 0 && editingBlockId == null) {
-      setBlockError('Desenhe e salve as áreas no mapa antes de cadastrar não em casa.');
-      return;
+
+    const rowErrors: Record<string, { streetName?: string; houseNumbers?: string }> = {};
+    for (const row of streetRows) {
+      if (!row.streetName.trim() && row.houseNumbers.trim() === '') {
+        rowErrors[row.key] = {
+          streetName: 'Preencha o nome da rua.',
+          houseNumbers: 'Informe ao menos uma casa.',
+        };
+      } else {
+        if (!row.streetName.trim()) {
+          rowErrors[row.key] = { streetName: 'Preencha o nome da rua.' };
+        } else if (row.houseNumbers.trim() === '') {
+          rowErrors[row.key] = { houseNumbers: 'Informe ao menos uma casa.' };
+        }
+      }
     }
+
+    setBlockNameError(nameError);
+    setStreetRowErrors(rowErrors);
+
+    if (nameError || Object.keys(rowErrors).length > 0) return;
 
     const rowsParsed = streetRows.map((row) => ({
       street_name: row.streetName.trim(),
       house_numbers: parseHouseList(row.houseNumbers),
       description: row.description.trim() || null,
     }));
-
-    for (const row of rowsParsed) {
-      if (!row.street_name || row.house_numbers.length === 0) {
-        setBlockError('Preencha o nome da rua e ao menos uma casa em cada linha.');
-        return;
-      }
-    }
 
     setAddingBlock(true);
     setBlockError('');
@@ -455,6 +476,7 @@ export default function EditTerritoryPage() {
           <form
             id="nao-em-casa-form"
             onSubmit={saveBlock}
+            noValidate
             className={`mb-6 space-y-4 rounded-apple-lg border p-4 sm:p-5 ${
               editingBlockId != null
                 ? 'border-apple-blue/25 bg-apple-blue/[0.04]'
@@ -480,10 +502,17 @@ export default function EditTerritoryPage() {
               <select
                 id="block-quadra-select"
                 value={blockName}
-                onChange={(event) => setBlockName(event.target.value)}
-                className="app-input max-w-md"
-                required
+                onChange={(event) => {
+                  setBlockName(event.target.value);
+                  if (blockNameError) setBlockNameError('');
+                }}
+                className={`app-input max-w-md ${
+                  blockNameError
+                    ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                    : ''
+                }`}
                 disabled={mapQuadraOptions.length === 0 && !blockName}
+                aria-invalid={Boolean(blockNameError)}
               >
                 <option value="">
                   {mapQuadraOptions.length === 0
@@ -499,6 +528,7 @@ export default function EditTerritoryPage() {
                   </option>
                 ))}
               </select>
+              {blockNameError ? <FieldError>{blockNameError}</FieldError> : null}
             </div>
 
             <div className="space-y-3">
@@ -510,10 +540,11 @@ export default function EditTerritoryPage() {
                   <button
                     type="button"
                     onClick={() => setStreetRows((prev) => [...prev, newStreetRow()])}
-                    className="app-btn-secondary h-9 px-3 text-[13px]"
+                    className="app-icon-btn"
+                    data-tooltip="Adicionar rua"
+                    aria-label="Adicionar rua"
                   >
-                    <IconPlus className="h-3.5 w-3.5" />
-                    Adicionar rua
+                    <IconPlus className="h-4 w-4" />
                   </button>
                 ) : null}
               </div>
@@ -555,11 +586,24 @@ export default function EditTerritoryPage() {
                             r.key === row.key ? { ...r, streetName: value } : r,
                           ),
                         );
+                        if (streetRowErrors[row.key]?.streetName) {
+                          setStreetRowErrors((prev) => ({
+                            ...prev,
+                            [row.key]: { ...prev[row.key], streetName: undefined },
+                          }));
+                        }
                       }}
                       placeholder="Ex: Rua das Mangabeiras…"
-                      className="app-input"
-                      required
+                      className={`app-input ${
+                        streetRowErrors[row.key]?.streetName
+                          ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                          : ''
+                      }`}
+                      aria-invalid={Boolean(streetRowErrors[row.key]?.streetName)}
                     />
+                    {streetRowErrors[row.key]?.streetName ? (
+                      <FieldError>{streetRowErrors[row.key].streetName}</FieldError>
+                    ) : null}
                   </div>
                   <div>
                     <label className="app-label" htmlFor={`street-houses-${row.key}`}>
@@ -575,11 +619,24 @@ export default function EditTerritoryPage() {
                             r.key === row.key ? { ...r, houseNumbers: value } : r,
                           ),
                         );
+                        if (streetRowErrors[row.key]?.houseNumbers) {
+                          setStreetRowErrors((prev) => ({
+                            ...prev,
+                            [row.key]: { ...prev[row.key], houseNumbers: undefined },
+                          }));
+                        }
                       }}
                       placeholder="Ex: 101, 103, 105, 210"
-                      className="app-input"
-                      required
+                      className={`app-input ${
+                        streetRowErrors[row.key]?.houseNumbers
+                          ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                          : ''
+                      }`}
+                      aria-invalid={Boolean(streetRowErrors[row.key]?.houseNumbers)}
                     />
+                    {streetRowErrors[row.key]?.houseNumbers ? (
+                      <FieldError>{streetRowErrors[row.key].houseNumbers}</FieldError>
+                    ) : null}
                     <p className="mt-1.5 text-[12px] text-apple-tertiary">
                       Separe por vírgula ou espaço.
                     </p>
@@ -625,19 +682,15 @@ export default function EditTerritoryPage() {
                   (mapQuadraOptions.length === 0 && editingBlockId == null) ||
                   selectableQuadraOptions.length === 0
                 }
-                className="app-btn-primary disabled:opacity-50"
+                className="app-icon-btn disabled:opacity-60"
+                data-tooltip={
+                  editingBlockId != null ? 'Salvar rua' : 'Salvar quadra / rua'
+                }
+                aria-label={
+                  editingBlockId != null ? 'Salvar rua' : 'Salvar quadra / rua'
+                }
               >
-                {editingBlockId != null ? (
-                  <>
-                    <IconSave className="h-4 w-4" />
-                    Salvar rua
-                  </>
-                ) : (
-                  <>
-                    <IconPlus className="h-4 w-4" />
-                    Salvar {streetRows.length > 1 ? `${streetRows.length} ruas` : 'quadra / rua'}
-                  </>
-                )}
+                <IconPlus className="h-4 w-4" />
               </button>
               {editingBlockId != null ? (
                 <button type="button" onClick={clearBlockForm} className="app-btn-secondary">
