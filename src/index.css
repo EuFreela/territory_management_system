@@ -168,7 +168,8 @@ select {
   [data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    z-index: 90;
+    /* Acima de cards/tabelas com shadow; tooltips precisam sobressair */
+    z-index: 200;
     left: 50%;
     bottom: calc(100% + 8px);
     transform: translateX(-50%) translateY(4px) scale(0.96);
