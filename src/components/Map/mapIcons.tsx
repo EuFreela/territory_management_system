@@ -8,6 +8,7 @@ import {
   CircleAlert,
   CircleCheck,
   CircleHelp,
+  Columns2,
   Expand,
   Eye,
   EyeOff,
@@ -29,6 +30,7 @@ import {
   RefreshCw,
   RotateCcw,
   RotateCw,
+  Rows2,
   Save,
   Scan,
   Search,
@@ -93,3 +95,5 @@ export const IconFocusAreas = icon(Scan);
 export const IconChevronDown = icon(ChevronDown);
 export const IconMenu = icon(Menu);
 export const IconWarning = icon(CircleAlert);
+export const IconRows = icon(Rows2);
+export const IconColumns = icon(Columns2);
