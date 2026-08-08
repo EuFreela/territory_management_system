@@ -47,7 +47,8 @@ function normalize(text: string) {
 }
 
 const thClass =
-  'px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary';
+  'px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary sm:px-4';
+const tdClass = 'px-3 py-3.5 text-[14px] sm:px-4';
 
 export default function FinishedTerritoriesPage() {
   const { isAdmin } = useAuth();
@@ -170,111 +171,114 @@ export default function FinishedTerritoriesPage() {
       ) : null}
 
       {!loading && filtered.length > 0 ? (
-        <div className="overflow-hidden rounded-[20px] border border-apple-line bg-apple-surface shadow-soft">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-[14px]">
-              <thead>
-                <tr className="border-b border-apple-line bg-apple-fill">
-                  <th className={thClass}>Dia</th>
-                  <th className={thClass}>Horário</th>
-                  <th className={thClass}>Dirigente</th>
-                  <th className={thClass}>Pessoas</th>
-                  <th className={thClass}>Território</th>
-                  <th className={thClass}>Registrado por</th>
-                  <th className={thClass}>Data/hora</th>
-                  {isAdmin ? <th className={`${thClass} text-right`}>Ações</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-apple-line last:border-0 transition hover:bg-apple-fill"
-                  >
-                    <td className="px-5 py-3.5 font-medium tabular-nums text-apple-ink">
-                      {formatDateBr(row.field_date)}
-                    </td>
-                    <td className="px-5 py-3.5 text-apple-secondary">
-                      {row.field_time?.trim() ? (
-                        <span className="inline-flex rounded-full bg-apple-fill px-2.5 py-0.5 text-[12px] font-semibold text-apple-ink">
-                          {row.field_time}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 text-apple-ink">
-                      {row.leader_name?.trim() || (
-                        <span className="text-apple-tertiary">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 tabular-nums text-apple-ink">
-                      {row.people_count != null ? (
-                        <span className="font-medium">{row.people_count}</span>
-                      ) : (
-                        <span className="text-apple-tertiary">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        {row.territory_id ? (
-                          <Link
-                            to={`/territories/${row.territory_id}`}
-                            data-tooltip={tooltipText(
-                              `Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
-                            )}
-                            aria-label={`Abrir território ${row.territory_name}`}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
-                          >
-                            <IconMap className="h-4 w-4" />
-                          </Link>
-                        ) : (
-                          <span
-                            data-tooltip={tooltipText(
-                              `${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
-                            )}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
-                          >
-                            <IconMap className="h-4 w-4" />
-                          </span>
-                        )}
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-apple-ink">{row.territory_name}</p>
-                          {row.territory_number ? (
-                            <p className="text-[12px] text-apple-tertiary">N.º {row.territory_number}</p>
-                          ) : null}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-apple-ink">
-                      {row.finished_by_name?.trim() ? (
-                        <span className="font-medium">{row.finished_by_name}</span>
-                      ) : (
-                        <span className="text-apple-tertiary">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap tabular-nums text-[13px] text-apple-secondary">
-                      {formatDateTimeBr(row.finished_at)}
-                    </td>
-                    {isAdmin ? (
-                      <td className="px-5 py-3.5 text-right">
-                        <button
-                          type="button"
-                          disabled={deletingId === row.id}
-                          onClick={() => void removeHistoryRow(row)}
-                          data-tooltip="Remover do histórico"
-                          aria-label="Remover do histórico"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-50"
+        /* overflow-visible: tooltips da coluna Ações precisam sobressair do card */
+        <div className="rounded-[20px] border border-apple-line bg-apple-surface shadow-soft">
+          <table className="w-full table-fixed text-left">
+            <thead>
+              <tr className="bg-apple-fill first:rounded-t-[20px]">
+                <th className={`${thClass} w-[11%] first:rounded-tl-[19px]`}>Dia</th>
+                <th className={`${thClass} w-[10%]`}>Horário</th>
+                <th className={`${thClass} w-[12%]`}>Dirigente</th>
+                <th className={`${thClass} w-[9%]`}>Pessoas</th>
+                <th className={`${thClass} w-[22%]`}>Território</th>
+                <th className={`${thClass} w-[14%]`}>Registrado por</th>
+                <th className={`${thClass} w-[14%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
+                  Data/hora
+                </th>
+                {isAdmin ? (
+                  <th className={`${thClass} w-[8%] rounded-tr-[19px] text-right`}>Ações</th>
+                ) : null}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row) => (
+                <tr key={row.id} className="transition hover:bg-apple-fill">
+                  <td className={`${tdClass} font-medium tabular-nums text-apple-ink`}>
+                    {formatDateBr(row.field_date)}
+                  </td>
+                  <td className={`${tdClass} text-apple-secondary`}>
+                    {row.field_time?.trim() ? (
+                      <span className="inline-flex max-w-full truncate rounded-full bg-apple-fill px-2 py-0.5 text-[12px] font-semibold text-apple-ink">
+                        {row.field_time}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className={`${tdClass} truncate text-apple-ink`}>
+                    {row.leader_name?.trim() || (
+                      <span className="text-apple-tertiary">—</span>
+                    )}
+                  </td>
+                  <td className={`${tdClass} tabular-nums text-apple-ink`}>
+                    {row.people_count != null ? (
+                      <span className="font-medium">{row.people_count}</span>
+                    ) : (
+                      <span className="text-apple-tertiary">—</span>
+                    )}
+                  </td>
+                  <td className={tdClass}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      {row.territory_id ? (
+                        <Link
+                          to={`/territories/${row.territory_id}`}
+                          data-tooltip={tooltipText(
+                            `Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                          )}
+                          data-tooltip-side="bottom"
+                          aria-label={`Abrir território ${row.territory_name}`}
+                          className="relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
                         >
-                          <IconTrash className="h-4 w-4" />
-                        </button>
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          <IconMap className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <span
+                          data-tooltip={tooltipText(
+                            `${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                          )}
+                          data-tooltip-side="bottom"
+                          className="relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
+                        >
+                          <IconMap className="h-3.5 w-3.5" />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-apple-ink">{row.territory_name}</p>
+                        {row.territory_number ? (
+                          <p className="truncate text-[12px] text-apple-tertiary">N.º {row.territory_number}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`${tdClass} truncate text-apple-ink`}>
+                    {row.finished_by_name?.trim() ? (
+                      <span className="font-medium">{row.finished_by_name}</span>
+                    ) : (
+                      <span className="text-apple-tertiary">—</span>
+                    )}
+                  </td>
+                  <td className={`${tdClass} truncate tabular-nums text-[13px] text-apple-secondary`}>
+                    {formatDateTimeBr(row.finished_at)}
+                  </td>
+                  {isAdmin ? (
+                    <td className={`${tdClass} text-right`}>
+                      <button
+                        type="button"
+                        disabled={deletingId === row.id}
+                        onClick={() => void removeHistoryRow(row)}
+                        data-tooltip="Remover do histórico"
+                        data-tooltip-side="left"
+                        aria-label="Remover do histórico"
+                        className="relative z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-50"
+                      >
+                        <IconTrash className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : null}
     </main>
