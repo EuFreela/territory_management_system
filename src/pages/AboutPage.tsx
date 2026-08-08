@@ -37,6 +37,25 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'GPS compartilhado e mapa (v0.0.8)',
+    items: [
+      'GPS multi-usuário: usuários logados com GPS ativo aparecem no mapa com nome, cada um em uma cor',
+      'Sua posição destacada como “Você”; presença expira sozinha ao desligar o GPS ou fechar o navegador (~45s)',
+      'Zoom e navegação limitados à região do CEP (Alpinópolis), com zoom mínimo e máximo adequados',
+      'Novo basemap OpenStreetMap Shortbread (tiles vetoriais via MapLibre) no fallback do Google Maps',
+      'Fallback automático para o OSM raster clássico se o vetorial falhar',
+    ],
+  },
+  {
+    title: 'Correções e polimento (v0.0.8)',
+    items: [
+      'Toasts Sonner unificados em todo o app: caixas quadradas, cores padrão de sucesso/erro e botão X interno',
+      'Validação de formulários em português (PT-BR) no app e no campo de senha',
+      'Campo de senha polido: medidor de força, checklist de requisitos e gerador de senha forte',
+      'Lista de finalizados sem scrollbar e tooltips legíveis',
+    ],
+  },
+  {
     title: 'Confirmações, usuários e escala (v0.0.7)',
     items: [
       'Confirmações padronizadas em alerta estilo iOS: todas as exclusões (usuário, território, não em casa, quadras, histórico, escala, áreas e notas do mapa) usam a mesma caixa centralizada',

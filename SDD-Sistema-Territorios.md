@@ -4,12 +4,12 @@
 |-------|--------|
 | **Produto** | CAMPO |
 | **Cliente / contexto** | Congregação Alpinópolis — gestão de territórios de campo |
-| **Versão do software** | **v0.0.7** |
-| **Versão deste documento** | **7.0** |
+| **Versão do software** | **v0.0.8** |
+| **Versão deste documento** | **8.0** |
 | **Data** | 07/08/2026 |
 | **Status** | Implementado e alinhado ao código atual |
 | **Repositório** | https://github.com/EuFreela/territory_management_system |
-| **Tag** | [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7) |
+| **Tag** | [`v0.0.8`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8) |
 | **Domínio de produção** | **https://analp.tec.br** |
 
 **Objetivo do documento:** especificação oficial do que o sistema faz, como está estruturado (dados, API, UI, segurança) e o que permanece fora de escopo.
@@ -37,7 +37,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 
 | Item | Valor |
 |------|--------|
-| Versão | v0.0.7 |
+| Versão | v0.0.8 |
 | Banco | MySQL 8+ (local ou servidor) |
 | Nome do banco (padrão) | `campo` (`DB_NAME`) |
 | Frontend | Vite + React SPA |
@@ -155,7 +155,7 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 ### 3.9 Sobre (`/sobre`)
 
 - Aba **O sistema**: o que é o CAMPO, o que faz, para quem é
-- Aba **Atualizações**: versão **v0.0.7** + changelog (confirmações, usuários, escala)
+- Aba **Atualizações**: versão **v0.0.8** + changelog (GPS multi-usuário, OSM Shortbread, polimento)
 
 ### 3.10 UI / UX global
 
@@ -495,23 +495,25 @@ Editar/cartão → blocks (quadra/rua/casas)
 
 ---
 
-## 14. Changelog resumido (v0.0.7)
+## 14. Changelog resumido (v0.0.8)
 
 Alinhado à aba **Sobre → Atualizações** no produto:
 
-1. **v0.0.7** — confirmações padronizadas em alerta iOS; gestão de usuários (papel/senha forte); escala por data  
-2. **v0.0.6.2** — lista por Terr. N.º; toggle asc/desc; tooltips 40 chars  
-3. **v0.0.6.1** — rota de carro; pan livre com GPS; voltar ao GPS/quadras  
-4. **v0.0.6** — GPS; notas; match exato  
+1. **v0.0.8** — GPS multi-usuário no mapa (presença com nome/cor); OSM Shortbread vetorial; limites de zoom da cidade; toasts unificados; validação PT-BR  
+2. **v0.0.7** — confirmações padronizadas em alerta iOS; gestão de usuários (papel/senha forte); escala por data  
+3. **v0.0.6.2** — lista por Terr. N.º; toggle asc/desc; tooltips 40 chars  
+4. **v0.0.6.1** — rota de carro; pan livre com GPS; voltar ao GPS/quadras  
+5. **v0.0.6** — GPS; notas; match exato  
 
 ---
 
-## 15. Critérios de aceite (regressão v0.0.7)
+## 15. Critérios de aceite (regressão v0.0.8)
 
-- [ ] Confirmações de exclusão/desvincular no novo padrão (ícone e cor por tipo de ação)  
-- [ ] Usuários: criar/editar com papel e senha forte; modal de papéis e permissões  
-- [ ] Escala: designação por data e permissões de gerenciamento  
-- [ ] Sobre com **v0.0.7**  
+- [ ] GPS multi-usuário: posição de quem está com GPS ativo aparece no mapa com nome e cor próprias  
+- [ ] Basemap OSM Shortbread (vetorial) ativo no fallback do Google Maps  
+- [ ] Zoom e pan limitados à região do CEP (Alpinópolis)  
+- [ ] Toasts Sonner unificados (caixas quadradas, cores padrão, X interno); validação em PT-BR  
+- [ ] Sobre com **v0.0.8**  
 
 ---
 
@@ -526,9 +528,10 @@ Alinhado à aba **Sobre → Atualizações** no produto:
 | 5.1 | 05/08/2026 | v0.0.5.1: imagem do cartão; seleção por id |
 | 6.0 | 05/08/2026 | v0.0.6: GPS, rota, notas, match exato |
 | 6.1 | 05/08/2026 | v0.0.6.1: carro, pan livre, voltar ao GPS |
-| **6.2** | **05/08/2026** | **v0.0.6.2:** ordenação N.º; tooltips compactos |
-| **7.0** | **07/08/2026** | **v0.0.7:** confirmações padronizadas; usuários (papel/senha); escala por data |
+| 6.2 | 05/08/2026 | v0.0.6.2: ordenação N.º; tooltips compactos |
+| 7.0 | 07/08/2026 | v0.0.7: confirmações padronizadas; usuários (papel/senha); escala por data |
+| **8.0** | **07/08/2026** | **v0.0.8:** GPS multi-usuário; OSM Shortbread; zoom da cidade; toasts/PT-BR |
 
 ---
 
-*Fim do SDD — CAMPO v0.0.7*
+*Fim do SDD — CAMPO v0.0.8*
