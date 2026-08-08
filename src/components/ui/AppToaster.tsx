@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Toaster } from 'sonner';
 import { useTheme } from '@/lib/theme-context';
 
-/** Central de toasts (Sonner) com visual Apple, seguindo o tema claro/escuro do app */
+/** Central de toasts (Sonner): padrão único (caixas quadradas + richColors) em todo o app */
 export default function AppToaster() {
   const { theme } = useTheme();
 
