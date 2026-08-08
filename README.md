@@ -2,7 +2,7 @@
 
 **Sistema de gestão de territórios de campo** · Congregação Alpinópolis
 
-**Versão:** [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7)
+**Versão:** [`v0.0.8`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8)
 
 **Produção:** [https://analp.tec.br](https://analp.tec.br)
 
@@ -261,13 +261,20 @@ Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na 
 
 ---
 
-## Changelog (v0.0.7)
+## Changelog (v0.0.8)
 
 Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
 
-- Confirmações padronizadas em alerta estilo iOS (exclusões, desvincular do dia, desmarcar casa)
-- Gestão de usuários com papéis (RBAC): criar/editar com papel e senha forte; modal de permissões
-- Escala: designação por data; ações de gerenciamento com permissão
+- GPS multi-usuário no mapa: quem está logado com GPS ativo aparece com nome e cor própria
+- Basemap OpenStreetMap Shortbread (vetorial via MapLibre) no fallback do Google Maps
+- Zoom e navegação limitados à região do CEP (Alpinópolis)
+- Toasts Sonner unificados (caixas quadradas, cores padrão, X interno) em todo o app
+- Validação em português (PT-BR) e campo de senha polido em Usuários
+- Lista de finalizados sem scrollbar e tooltips legíveis
+
+### Histórico (v0.0.7)
+
+- Confirmações padronizadas em alerta estilo iOS; gestão de usuários (RBAC); escala por data
 
 ### Histórico (v0.0.6.2)
 
@@ -278,7 +285,7 @@ Resumo das entregas desta versão (detalhes também em **Sobre → Atualizaçõe
 
 - Rota de carro; pan livre com GPS; voltar ao GPS ou às quadras
 
-Tag no repositório: [`v0.0.7`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.7)
+Tag no repositório: [`v0.0.8`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8)
 
 ---
 
