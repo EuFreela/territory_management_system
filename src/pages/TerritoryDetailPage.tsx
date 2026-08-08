@@ -27,7 +27,7 @@ import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
-type MapViewTab = 'mapa' | 'imagem';
+type MapViewTab = 'mapa' | 'imagem' | 'mapa-imagem';
 
 export default function TerritoryDetailPage() {
   const { id } = useParams();
@@ -53,8 +53,12 @@ export default function TerritoryDetailPage() {
     setMapViewTab(tab);
     if (tab === 'mapa') {
       setMapResizeToken((n) => n + 1);
+    } else if (tab === 'imagem') {
+      setImagePanelReady(true);
+      setImageResizeToken((n) => n + 1);
     } else {
       setImagePanelReady(true);
+      setMapResizeToken((n) => n + 1);
       setImageResizeToken((n) => n + 1);
     }
   }
@@ -421,14 +425,34 @@ export default function TerritoryDetailPage() {
                 <IconImage className="h-3.5 w-3.5 shrink-0" />
                 Imagem
               </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-mapa-imagem-juntas"
+                aria-selected={mapViewTab === 'mapa-imagem'}
+                onClick={() => selectMapView('mapa-imagem')}
+                className={[
+                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+                  mapViewTab === 'mapa-imagem'
+                    ? 'bg-apple-surface text-apple-ink shadow-soft'
+                    : 'text-apple-secondary hover:text-apple-ink',
+                ].join(' ')}
+              >
+                <span className="flex shrink-0 items-center">
+                  <IconMap className="h-3.5 w-3.5" />
+                  <IconImage className="-ml-1 h-3.5 w-3.5" />
+                </span>
+              </button>
             </div>
 
             {/* Painéis sempre no DOM após montar — evita reload do Google Maps a cada troca de aba */}
             <div
               role="tabpanel"
               aria-labelledby="tab-mapa-interativo"
-              hidden={mapViewTab !== 'mapa'}
-              className={mapViewTab === 'mapa' ? '' : 'hidden'}
+              hidden={mapViewTab !== 'mapa' && mapViewTab !== 'mapa-imagem'}
+              className={
+                mapViewTab === 'mapa' || mapViewTab === 'mapa-imagem' ? 'mb-4' : 'hidden'
+              }
             >
               <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
                 Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
@@ -473,12 +497,14 @@ export default function TerritoryDetailPage() {
               ) : null}
             </div>
 
-            {imagePanelReady || mapViewTab === 'imagem' ? (
+            {imagePanelReady || mapViewTab === 'imagem' || mapViewTab === 'mapa-imagem' ? (
               <div
                 role="tabpanel"
                 aria-labelledby="tab-mapa-imagem"
-                hidden={mapViewTab !== 'imagem'}
-                className={mapViewTab === 'imagem' ? '' : 'hidden'}
+                hidden={mapViewTab !== 'imagem' && mapViewTab !== 'mapa-imagem'}
+                className={
+                  mapViewTab === 'imagem' || mapViewTab === 'mapa-imagem' ? '' : 'hidden'
+                }
               >
                 {hasTerritoryStaticMapCandidate(territory) ? (
                   <TerritoryImageLeafletMap
