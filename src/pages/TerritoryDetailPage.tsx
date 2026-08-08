@@ -20,7 +20,7 @@ import TerritoryMap, {
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
 import { toast } from 'sonner';
-import { confirmToast, infoIcon } from '@/lib/confirm-toast';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
@@ -94,7 +94,7 @@ export default function TerritoryDetailPage() {
       await api(`/api/territories/${id}/daily`, { method: 'POST' });
       const refreshed = await api<Territory>(`/api/territories/${id}`);
       setTerritory(refreshed);
-      toast('Território vinculado ao dia.', { icon: infoIcon });
+      toast.success('Território vinculado ao dia.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao vincular.');
     }

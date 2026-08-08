@@ -301,63 +301,44 @@ select {
     @apply rounded-apple-lg border border-dashed border-apple-line px-5 py-10 text-center bg-apple-fill;
   }
 
-  /* Sonner toasts — layout/tema Apple no toast "normal" e no error.
-     success / info / warning mantêm as cores e fundos default do Sonner (richColors). */
+  /* Sonner toasts (toaster principal): um único padrão em todo o sistema —
+     caixas “quadradas” (8px), cores default do Sonner (richColors), X interno. */
   [data-sonner-toaster] {
     --width: 350px;
-    --border-radius: 16px;
+    --border-radius: 8px;
     font-family: inherit;
   }
 
+  /* Toast neutro (sem type): surface do tema, cantos iguais aos demais */
   [data-sonner-toaster][data-sonner-theme='light'] {
-    --normal-bg: rgb(var(--apple-surface) / 0.8);
-    --normal-border: var(--apple-line);
+    --normal-bg: #fff;
+    --normal-border: var(--gray4, hsl(0, 0%, 93%));
     --normal-text: rgb(var(--apple-ink));
-    --error-bg: rgb(var(--apple-red) / 0.1);
-    --error-border: rgb(var(--apple-red) / 0.3);
-    --error-text: rgb(var(--apple-red));
   }
 
   [data-sonner-toaster][data-sonner-theme='dark'] {
-    --normal-bg: rgb(var(--apple-surface) / 0.75);
-    --normal-border: var(--apple-line);
+    --normal-bg: #000;
+    --normal-border: hsl(0, 0%, 20%);
     --normal-text: rgb(var(--apple-ink));
-    --error-bg: rgb(var(--apple-red) / 0.14);
-    --error-border: rgb(var(--apple-red) / 0.4);
-    --error-text: rgb(var(--apple-red));
   }
 
-  /* success / info / warning: cantos do Sonner default (8px), mais “quadrados” que o Apple 16px */
-  [data-sonner-toast][data-styled='true'][data-type='success'],
-  [data-sonner-toast][data-styled='true'][data-type='info'],
-  [data-sonner-toast][data-styled='true'][data-type='warning'] {
-    border-radius: 8px;
+  .app-toaster [data-sonner-toast][data-styled='true'] {
+    border-radius: 8px !important;
+    padding-right: 36px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
-  /* Vidro Apple só no toast neutro (default) e no error; success/info/warning ficam opacos no estilo Sonner */
-  [data-sonner-toast][data-styled='true']:not([data-type='success']):not([data-type='info']):not([data-type='warning']) {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.08) inset,
-      var(--shadow-float);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-    backdrop-filter: blur(24px) saturate(1.8);
-  }
-
-  [data-sonner-toast][data-styled='true'] [data-title] {
+  .app-toaster [data-sonner-toast][data-styled='true'] [data-title] {
     font-weight: 600;
     letter-spacing: -0.011em;
   }
 
-  [data-sonner-toast][data-styled='true'] [data-icon] {
+  .app-toaster [data-sonner-toast][data-styled='true'] [data-icon] {
     height: 18px;
     width: 18px;
   }
 
-  /* X dentro do corpo do toast (Sonner default fica “flutuando” no canto, metade fora) */
-  .app-toaster [data-sonner-toast][data-styled='true'] {
-    padding-right: 36px;
-  }
-
+  /* X dentro do corpo (todos os tipos) */
   .app-toaster [data-sonner-toast][data-styled='true'] [data-close-button] {
     left: auto;
     right: 8px;
@@ -365,20 +346,7 @@ select {
     transform: translateY(-50%);
   }
 
-  /* Close button Apple só no neutro/error; nos richColors o Sonner define as cores do tipo */
-  [data-sonner-toast]:not([data-type='success']):not([data-type='info']):not([data-type='warning']) [data-close-button] {
-    background: var(--apple-fill);
-    border-color: var(--apple-line);
-    color: rgb(var(--apple-secondary));
-  }
-
-  [data-sonner-toast]:not([data-type='success']):not([data-type='info']):not([data-type='warning']) [data-close-button]:hover {
-    background: var(--apple-line);
-    color: rgb(var(--apple-ink));
-  }
-
-  /* Barra de progresso Apple nos toasts do app: cronômetro que acompanha a
-     duração (--toast-duration) e usa a cor padrão do tipo (success/error/info/warning) */
+  /* Barra de progresso (cronômetro da duração) em todos os toasts do app */
   .app-toaster [data-sonner-toast]::before {
     content: '';
     position: absolute;
@@ -386,7 +354,7 @@ select {
     bottom: 0;
     width: 100%;
     height: 3px;
-    border-radius: 0 9999px 9999px 0;
+    border-radius: 0 8px 8px 0;
     background: currentColor;
     opacity: 0.35;
     transform-origin: left center;

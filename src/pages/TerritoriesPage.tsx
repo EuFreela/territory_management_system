@@ -10,7 +10,7 @@ import {
   IconUnlink,
 } from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
-import { confirmToast, infoIcon } from '@/lib/confirm-toast';
+import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { tooltipText } from '@/lib/tooltip';
@@ -92,7 +92,7 @@ export default function TerritoriesPage() {
     try {
       await api(`/api/territories/${id}/daily`, { method: 'POST' });
       await load();
-      toast('Território vinculado ao dia.', { icon: infoIcon });
+      toast.success('Território vinculado ao dia.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao vincular.');
     }
