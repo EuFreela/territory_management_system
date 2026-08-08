@@ -960,6 +960,8 @@ type TerritoryMapProps = {
   heightClass?: string;
   /** Oculta a caixa de busca por endereço (ex.: visões de comparação) */
   hideSearch?: boolean;
+  /** Oculta o contador de áreas no modo leitura (ex.: cabeçalho do Mapa & Imagem) */
+  hideAreaCount?: boolean;
   /** Preenche a altura disponível do pai (flex) — usado em modais de comparação */
   fillHeight?: boolean;
   /**
@@ -997,6 +999,7 @@ export default function TerritoryMap({
   editable = true,
   heightClass = 'h-[28rem]',
   hideSearch = false,
+  hideAreaCount = false,
   fillHeight = false,
   selectedKey = null,
   focusToken = 0,
@@ -2454,7 +2457,7 @@ export default function TerritoryMap({
                 ? `✓ ${areas.length} área(s)${notes.length ? ` · ${notes.length} nota(s)` : ''} pronta(s) para salvar`
                 : '⚠ Ative o lápis, desenhe um contorno (3+ pontos) e conclua com ✓'}
             </p>
-          ) : (
+          ) : areaReady && hideAreaCount ? null : (
             <p className="text-sm text-apple-secondary">
               {areaReady
                 ? `${areas.length} área(s) no território${notes.length ? ` · ${notes.length} nota(s) de atenção` : ''}.`

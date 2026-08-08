@@ -4,12 +4,12 @@ import {
   IconArrowLeft,
   IconCheck,
   IconCheckCircle,
+  IconColumns,
   IconHome,
   IconImage,
   IconMap,
   IconPencil,
-  IconRotateLeft,
-  IconRotateRight,
+  IconRows,
   IconStar,
   IconTrash,
   IconUnlink,
@@ -20,6 +20,7 @@ import TerritoryMap, {
   areaMatchesBlock,
   findAreaForBlock,
   parseGeoJsonToAreas,
+  parseGeoJsonToNotes,
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
 import { toast } from 'sonner';
@@ -59,6 +60,13 @@ export default function TerritoryDetailPage() {
   const [imageResizeToken, setImageResizeToken] = useState(0);
   /** Imagem só monta na 1ª visita à aba — depois permanece no DOM */
   const [imagePanelReady, setImagePanelReady] = useState(false);
+
+  const splitAreas = useMemo(() => parseGeoJsonToAreas(territory?.geojson), [territory?.geojson]);
+  const splitNotes = useMemo(() => parseGeoJsonToNotes(territory?.geojson), [territory?.geojson]);
+  const splitAreaCount =
+    splitAreas.length > 0
+      ? `${splitAreas.length} área(s) no território${splitNotes.length ? ` · ${splitNotes.length} nota(s) de atenção` : ''}.`
+      : 'Sem áreas definidas.';
 
   function selectMapView(tab: MapViewTab) {
     setMapViewTab(tab);
@@ -774,21 +782,25 @@ export default function TerritoryDetailPage() {
             <button
               type="button"
               onClick={rotateSplit}
-                data-tooltip={
-                  splitOrientation === 'horizontal'
-                    ? 'Empilhar na vertical'
-                    : 'Colocar lado a lado (horizontal)'
-                }
-                aria-label="Girar orientação"
-                aria-pressed={splitOrientation === 'vertical'}
-                className="app-icon-btn"
-              >
-                {splitOrientation === 'horizontal' ? (
-                  <IconRotateLeft className="h-5 w-5" />
-                ) : (
-                  <IconRotateRight className="h-5 w-5" />
-                )}
-              </button>
+              data-tooltip={
+                splitOrientation === 'horizontal'
+                  ? 'Empilhar na vertical'
+                  : 'Colocar lado a lado (horizontal)'
+              }
+              data-tooltip-side="bottom"
+              aria-label="Girar orientação"
+              aria-pressed={splitOrientation === 'vertical'}
+              className="app-icon-btn"
+            >
+              {splitOrientation === 'horizontal' ? (
+                <IconRows className="h-5 w-5" />
+              ) : (
+                <IconColumns className="h-5 w-5" />
+              )}
+            </button>
+            <span className="max-w-[240px] truncate text-[12px] font-medium text-apple-secondary">
+              {splitAreaCount}
+            </span>
             <button
               type="button"
               onClick={closeSplit}
@@ -819,6 +831,7 @@ export default function TerritoryDetailPage() {
               cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
               editable={false}
               hideSearch
+              hideAreaCount
               fillHeight
               resizeToken={splitResizeToken}
               finishedKeys={blocksByQuadra
