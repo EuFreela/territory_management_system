@@ -3,9 +3,11 @@ import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconCheckCircle,
+  IconChevronDown,
   IconInfo,
   IconLogOut,
   IconMap,
+  IconMenu,
   IconMoon,
   IconSun,
   IconUser,
@@ -216,18 +218,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     <IconMap className="h-3.5 w-3.5 opacity-80" />
                     Territórios
-                    <svg
+                    <IconChevronDown
                       className={`h-3.5 w-3.5 opacity-70 transition-transform ${
                         territoriesOpen ? 'rotate-180' : ''
                       }`}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
+                    />
                   </button>
                   {dropdown}
                 </>
@@ -309,17 +304,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {mobileOpen ? (
                 <IconX className="h-5 w-5" />
               ) : (
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  aria-hidden
-                >
-                  <path d="M4 7h16M4 12h16M4 17h16" />
-                </svg>
+                <IconMenu className="h-5 w-5" />
               )}
             </button>
           </div>
