@@ -958,6 +958,10 @@ type TerritoryMapProps = {
   cepLabel?: string | null;
   editable?: boolean;
   heightClass?: string;
+  /** Oculta a caixa de busca por endereço (ex.: visões de comparação) */
+  hideSearch?: boolean;
+  /** Preenche a altura disponível do pai (flex) — usado em modais de comparação */
+  fillHeight?: boolean;
   /**
    * Seleção externa: preferir **id** da área (único).
    * Aceita também rótulo/nome da quadra (cards de não em casa).
@@ -992,6 +996,8 @@ export default function TerritoryMap({
   cepLabel,
   editable = true,
   heightClass = 'h-[28rem]',
+  hideSearch = false,
+  fillHeight = false,
   selectedKey = null,
   focusToken = 0,
   onAreaSelect,
@@ -1741,7 +1747,9 @@ export default function TerritoryMap({
       className={
         isFullscreen
           ? 'fixed inset-0 z-[9000] flex flex-col gap-3 bg-slate-100 p-3 sm:p-4'
-          : 'space-y-3'
+          : fillHeight
+            ? 'flex h-full min-h-0 flex-col gap-3'
+            : 'space-y-3'
       }
     >
       {/* Toolbar de ícones */}
@@ -1955,6 +1963,7 @@ export default function TerritoryMap({
       ) : null}
 
       {/* Busca por endereço — div (não form) p/ não quebrar em páginas com form pai (Novo/Editar) */}
+      {!hideSearch ? (
       <div ref={addressBoxRef} className={`relative w-full ${isFullscreen ? 'shrink-0' : ''}`}>
         <div className="flex overflow-hidden rounded-xl border border-apple-line bg-apple-surface shadow-soft">
           <label htmlFor="map-address-search" className="sr-only">
@@ -2045,10 +2054,11 @@ export default function TerritoryMap({
           </p>
         ) : null}
       </div>
+      ) : null}
 
       <div
         className={`relative z-0 isolate w-full overflow-hidden rounded-xl border border-apple-line bg-apple-surface ${
-          isFullscreen ? 'min-h-0 flex-1' : heightClass
+          isFullscreen || fillHeight ? 'min-h-0 flex-1' : heightClass
         } ${
           noteMode
             ? 'ring-2 ring-amber-500/60'

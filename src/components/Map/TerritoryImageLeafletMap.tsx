@@ -47,9 +47,15 @@ export default function TerritoryImageLeafletMap({
   territory,
   /** Incrementar ao reexibir a aba (sem desmontar) */
   resizeToken = 0,
+  /** Altura do contêiner quando fora de tela cheia */
+  heightClass = 'h-[min(70vh,40rem)]',
+  /** Preenche a altura disponível do pai (flex) — usado em modais de comparação */
+  fillHeight = false,
 }: {
   territory: Territory;
   resizeToken?: number;
+  heightClass?: string;
+  fillHeight?: boolean;
 }) {
   const candidates = useMemo(() => territoryStaticMapCandidates(territory), [territory]);
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
@@ -161,12 +167,14 @@ export default function TerritoryImageLeafletMap({
       className={
         isFullscreen
           ? 'fixed inset-0 z-[9000] flex flex-col bg-slate-100 p-3 dark:bg-black sm:p-4'
-          : ''
+          : fillHeight
+            ? 'flex h-full min-h-0 flex-col gap-3'
+            : ''
       }
     >
       <div
         className={`relative z-0 isolate w-full overflow-hidden rounded-2xl border border-apple-line bg-apple-surface shadow-soft ${
-          isFullscreen ? 'min-h-0 flex-1' : 'h-[min(70vh,40rem)]'
+          isFullscreen || fillHeight ? 'min-h-0 flex-1' : heightClass
         }`}
       >
         {/* Controles — mesmo padrão do TerritoryMap */}

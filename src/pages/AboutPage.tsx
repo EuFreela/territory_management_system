@@ -37,6 +37,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Mapa & Imagem juntos (v0.0.8.2)',
+    items: [
+      'Aba Mapa & Imagem: abre em tela cheia com o mapa principal e a imagem do cartão lado a lado',
+      'Botão de girar orientação: alterna entre lado a lado (horizontal) e um sobre o outro (vertical)',
+      'Fechar com X ou Esc — volta para a aba Mapa',
+      'Botão Cancelar no comentário de atenção — sai da edição sem salvar',
+      'Botões de edição do mapa padronizados em formato redondo',
+    ],
+  },
+  {
     title: 'Minha conta (v0.0.8.1)',
     items: [
       'Página Minha conta no menu, para todos os usuários: edite seu nome e troque sua senha',
@@ -44,9 +54,6 @@ const updates: { title: string; items: string[] }[] = [
       'Troca de senha com o mesmo padrão do admin: medidor de força, requisitos e gerador de senha forte',
       'Olho único mostra/oculta todas as senhas da página de uma vez',
       'Erros em toast, com o campo relacionado destacado em vermelho e a mensagem abaixo do input',
-      'Aba Mapa & Imagem no cartão: veja o mapa e a imagem do cartão um abaixo do outro para comparar',
-      'Botão Cancelar no comentário de atenção — sai da edição sem salvar',
-      'Botões de edição do mapa padronizados em formato redondo',
     ],
   },
   {
