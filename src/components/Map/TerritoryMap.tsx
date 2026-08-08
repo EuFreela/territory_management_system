@@ -56,6 +56,29 @@ export type MapNote = {
 
 const DEFAULT_CENTER: LatLng = [-15.793889, -47.882778];
 
+/**
+ * Limites de câmera do mapa de territórios.
+ * - minZoom: não “sai” da cidade (visão municipal)
+ * - maxZoom: não chega no detalhe de nome de rua / prédio
+ * - bounds: recorte ~±7 km em torno do CEP do sistema (Alpinópolis etc.)
+ */
+const MAP_MIN_ZOOM = 10;
+const MAP_MAX_ZOOM = 20;
+const MAP_DEFAULT_ZOOM = 15;
+/** Meia-extensão em graus ≈ 7 km (latitude) — mantém o pan dentro da região */
+const MAP_BOUNDS_DELTA = 0.065;
+
+function mapCityBounds(lat: number, lng: number): L.LatLngBounds {
+  return L.latLngBounds(
+    [lat - MAP_BOUNDS_DELTA, lng - MAP_BOUNDS_DELTA],
+    [lat + MAP_BOUNDS_DELTA, lng + MAP_BOUNDS_DELTA],
+  );
+}
+
+function clampMapZoom(zoom: number) {
+  return Math.min(MAP_MAX_ZOOM, Math.max(MAP_MIN_ZOOM, zoom));
+}
+
 const AREA_COLORS = [
   { color: '#0ea5e9', fill: '#7dd3fc' },
   { color: '#f59e0b', fill: '#fde68a' },
@@ -477,7 +500,7 @@ function FocusOnSelected({
   useEffect(() => {
     if (!area || area.points.length < 2 || focusToken <= 0) return;
     const bounds = L.latLngBounds(area.points.map(([lat, lng]) => L.latLng(lat, lng)));
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 18, animate: true });
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: MAP_MAX_ZOOM, animate: true });
   }, [area, focusToken, map]);
 
   return null;
@@ -523,12 +546,12 @@ function FitToAreasOn({
 
     if (allPoints.length >= 2) {
       const bounds = L.latLngBounds(allPoints.map(([lat, lng]) => L.latLng(lat, lng)));
-      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 17, animate: true });
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: MAP_MAX_ZOOM, animate: true });
       return;
     }
 
     if (allPoints.length === 1) {
-      map.setView(allPoints[0], 16, { animate: true });
+      map.setView(allPoints[0], clampMapZoom(MAP_DEFAULT_ZOOM + 1), { animate: true });
       return;
     }
 
@@ -539,11 +562,11 @@ function FitToAreasOn({
       Number.isFinite(Number(lat)) &&
       Number.isFinite(Number(lng))
     ) {
-      map.setView([Number(lat), Number(lng)], 15, { animate: true });
+      map.setView([Number(lat), Number(lng)], MAP_DEFAULT_ZOOM, { animate: true });
       return;
     }
 
-    map.setView(DEFAULT_CENTER, 5, { animate: true });
+    map.setView(DEFAULT_CENTER, MAP_MIN_ZOOM, { animate: true });
   }, [token, map]);
 
   return null;
@@ -568,17 +591,48 @@ function FlyToUserGps({
     if (token <= 0) return;
     const pos = positionRef.current;
     if (!pos) return;
-    map.flyTo(pos, Math.max(map.getZoom(), 16), { animate: true, duration: 0.8 });
+    map.flyTo(pos, clampMapZoom(Math.max(map.getZoom(), MAP_DEFAULT_ZOOM)), {
+      animate: true,
+      duration: 0.8,
+    });
   }, [token, map]);
   return null;
 }
 
+/** Paleta para outros usuários online (eu = azul). */
+const PEER_GPS_COLORS = [
+  { bg: '#059669', ring: '#047857', dot: '#34d399' }, // verde
+  { bg: '#d97706', ring: '#b45309', dot: '#fbbf24' }, // laranja
+  { bg: '#7c3aed', ring: '#6d28d9', dot: '#a78bfa' }, // roxo
+  { bg: '#db2777', ring: '#be185d', dot: '#f472b6' }, // rosa
+  { bg: '#0891b2', ring: '#0e7490', dot: '#22d3ee' }, // ciano
+] as const;
+
+function peerColorForUserId(userId: number) {
+  return PEER_GPS_COLORS[Math.abs(userId) % PEER_GPS_COLORS.length];
+}
+
 /**
- * Ponto GPS do usuário logado — pin azul + nome no balão acima.
- * Só aparece com a opção “Minha localização” ativa.
+ * Ponto GPS no mapa — pin + nome no balão.
+ * `isSelf`: azul (você). Outros: cores por userId.
  */
-function UserGpsMarker({ position, name }: { position: LatLng; name: string }) {
-  const label = (name || 'Você').trim() || 'Você';
+function UserGpsMarker({
+  position,
+  name,
+  isSelf = true,
+  userId,
+  subtitle,
+}: {
+  position: LatLng;
+  name: string;
+  isSelf?: boolean;
+  userId?: number;
+  subtitle?: string;
+}) {
+  const label = (name || (isSelf ? 'Você' : 'Usuário')).trim() || (isSelf ? 'Você' : 'Usuário');
+  const colors = isSelf
+    ? { bg: '#0284c7', ring: '#0284c7', dot: '#0ea5e9' }
+    : peerColorForUserId(userId ?? 0);
 
   const icon = useMemo(() => {
     const approxWidth = Math.min(220, Math.max(72, label.length * 8 + 36));
@@ -591,32 +645,47 @@ function UserGpsMarker({ position, name }: { position: LatLng; name: string }) {
       ">
         <div style="
           max-width:200px;padding:5px 10px 6px;border-radius:9999px;
-          background:#0284c7;color:#fff;border:2px solid #fff;
+          background:${colors.bg};color:#fff;border:2px solid #fff;
           font-size:12px;font-weight:800;line-height:1.2;
-          box-shadow:0 4px 14px rgba(3,105,161,0.45),0 0 0 2px rgba(14,165,233,0.35);
+          box-shadow:0 4px 14px rgba(0,0,0,0.28),0 0 0 2px ${colors.ring}55;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
         ">${escapeHtml(label)}</div>
         <div style="
           width:16px;height:16px;margin-top:4px;border-radius:9999px;
-          background:#0ea5e9;border:3px solid #fff;
-          box-shadow:0 0 0 2px #0284c7,0 2px 8px rgba(3,105,161,0.4);
+          background:${colors.dot};border:3px solid #fff;
+          box-shadow:0 0 0 2px ${colors.ring},0 2px 8px rgba(0,0,0,0.25);
         "></div>
       </div>`,
       iconSize: [approxWidth, height + 20],
       iconAnchor: [approxWidth / 2, height + 18],
     });
-  }, [label]);
+  }, [label, colors.bg, colors.dot, colors.ring]);
 
   return (
-    <Marker position={position} icon={icon} interactive={false} zIndexOffset={1600}>
+    <Marker
+      position={position}
+      icon={icon}
+      interactive={false}
+      zIndexOffset={isSelf ? 1600 : 1500}
+    >
       <Popup>
         <strong>{label}</strong>
         <br />
-        <span style={{ fontSize: 12, color: '#64748b' }}>Sua localização atual</span>
+        <span style={{ fontSize: 12, color: '#64748b' }}>
+          {subtitle ?? (isSelf ? 'Sua localização atual' : 'Online com GPS ativo')}
+        </span>
       </Popup>
     </Marker>
   );
 }
+
+export type OnlineGpsUser = {
+  userId: number;
+  name: string;
+  lat: number;
+  lng: number;
+  updatedAt: number;
+};
 
 /** Voa até o endereço encontrado na busca */
 function FlyToSearchResult({
@@ -630,7 +699,7 @@ function FlyToSearchResult({
 
   useEffect(() => {
     if (token <= 0 || !result) return;
-    map.flyTo([result.lat, result.lng], 17, { animate: true, duration: 0.8 });
+    map.flyTo([result.lat, result.lng], MAP_MAX_ZOOM, { animate: true, duration: 0.8 });
   }, [token, result, map]);
 
   return null;
@@ -658,13 +727,13 @@ function InitialMapView({
 
     if (allPoints.length >= 2) {
       const bounds = L.latLngBounds(allPoints.map(([lat, lng]) => L.latLng(lat, lng)));
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17, animate: false });
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: MAP_MAX_ZOOM, animate: false });
       cameraLocked.current = true;
       return;
     }
 
     if (centerLat != null && centerLng != null) {
-      map.setView([Number(centerLat), Number(centerLng)], 15, { animate: false });
+      map.setView([Number(centerLat), Number(centerLng)], MAP_DEFAULT_ZOOM, { animate: false });
       cameraLocked.current = true;
     }
   }, [centerLat, centerLng, seedGeoJson, map]);
@@ -972,6 +1041,11 @@ export default function TerritoryMap({
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsFlyToken, setGpsFlyToken] = useState(0);
   const gpsWatchIdRef = useRef<number | null>(null);
+  /** Outros usuários logados com GPS ativo (presença no servidor) */
+  const [onlineGpsUsers, setOnlineGpsUsers] = useState<OnlineGpsUser[]>([]);
+  const lastPresencePublishRef = useRef<number>(0);
+  const gpsPositionRef = useRef<LatLng | null>(null);
+  gpsPositionRef.current = gpsPosition;
 
   /** Rota mais curta GPS → quadra (área) mais próxima */
   const [routePath, setRoutePath] = useState<LatLng[] | null>(null);
@@ -1046,6 +1120,8 @@ export default function TerritoryMap({
     setGpsError('');
     setGpsLoading(false);
     clearRoute();
+    // Remove presença no mapa dos outros
+    void api('/api/presence/gps', { method: 'DELETE' }).catch(() => {});
   }
 
   function enableGps() {
@@ -1118,11 +1194,88 @@ export default function TerritoryMap({
     }
   }
 
-  // Limpa watch ao desmontar
+  // Limpa watch + presença ao desmontar
   useEffect(() => {
     return () => {
       stopGpsWatch();
       routeAbortRef.current?.abort();
+      // keepalive: tenta avisar o servidor mesmo se a aba fechar
+      try {
+        void fetch('/api/presence/gps', {
+          method: 'DELETE',
+          credentials: 'include',
+          keepalive: true,
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  /**
+   * Publica a própria posição no servidor enquanto o GPS estiver ativo.
+   * Intervalo fixo (~8s) + publicação imediata ao ligar (via ref da posição).
+   */
+  useEffect(() => {
+    if (!gpsEnabled || !user?.id) return;
+
+    const publish = (force = false) => {
+      const pos = gpsPositionRef.current;
+      if (!pos) return;
+      const now = Date.now();
+      if (!force && now - lastPresencePublishRef.current < 7500) return;
+      lastPresencePublishRef.current = now;
+      void api('/api/presence/gps', {
+        method: 'PUT',
+        body: JSON.stringify({ lat: pos[0], lng: pos[1] }),
+      }).catch(() => {
+        /* silencioso: mapa local continua */
+      });
+    };
+
+    // Tenta logo e de novo após o 1º fix do navegador
+    publish(true);
+    const boot = window.setTimeout(() => publish(true), 1500);
+    const id = window.setInterval(() => publish(false), 8000);
+    return () => {
+      window.clearTimeout(boot);
+      window.clearInterval(id);
+    };
+  }, [gpsEnabled, user?.id]);
+
+  // Quando a posição muda, tenta publicar (respeitando throttle)
+  useEffect(() => {
+    if (!gpsEnabled || !gpsPosition || !user?.id) return;
+    const now = Date.now();
+    if (now - lastPresencePublishRef.current < 7500) return;
+    lastPresencePublishRef.current = now;
+    void api('/api/presence/gps', {
+      method: 'PUT',
+      body: JSON.stringify({ lat: gpsPosition[0], lng: gpsPosition[1] }),
+    }).catch(() => {});
+  }, [gpsEnabled, gpsPosition, user?.id]);
+
+  /**
+   * Busca usuários online com GPS (todos veem no mapa, mesmo sem GPS próprio).
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const pull = async () => {
+      try {
+        const data = await api<{ users: OnlineGpsUser[] }>('/api/presence/gps');
+        if (cancelled) return;
+        setOnlineGpsUsers(Array.isArray(data.users) ? data.users : []);
+      } catch {
+        if (!cancelled) setOnlineGpsUsers([]);
+      }
+    };
+
+    void pull();
+    const id = window.setInterval(() => void pull(), 6000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
     };
   }, []);
 
@@ -1323,7 +1476,13 @@ export default function TerritoryMap({
       : null;
 
   const mapStartCenter = cepCenter ?? DEFAULT_CENTER;
-  const mapStartZoom = cepCenter ? 15 : 5;
+  const mapStartZoom = cepCenter ? MAP_DEFAULT_ZOOM : MAP_MIN_ZOOM;
+  const boundsLat = cepCenter?.[0];
+  const boundsLng = cepCenter?.[1];
+  const mapBounds = useMemo(() => {
+    if (boundsLat == null || boundsLng == null) return undefined;
+    return mapCityBounds(boundsLat, boundsLng);
+  }, [boundsLat, boundsLng]);
 
   /**
    * Prioriza match do card (selectedKey). Se a chave ficou órfã (área apagada/renomeada),
@@ -2027,6 +2186,10 @@ export default function TerritoryMap({
         <MapContainer
           center={mapStartCenter}
           zoom={mapStartZoom}
+          minZoom={MAP_MIN_ZOOM}
+          maxZoom={MAP_MAX_ZOOM}
+          maxBounds={mapBounds}
+          maxBoundsViscosity={1}
           scrollWheelZoom={false}
           className="h-full w-full"
         >
@@ -2189,8 +2352,24 @@ export default function TerritoryMap({
             <UserGpsMarker
               position={gpsPosition}
               name={user?.name?.trim() || 'Você'}
+              isSelf
+              userId={user?.id}
             />
           ) : null}
+
+          {/* Outros usuários logados com GPS ativo */}
+          {onlineGpsUsers
+            .filter((u) => u.userId !== user?.id)
+            .map((u) => (
+              <UserGpsMarker
+                key={u.userId}
+                position={[u.lat, u.lng]}
+                name={u.name}
+                isSelf={false}
+                userId={u.userId}
+                subtitle="Online com GPS ativo"
+              />
+            ))}
 
           {gpsEnabled && routePath && routePath.length >= 2 ? (
             <Polyline

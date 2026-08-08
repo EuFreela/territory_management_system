@@ -99,8 +99,9 @@ export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
 
         const layer = new GoogleMutant({
           type,
-          maxZoom: 21,
-          maxNativeZoom: 21,
+          // Alinhado ao maxZoom do TerritoryMap (sem detalhe de nome de rua)
+          maxZoom: 16,
+          maxNativeZoom: 16,
         });
 
         await new Promise<void>((resolve, reject) => {
