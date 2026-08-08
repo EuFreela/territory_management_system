@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Toaster } from 'sonner';
 import { useTheme } from '@/lib/theme-context';
 
@@ -9,13 +10,17 @@ export default function AppToaster() {
     <>
       <Toaster
         theme={theme}
-        position="bottom-right"
+        position="bottom-center"
         offset={20}
         gap={10}
         closeButton
         richColors
         visibleToasts={4}
-        toastOptions={{ duration: 4000 }}
+        className="app-toaster"
+        toastOptions={{
+          duration: 4000,
+          style: { '--toast-duration': '4000ms' } as CSSProperties,
+        }}
       />
       {/* Toaster exclusivo para confirmações (toasterId: 'confirm'): centralizado,
           com fundo escurecido e desfocado, como os modais do app */}
