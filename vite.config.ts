@@ -9,6 +9,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  optimizeDeps: {
+    // maplibre-gl-leaflet é CJS e faz require('maplibre-gl'); forçamos pré-bundle estável
+    include: ['maplibre-gl', 'leaflet', '@maplibre/maplibre-gl-leaflet'],
+  },
   server: {
     port: 3000,
     strictPort: true,

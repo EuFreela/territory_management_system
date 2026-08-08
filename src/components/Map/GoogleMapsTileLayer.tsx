@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { TileLayer, useMap } from 'react-leaflet';
+import { useMap } from 'react-leaflet';
 import type { Layer } from 'leaflet';
 import GoogleMutant from 'leaflet.gridlayer.googlemutant';
+import { OsmShortbreadTileLayer } from './OsmShortbreadTileLayer';
 
 const API_KEY = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined)?.trim();
 
@@ -67,18 +68,18 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 
 /**
  * Base map do Google Maps dentro do Leaflet (ToS-compliant via GoogleMutant).
- * Mantém OpenStreetMap até o Google ficar pronto; se falhar, permanece no OSM.
+ * Até o Google ficar pronto (ou se falhar), usa OpenStreetMap Shortbread (vector).
  */
 export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
   const map = useMap();
-  /** true = ainda sem Google (mostra OSM). false = Google ativo. */
+  /** true = ainda sem Google (mostra OSM Shortbread). false = Google ativo. */
   const [showOsm, setShowOsm] = useState(true);
   const layerRef = useRef<Layer | null>(null);
 
   useEffect(() => {
     if (!API_KEY) {
       console.warn(
-        '[Campo] VITE_GOOGLE_MAPS_API_KEY não definida — usando OpenStreetMap.\n' +
+        '[Campo] VITE_GOOGLE_MAPS_API_KEY não definida — usando OpenStreetMap Shortbread.\n' +
           'Adicione a chave no .env e reinicie o Vite (npm run dev).',
       );
       setShowOsm(true);
@@ -144,10 +145,5 @@ export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
 
   if (!showOsm) return null;
 
-  return (
-    <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    />
-  );
+  return <OsmShortbreadTileLayer />;
 }
