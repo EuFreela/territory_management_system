@@ -37,6 +37,20 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Login, ícones e polimento (v0.0.8.3)',
+    items: [
+      'Validação do login em português (PT-BR): nada de mensagens nativas do navegador em inglês',
+      'Balão de erro próprio abaixo de cada campo, com o campo relacionado destacado em vermelho',
+      'Erro de credenciais inválidas em toast, no padrão do restante do app',
+      'Ícones do sistema trocados pela biblioteca Lucide (visual leve e consistente)',
+      'Botões Adicionar rua e Salvar quadra/rua padronizados no formato redondo de ícone',
+      'Validação do cadastro de não em casa em português, com mensagem abaixo do campo correspondente',
+      'Mapa & Imagem: contador de áreas no cabeçalho ao lado do botão de orientação',
+      'Botão de orientação com ícone relativo à ação (empilhar/lado a lado) e tooltips abaixo, dentro das margens da tela',
+      'Labels e texto de ajuda da edição de território com mais contraste e legibilidade',
+    ],
+  },
+  {
     title: 'Mapa & Imagem juntos (v0.0.8.2)',
     items: [
       'Aba Mapa & Imagem: abre em tela cheia com o mapa principal e a imagem do cartão lado a lado',
