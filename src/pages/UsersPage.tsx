@@ -7,6 +7,7 @@ import RolesModal from '@/components/ui/RolesModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { confirmToast } from '@/lib/confirm-toast';
+import { onInputClearValidity, onInvalidPtBr } from '@/lib/form-validation-pt';
 
 type Role = {
   id: number;
@@ -211,7 +212,12 @@ export default function UsersPage() {
           <h2 className="mb-4 text-[17px] font-semibold tracking-tightish text-apple-ink">
             Novo usuário
           </h2>
-          <form onSubmit={onCreate} className="grid gap-3 sm:grid-cols-2">
+          <form
+            onSubmit={onCreate}
+            onInvalidCapture={onInvalidPtBr}
+            onInput={onInputClearValidity}
+            className="grid gap-3 sm:grid-cols-2"
+          >
             <div>
               <label className="app-label">Nome</label>
               <input
@@ -232,7 +238,7 @@ export default function UsersPage() {
                 required
               />
             </div>
-            <div className="mb-2">
+            <div className="min-w-0">
               <PasswordField
                 label="Senha"
                 value={password}
@@ -241,8 +247,8 @@ export default function UsersPage() {
                 autoComplete="new-password"
               />
             </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="mb-1.5 flex min-h-6 items-center justify-between gap-2">
                 <label htmlFor="new-role" className="app-label mb-0">
                   Papel
                 </label>
@@ -251,7 +257,7 @@ export default function UsersPage() {
                   onClick={() => setShowRoles(true)}
                   aria-label="Ver papéis e permissões"
                   data-tooltip="Ver papéis e permissões"
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
                 >
                   <IconHelp className="h-[18px] w-[18px]" />
                 </button>
@@ -393,7 +399,12 @@ export default function UsersPage() {
                     Deixe a senha em branco para manter a atual.
                   </p>
 
-                  <form onSubmit={onSubmitEdit} className="space-y-4">
+                  <form
+                    onSubmit={onSubmitEdit}
+                    onInvalidCapture={onInvalidPtBr}
+                    onInput={onInputClearValidity}
+                    className="space-y-4"
+                  >
                     <div>
                       <label htmlFor="edit-name" className="app-label">
                         Nome
@@ -424,7 +435,7 @@ export default function UsersPage() {
                     </div>
 
                     <div>
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-1.5 flex min-h-6 items-center justify-between gap-2">
                         <label htmlFor="edit-role" className="app-label mb-0">
                           Papel
                         </label>
@@ -433,7 +444,7 @@ export default function UsersPage() {
                           onClick={() => setShowRoles(true)}
                           aria-label="Ver papéis e permissões"
                           data-tooltip="Ver papéis e permissões"
-                          className="flex h-6 w-6 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
                         >
                           <IconHelp className="h-[18px] w-[18px]" />
                         </button>

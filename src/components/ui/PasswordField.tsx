@@ -1,5 +1,12 @@
 import { useId, useState } from 'react';
-import { IconCheck, IconCheckCircle, IconEye, IconEyeOff, IconKey, IconRefresh } from '@/components/Map/mapIcons';
+import {
+  IconCheck,
+  IconCheckCircle,
+  IconEye,
+  IconEyeOff,
+  IconKey,
+  IconRefresh,
+} from '@/components/Map/mapIcons';
 import { PASSWORD_REQUIREMENTS, generateStrongPassword, isStrongPassword } from '@/lib/password';
 
 type PasswordFieldProps = {
@@ -16,28 +23,50 @@ type PasswordFieldProps = {
   maxLength?: number;
 };
 
-type StrengthTier = {
-  label: string;
-  bar: string;
-  dot: string;
-};
+/** Segmentos do medidor (visual compacto do app, não 1 barra fina “progress”) */
+const METER_SEGMENTS = 4;
 
-function strengthTier(score: number): StrengthTier {
-  if (score >= PASSWORD_REQUIREMENTS.length) {
-    return { label: 'Forte', bar: 'bg-apple-green', dot: 'bg-apple-green' };
+function tierFromScore(score: number, total: number) {
+  const ratio = total > 0 ? score / total : 0;
+  if (ratio >= 1) {
+    return {
+      label: 'Forte',
+      segments: METER_SEGMENTS,
+      // Light: cores mais saturadas para leitura; dark: tokens do tema (já bons)
+      bar: 'bg-[rgb(36,160,70)] dark:bg-apple-green',
+      chip: 'bg-apple-green/25 text-[rgb(22,128,52)] dark:bg-apple-green/15 dark:text-apple-green',
+      status: 'text-[rgb(22,128,52)] dark:text-apple-green',
+    } as const;
   }
   if (score >= 4) {
-    return { label: 'Média', bar: 'bg-apple-orange', dot: 'bg-apple-orange' };
+    return {
+      label: 'Média',
+      segments: 3,
+      bar: 'bg-[rgb(217,130,0)] dark:bg-apple-orange',
+      chip: 'bg-apple-orange/25 text-[rgb(176,96,0)] dark:bg-apple-orange/15 dark:text-apple-orange',
+      status: 'text-[rgb(176,96,0)] dark:text-apple-orange',
+    } as const;
   }
-  return { label: 'Fraca', bar: 'bg-apple-red', dot: 'bg-apple-red' };
+  if (score >= 2) {
+    return {
+      label: 'Fraca',
+      segments: 2,
+      bar: 'bg-[rgb(215,48,40)] dark:bg-apple-red',
+      chip: 'bg-apple-red/15 text-[rgb(196,40,32)] dark:bg-apple-red/10 dark:text-apple-red',
+      status: 'text-[rgb(196,40,32)] dark:text-apple-red',
+    } as const;
+  }
+  return {
+    label: 'Fraca',
+    segments: Math.max(score, 1),
+    bar: 'bg-[rgb(215,48,40)] dark:bg-apple-red',
+    chip: 'bg-apple-red/15 text-[rgb(196,40,32)] dark:bg-apple-red/10 dark:text-apple-red',
+    status: 'text-[rgb(196,40,32)] dark:text-apple-red',
+  } as const;
 }
 
 /**
- * Campo de senha (estilo Apple) com:
- * - ícone de chave (SF Symbols) + botão de mostrar/ocultar
- * - medidor de força segmentado, como o de Ajustes do iOS
- * - checklist de requisitos em tempo real
- * - sugestão de senha forte aleatória quando a digitada é fraca
+ * Campo de senha alinhado ao layout do app (cards, fills, azul/verde suaves).
  */
 export default function PasswordField({
   label,
@@ -53,18 +82,19 @@ export default function PasswordField({
 }: PasswordFieldProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
+  const helpId = `${inputId}-help`;
   const [show, setShow] = useState(false);
 
   const touched = value !== '';
-  const score = touched
-    ? PASSWORD_REQUIREMENTS.filter((req) => req.test(value)).length
-    : 0;
+  const total = PASSWORD_REQUIREMENTS.length;
+  const score = touched ? PASSWORD_REQUIREMENTS.filter((req) => req.test(value)).length : 0;
   const strong = touched && isStrongPassword(value);
-  const tier = strengthTier(score);
+  const tier = tierFromScore(score, total);
 
   return (
     <div>
-      <label htmlFor={inputId} className="app-label">
+      {/* min-h-6 alinha com labels que têm botão de ajuda (ex.: Papel na UsersPage) */}
+      <label htmlFor={inputId} className="app-label mb-1.5 flex min-h-6 items-center">
         {label}
         {optional ? <span className="font-normal text-apple-tertiary"> (opcional)</span> : null}
       </label>
@@ -82,6 +112,7 @@ export default function PasswordField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           maxLength={maxLength}
+          aria-describedby={touched ? helpId : undefined}
         />
         <button
           type="button"
@@ -98,71 +129,101 @@ export default function PasswordField({
       </div>
 
       {touched ? (
-        <div className="mt-2.5">
+        <div id={helpId} className="mt-2.5 space-y-2.5">
+          {/* Medidor + chip de força — padrão visual do app */}
           <div className="flex items-center gap-3">
-            <div className="flex flex-1 gap-1" role="meter" aria-label="Força da senha" aria-valuemin={0} aria-valuemax={PASSWORD_REQUIREMENTS.length} aria-valuenow={score}>
-              {PASSWORD_REQUIREMENTS.map((_, i) => (
+            <div
+              role="meter"
+              aria-label="Força da senha"
+              aria-valuemin={0}
+              aria-valuemax={METER_SEGMENTS}
+              aria-valuenow={tier.segments}
+              aria-valuetext={tier.label}
+              className="flex min-w-0 flex-1 gap-1"
+            >
+              {Array.from({ length: METER_SEGMENTS }, (_, i) => (
                 <span
                   key={i}
                   className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                    i < score ? tier.bar : 'bg-apple-line'
+                    i < tier.segments ? tier.bar : 'bg-apple-line'
                   }`}
                 />
               ))}
             </div>
-            <span className="flex items-center gap-1.5 text-[12px] font-semibold text-apple-ink">
-              <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
-              Força: {tier.label}
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${tier.chip}`}
+            >
+              {tier.label}
             </span>
           </div>
 
-          <div className="mt-2.5 rounded-apple border border-apple-line bg-apple-fill p-3">
-            <ul className="space-y-1.5">
+          {/* Card de requisitos — mesmo idioma de RolesModal / app-fill */}
+          <div className="rounded-apple border border-apple-line bg-apple-fill px-3.5 py-3 shadow-soft">
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <p className="text-[12px] font-semibold tracking-tightish text-apple-secondary">
+                Requisitos
+              </p>
+              <p className="text-[11px] tabular-nums text-apple-tertiary">
+                {score}/{total}
+              </p>
+            </div>
+
+            <ul className="grid gap-1.5 sm:grid-cols-2">
               {PASSWORD_REQUIREMENTS.map((req) => {
                 const ok = req.test(value);
                 return (
-                  <li
-                    key={req.label}
-                    className={`flex items-center gap-2 text-[12px] transition ${
-                      ok ? 'font-medium text-apple-green' : 'text-apple-tertiary'
-                    }`}
-                  >
+                  <li key={req.label} className="flex min-w-0 items-start gap-2">
                     <span
-                      className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full transition ${
-                        ok ? 'bg-apple-green/15 text-apple-green' : 'bg-apple-surface text-apple-tertiary'
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+                        ok
+                          ? 'bg-apple-green/25 text-[rgb(22,128,52)] dark:bg-apple-green/15 dark:text-apple-green'
+                          : 'bg-apple-surface text-apple-tertiary ring-1 ring-inset ring-apple-line'
                       }`}
+                      aria-hidden
                     >
                       {ok ? (
-                        <IconCheck className="h-3 w-3" />
+                        <IconCheck className="h-2.5 w-2.5" />
                       ) : (
-                        <span className="h-1 w-1 rounded-full bg-current opacity-60" />
+                        <span className="h-1 w-1 rounded-full bg-current opacity-50" />
                       )}
                     </span>
-                    {req.label}
+                    <span
+                      className={`min-w-0 text-[12px] leading-snug transition-colors duration-200 ${
+                        ok ? 'font-medium text-apple-ink' : 'text-apple-secondary'
+                      }`}
+                    >
+                      {req.label}
+                    </span>
                   </li>
                 );
               })}
             </ul>
-          </div>
 
-          {strong ? (
-            <p className="mt-2.5 flex items-center gap-2 text-[12px] font-semibold text-apple-green">
-              <IconCheckCircle className="h-[15px] w-[15px]" />
-              Senha forte. Tudo certo.
-            </p>
-          ) : (
-            <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-apple border border-apple-red/20 bg-apple-red/[0.07] px-3 py-2">
-              <span className="text-[12px] font-medium text-apple-red">Senha fraca — use a sugestão:</span>
-              <button
-                type="button"
-                onClick={() => onChange(generateStrongPassword())}
-                className="inline-flex items-center gap-1.5 rounded-full border border-apple-line bg-apple-surface px-3 py-1.5 text-[12px] font-semibold text-apple-ink shadow-soft transition hover:bg-apple-fill active:scale-[0.98]"
-              >
-                <IconRefresh className="h-3.5 w-3.5 text-apple-blue" />
-                Gerar senha forte
-              </button>
+            <div className="mt-3 flex flex-col gap-2.5 border-t border-apple-line pt-3 sm:flex-row sm:items-center sm:justify-between">
+              {strong ? (
+                <p className={`flex items-center gap-2 text-[12px] font-semibold ${tier.status}`}>
+                  <IconCheckCircle className="h-4 w-4 shrink-0" />
+                  Senha forte — tudo certo.
+                </p>
+              ) : score >= 4 ? (
+                <p className={`text-[12px] font-semibold ${tier.status}`}>Senha média — quase lá.</p>
+              ) : (
+                <p className={`text-[12px] font-semibold ${tier.status}`}>Senha fraca — complete os requisitos.</p>
+              )}
+
+              {!strong ? (
+                <button
+                  type="button"
+                  onClick={() => onChange(generateStrongPassword())}
+                  disabled={disabled}
+                  className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-apple-line bg-apple-surface px-3 text-[13px] font-semibold text-apple-ink shadow-soft transition hover:bg-apple-bg active:scale-[0.99] disabled:opacity-40 sm:w-auto"
+                >
+                  <IconRefresh className="h-3.5 w-3.5 text-apple-blue" />
+                  Gerar senha forte
+                </button>
+              ) : null}
             </div>
-          )}
+          </div>
         </div>
       ) : null}
     </div>
