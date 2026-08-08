@@ -1,10 +1,14 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
+import FieldError from '@/components/ui/FieldError';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { APP_VERSION } from '@/lib/version';
+
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 export default function LoginPage() {
   const { user, loading, setUser } = useAuth();
@@ -12,16 +16,32 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  async function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+
+    const errors: { email?: string; password?: string } = {};
+    if (email.trim() === '') {
+      errors.email = 'Preencha este campo.';
+    } else if (!EMAIL_RE.test(email.trim())) {
+      errors.email = 'Informe um e-mail válido.';
+    }
+    if (password === '') {
+      errors.password = 'Preencha este campo.';
+    }
+
+    if (errors.email || errors.password) {
+      setFieldErrors(errors);
+      setSubmitting(false);
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
 
     try {
@@ -38,7 +58,7 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao fazer login.');
       setSubmitting(false);
     }
   }
@@ -87,22 +107,35 @@ export default function LoginPage() {
               Use o email e a senha fornecidos pelo administrador.
             </p>
 
-            <form onSubmit={onSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} noValidate className="space-y-4">
               <div>
                 <label htmlFor="email" className="app-label">
                   Email
                 </label>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
+                  inputMode="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="app-input"
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (fieldErrors.email) {
+                      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                    }
+                  }}
+                  className={`app-input ${
+                    fieldErrors.email
+                      ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                      : ''
+                  }`}
                   required
                   disabled={submitting}
                   autoComplete="username"
-                  placeholder="seu@email.com"
+                  placeholder="seuemail@exemplo.com"
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                 />
+                {fieldErrors.email ? <FieldError id="email-error">{fieldErrors.email}</FieldError> : null}
               </div>
 
               <div>
@@ -113,19 +146,27 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="app-input"
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                  className={`app-input ${
+                    fieldErrors.password
+                      ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                      : ''
+                  }`}
                   required
                   disabled={submitting}
                   autoComplete="current-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                 />
+                {fieldErrors.password ? (
+                  <FieldError id="password-error">{fieldErrors.password}</FieldError>
+                ) : null}
               </div>
-
-              {error ? (
-                <p className="rounded-apple border border-apple-red/25 bg-apple-red/10 px-3.5 py-2.5 text-[13px] text-apple-red">
-                  {error}
-                </p>
-              ) : null}
 
               <button
                 type="submit"
