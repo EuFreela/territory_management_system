@@ -111,6 +111,16 @@ const themeSchema = z.object({
   theme: z.enum(['light', 'dark']),
 });
 
+const profileSchema = z.object({
+  // Só o nome pode ser editado pelo próprio usuário (email e papel ficam restritos ao admin)
+  name: z
+    .string()
+    .min(2, 'Nome deve ter pelo menos 2 caracteres')
+    .max(150)
+    .transform((v) => v.trim())
+    .refine((v) => v.length >= 2, 'Nome deve ter pelo menos 2 caracteres'),
+});
+
 /** Preferência de tema (light/dark) salva no usuário logado */
 router.put('/theme', requireAuth, async (req, res) => {
   try {
@@ -145,6 +155,32 @@ router.put('/theme', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[auth/theme]', error);
     res.status(500).json({ error: 'Erro ao salvar tema.' });
+  }
+});
+
+/** Edita o nome do próprio usuário (qualquer papel). Email e papel: restritos ao admin. */
+router.put('/profile', requireAuth, async (req, res) => {
+  try {
+    const parsed = profileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
+
+    const authUser = (req as AuthedRequest).user;
+    const name = parsed.data.name;
+
+    await pool.execute('UPDATE users SET name = ? WHERE id = ?', [name, authUser.id]);
+
+    // Reemite cookie com o nome atualizado (payload do token fica consistente)
+    const token = await signToken({ id: authUser.id, email: authUser.email, name });
+    res.cookie('auth_token', token, cookieOptions);
+
+    const user = (await loadRbacUserById(authUser.id)) ?? { ...authUser, name };
+    res.json({ message: 'Nome atualizado com sucesso.', user });
+  } catch (error) {
+    console.error('[auth/profile]', error);
+    res.status(500).json({ error: 'Erro ao atualizar perfil.' });
   }
 });
 
