@@ -390,23 +390,25 @@ export default function EditTerritoryPage() {
           <form id="territory-form" onSubmit={saveTerritory} className="mt-6 space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Localidade</label>
+                <label className="app-label" htmlFor="localidade-input">Localidade</label>
                 <input
+                  id="localidade-input"
                   value={localidade}
                   onChange={(event) => setLocalidade(event.target.value)}
                   placeholder="Ex: Mundo Novo"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="app-input"
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Terr. N.º</label>
+                <label className="app-label" htmlFor="terr-numero-input">Terr. N.º</label>
                 <input
+                  id="terr-numero-input"
                   value={number}
                   onChange={(event) => setNumber(event.target.value)}
                   placeholder="Ex: 31"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                  className="app-input"
                 />
               </div>
             </div>
@@ -418,8 +420,8 @@ export default function EditTerritoryPage() {
             ) : null}
 
             <div id="territorio-mapa-edit" className="scroll-mt-6">
-              <label className="mb-2 block text-sm font-medium text-slate-700">Área do território no mapa</label>
-              <p className="mb-2 text-xs text-slate-500">
+              <label className="app-label">Área do território no mapa</label>
+              <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
                 Clique no card de não em casa ou na área do mapa para destacar a quadra (sem rolar a
                 página).
               </p>
