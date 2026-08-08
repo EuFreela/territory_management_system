@@ -21,6 +21,12 @@ type PasswordFieldProps = {
   autoComplete?: string;
   placeholder?: string;
   maxLength?: number;
+  /** Mensagem de erro do campo (borda vermelha + texto abaixo do input) */
+  error?: string;
+  /** Estado controlado de visibilidade (quando showToggle=false, o olho interno some) */
+  show?: boolean;
+  /** Mostrar o olho individual do campo (padrão true). Use false para um olho único externo. */
+  showToggle?: boolean;
 };
 
 /** Segmentos do medidor (visual compacto do app, não 1 barra fina “progress”) */
@@ -79,11 +85,16 @@ export default function PasswordField({
   autoComplete = 'new-password',
   placeholder,
   maxLength = 128,
+  error,
+  show,
+  showToggle = true,
 }: PasswordFieldProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const helpId = `${inputId}-help`;
-  const [show, setShow] = useState(false);
+  const [internalShow, setInternalShow] = useState(false);
+  const visible = showToggle ? internalShow : Boolean(show);
+  const toggleVisible = () => setInternalShow((s) => !s);
 
   const touched = value !== '';
   const total = PASSWORD_REQUIREMENTS.length;
@@ -103,10 +114,12 @@ export default function PasswordField({
         <IconKey className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-apple-tertiary" />
         <input
           id={inputId}
-          type={show ? 'text' : 'password'}
+          type={visible ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="app-input pl-10 pr-11"
+          className={`app-input pl-10 pr-11 ${
+            error ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25' : ''
+          }`}
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}
@@ -114,19 +127,31 @@ export default function PasswordField({
           maxLength={maxLength}
           aria-describedby={touched ? helpId : undefined}
         />
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => setShow((s) => !s)}
-          aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
-          data-tooltip={show ? 'Ocultar senha' : 'Mostrar senha'}
-          data-tooltip-side="left"
-          disabled={disabled}
-          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-ink active:scale-95 disabled:opacity-40"
-        >
-          {show ? <IconEyeOff className="h-[18px] w-[18px]" /> : <IconEye className="h-[18px] w-[18px]" />}
-        </button>
+        {showToggle ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={toggleVisible}
+            aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
+            data-tooltip={visible ? 'Ocultar senha' : 'Mostrar senha'}
+            data-tooltip-side="left"
+            disabled={disabled}
+            className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-ink active:scale-95 disabled:opacity-40"
+          >
+            {visible ? (
+              <IconEyeOff className="h-[18px] w-[18px]" />
+            ) : (
+              <IconEye className="h-[18px] w-[18px]" />
+            )}
+          </button>
+        ) : null}
       </div>
+
+      {error ? (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium text-apple-red">
+          {error}
+        </p>
+      ) : null}
 
       {touched ? (
         <div id={helpId} className="mt-2.5 space-y-2.5">

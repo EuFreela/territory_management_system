@@ -8,6 +8,7 @@ import {
   IconMap,
   IconMoon,
   IconSun,
+  IconUser,
   IconUsers,
   IconX,
 } from '@/components/Map/mapIcons';
@@ -242,6 +243,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   Usuários
                 </NavLink>
               ) : null}
+              <NavLink to="/perfil" className={navClass}>
+                <IconUser className="h-3.5 w-3.5 opacity-80" />
+                Minha conta
+              </NavLink>
               <NavLink to="/sobre" className={navClass}>
                 <IconInfo className="h-3.5 w-3.5 opacity-80" />
                 Sobre
@@ -251,9 +256,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <div className="hidden text-right sm:block">
-              <p className="max-w-[10rem] truncate text-[13px] font-medium text-apple-ink">
+              <Link
+                to="/perfil"
+                data-tooltip="Minha conta"
+                data-tooltip-side="bottom"
+                className="block max-w-[10rem] truncate text-[13px] font-medium text-apple-ink transition hover:text-apple-blue"
+              >
                 {user?.name}
-              </p>
+              </Link>
               {user?.role?.name ? (
                 <p className="text-[11px] text-apple-tertiary">{user.role.name}</p>
               ) : null}
@@ -373,6 +383,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   Usuários
                 </NavLink>
               ) : null}
+
+              <NavLink to="/perfil" className={mobileNavClass}>
+                <IconUser className="h-4 w-4 opacity-70" />
+                Minha conta
+              </NavLink>
 
               <NavLink to="/sobre" className={mobileNavClass}>
                 <IconInfo className="h-4 w-4 opacity-70" />

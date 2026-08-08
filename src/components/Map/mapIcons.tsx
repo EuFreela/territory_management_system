@@ -342,6 +342,16 @@ export function IconUsers({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
+/** Usuário único (Minha conta) */
+export function IconUser({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+    </svg>
+  );
+}
+
 export function IconMap({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>

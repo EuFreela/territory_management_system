@@ -12,6 +12,7 @@ import EditTerritoryPage from './pages/EditTerritoryPage';
 import FieldLeadersPage from './pages/FieldLeadersPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import UsersPage from './pages/UsersPage';
+import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
 import { useAuth } from './lib/auth-context';
 
@@ -61,14 +62,13 @@ export default function App() {
               </RequirePermission>
             }
           />
-          <Route
-            path="/usuarios"
-            element={
+          <Route path="/usuarios" element={
               <RequirePermission scope="user:manage">
                 <UsersPage />
               </RequirePermission>
             }
           />
+          <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/sobre" element={<AboutPage />} />
         </Route>
 
