@@ -28,10 +28,14 @@ export function ptBrValidityMessage(el: ValidityTarget): string {
     return 'Valor inválido.';
   }
   if (v.tooShort) {
-    return `Use pelo menos ${el.minLength} caracteres.`;
+    const min =
+      el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.minLength : 0;
+    return `Use pelo menos ${min} caracteres.`;
   }
   if (v.tooLong) {
-    return `Use no máximo ${el.maxLength} caracteres.`;
+    const max =
+      el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.maxLength : 0;
+    return `Use no máximo ${max} caracteres.`;
   }
   if (v.rangeUnderflow) {
     return `O valor mínimo é ${(el as HTMLInputElement).min}.`;
