@@ -8,9 +8,11 @@ import {
   IconImage,
   IconMap,
   IconPencil,
+  IconRotate,
   IconStar,
   IconTrash,
   IconUnlink,
+  IconX,
 } from '@/components/Map/mapIcons';
 import TerritoryImageLeafletMap from '@/components/Map/TerritoryImageLeafletMap';
 import TerritoryMap, {
@@ -43,6 +45,14 @@ export default function TerritoryDetailPage() {
   const [linkHint, setLinkHint] = useState('');
   /** Aba: mapa interativo (Leaflet) ou imagem estática do cartão */
   const [mapViewTab, setMapViewTab] = useState<MapViewTab>('mapa');
+  /** Modal de comparação Mapa & Imagem aberta? */
+  const [splitOpen, setSplitOpen] = useState(false);
+  /** Orientação dos quadros: horizontal = lado a lado; vertical = um sobre o outro */
+  const [splitOrientation, setSplitOrientation] = useState<'horizontal' | 'vertical'>(
+    'horizontal',
+  );
+  /** Incrementa ao girar a orientação p/ invalidateSize nos dois Leaflet */
+  const [splitResizeToken, setSplitResizeToken] = useState(0);
   /** Mantém painéis montados; só redimensiona o Leaflet ao trocar (sem novo load do Google) */
   const [mapResizeToken, setMapResizeToken] = useState(0);
   const [imageResizeToken, setImageResizeToken] = useState(0);
@@ -58,10 +68,44 @@ export default function TerritoryDetailPage() {
       setImageResizeToken((n) => n + 1);
     } else {
       setImagePanelReady(true);
-      setMapResizeToken((n) => n + 1);
-      setImageResizeToken((n) => n + 1);
+      setSplitOpen(true);
+      setSplitResizeToken((n) => n + 1);
     }
   }
+
+  /** Fecha a modal e volta para a aba anterior (Mapa) */
+  function closeSplit() {
+    setSplitOpen(false);
+    setMapViewTab('mapa');
+    setMapResizeToken((n) => n + 1);
+  }
+
+  /** Alterna a orientação dos quadros: horizontal ↔ vertical */
+  function rotateSplit() {
+    setSplitOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'));
+    setSplitResizeToken((n) => n + 1);
+  }
+
+  // Esc fecha a modal de comparação e trava o scroll do body
+  useEffect(() => {
+    if (!splitOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      closeSplit();
+    };
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [splitOpen]);
 
   useEffect(() => {
     if (!id) return;
@@ -295,6 +339,7 @@ export default function TerritoryDetailPage() {
   const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
 
   return (
+    <>
     <main className="app-page space-y-6">
       <div className="space-y-6">
         <div className="app-card-pad">
@@ -449,10 +494,8 @@ export default function TerritoryDetailPage() {
             <div
               role="tabpanel"
               aria-labelledby="tab-mapa-interativo"
-              hidden={mapViewTab !== 'mapa' && mapViewTab !== 'mapa-imagem'}
-              className={
-                mapViewTab === 'mapa' || mapViewTab === 'mapa-imagem' ? 'mb-4' : 'hidden'
-              }
+              hidden={mapViewTab !== 'mapa'}
+              className={mapViewTab === 'mapa' ? 'mb-4' : 'hidden'}
             >
               <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
                 Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
@@ -501,10 +544,8 @@ export default function TerritoryDetailPage() {
               <div
                 role="tabpanel"
                 aria-labelledby="tab-mapa-imagem"
-                hidden={mapViewTab !== 'imagem' && mapViewTab !== 'mapa-imagem'}
-                className={
-                  mapViewTab === 'imagem' || mapViewTab === 'mapa-imagem' ? '' : 'hidden'
-                }
+                hidden={mapViewTab !== 'imagem'}
+                className={mapViewTab === 'imagem' ? '' : 'hidden'}
               >
                 {hasTerritoryStaticMapCandidate(territory) ? (
                   <TerritoryImageLeafletMap
@@ -712,5 +753,94 @@ export default function TerritoryDetailPage() {
         </section>
       </div>
     </main>
+
+    {/* Modal de comparação Mapa & Imagem — tela cheia, dois quadros */}    {splitOpen ? (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mapa e Imagem lado a lado"
+        className="fixed inset-0 z-[9000] flex flex-col bg-slate-100 dark:bg-black"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-apple-line bg-apple-surface px-3 py-2 shadow-sm sm:px-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-apple-ink">
+            <span className="flex items-center">
+              <IconMap className="h-4 w-4" />
+              <IconImage className="-ml-1 h-4 w-4" />
+            </span>
+            Mapa &amp; Imagem
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={rotateSplit}
+              data-tooltip={
+                splitOrientation === 'horizontal'
+                  ? 'Empilhar na vertical'
+                  : 'Colocar lado a lado (horizontal)'
+              }
+              aria-label="Girar orientação"
+              aria-pressed={splitOrientation === 'vertical'}
+              className="app-icon-btn"
+            >
+              <IconRotate className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={closeSplit}
+              data-tooltip="Fechar (Esc)"
+              aria-label="Fechar"
+              className="app-icon-btn"
+            >
+              <IconX className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          className={`flex min-h-0 flex-1 gap-2 p-2 sm:gap-3 sm:p-3 ${
+            splitOrientation === 'horizontal' ? 'flex-col sm:flex-row' : 'flex-col'
+          }`}
+        >
+          {/* Quadro: mapa principal */}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <TerritoryMap
+              value={territory.geojson}
+              centerLat={
+                territory.map_lat != null ? Number(territory.map_lat) : mapConfig?.lat ?? null
+              }
+              centerLng={
+                territory.map_lng != null ? Number(territory.map_lng) : mapConfig?.lng ?? null
+              }
+              cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+              editable={false}
+              hideSearch
+              fillHeight
+              resizeToken={splitResizeToken}
+              finishedKeys={blocksByQuadra
+                .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
+                .map(([name]) => name)}
+            />
+          </div>
+
+          {/* Quadro: imagem do cartão */}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {hasTerritoryStaticMapCandidate(territory) ? (
+              <TerritoryImageLeafletMap
+                territory={territory}
+                resizeToken={splitResizeToken}
+                fillHeight
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-apple-line bg-apple-fill px-4 text-center text-[14px] text-apple-secondary">
+                Defina o <strong className="text-apple-ink">Terr. N.º</strong> do cartão para
+                associar a imagem (ex.: N.º 28 →{' '}
+                <code className="mx-1 text-[12px]">t28.webp</code>).
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }
