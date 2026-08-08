@@ -779,6 +779,9 @@ export default function TerritoryDetailPage() {
             Mapa &amp; Imagem
           </p>
           <div className="flex items-center gap-2">
+            <span className="max-w-[240px] truncate text-[12px] font-medium text-apple-secondary">
+              {splitAreaCount}
+            </span>
             <button
               type="button"
               onClick={rotateSplit}
@@ -798,13 +801,12 @@ export default function TerritoryDetailPage() {
                 <IconColumns className="h-5 w-5" />
               )}
             </button>
-            <span className="max-w-[240px] truncate text-[12px] font-medium text-apple-secondary">
-              {splitAreaCount}
-            </span>
             <button
               type="button"
               onClick={closeSplit}
               data-tooltip="Fechar (Esc)"
+              data-tooltip-side="bottom"
+              data-tooltip-align="end"
               aria-label="Fechar"
               className="app-icon-btn"
             >
