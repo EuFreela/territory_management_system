@@ -37,6 +37,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Minha conta (v0.0.8.1)',
+    items: [
+      'Página Minha conta no menu, para todos os usuários: edite seu nome e troque sua senha',
+      'Email e papel continuam restritos ao administrador',
+      'Troca de senha com o mesmo padrão do admin: medidor de força, requisitos e gerador de senha forte',
+      'Olho único mostra/oculta todas as senhas da página de uma vez',
+      'Erros em toast, com o campo relacionado destacado em vermelho e a mensagem abaixo do input',
+    ],
+  },
+  {
     title: 'GPS compartilhado e mapa (v0.0.8)',
     items: [
       'GPS multi-usuário: usuários logados com GPS ativo aparecem no mapa com nome, cada um em uma cor',
