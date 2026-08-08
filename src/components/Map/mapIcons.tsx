@@ -382,8 +382,8 @@ export function IconImage({ className = 'h-5 w-5' }: IconProps) {
   );
 }
 
-/** Girar / alternar orientação (ex.: horizontal ↔ vertical) */
-export function IconRotate({ className = 'h-5 w-5' }: IconProps) {
+/** Girar orientação: quadrado com seta para a esquerda */
+export function IconRotateLeft({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg
       className={className}
@@ -395,8 +395,29 @@ export function IconRotate({ className = 'h-5 w-5' }: IconProps) {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M21 12a9 9 0 1 1-3-6.7" />
-      <path d="M21 3v5h-5" />
+      <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path d="M14 8 10 12l4 4" />
+      <path d="M10 12h7" />
+    </svg>
+  );
+}
+
+/** Girar orientação: quadrado com seta para a direita */
+export function IconRotateRight({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+      <path d="M10 8l4 4-4 4" />
+      <path d="M14 12H7" />
     </svg>
   );
 }

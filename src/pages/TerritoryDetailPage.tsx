@@ -8,7 +8,8 @@ import {
   IconImage,
   IconMap,
   IconPencil,
-  IconRotate,
+  IconRotateLeft,
+  IconRotateRight,
   IconStar,
   IconTrash,
   IconUnlink,
@@ -773,17 +774,21 @@ export default function TerritoryDetailPage() {
             <button
               type="button"
               onClick={rotateSplit}
-              data-tooltip={
-                splitOrientation === 'horizontal'
-                  ? 'Empilhar na vertical'
-                  : 'Colocar lado a lado (horizontal)'
-              }
-              aria-label="Girar orientação"
-              aria-pressed={splitOrientation === 'vertical'}
-              className="app-icon-btn"
-            >
-              <IconRotate className="h-5 w-5" />
-            </button>
+                data-tooltip={
+                  splitOrientation === 'horizontal'
+                    ? 'Empilhar na vertical'
+                    : 'Colocar lado a lado (horizontal)'
+                }
+                aria-label="Girar orientação"
+                aria-pressed={splitOrientation === 'vertical'}
+                className="app-icon-btn"
+              >
+                {splitOrientation === 'horizontal' ? (
+                  <IconRotateLeft className="h-5 w-5" />
+                ) : (
+                  <IconRotateRight className="h-5 w-5" />
+                )}
+              </button>
             <button
               type="button"
               onClick={closeSplit}
