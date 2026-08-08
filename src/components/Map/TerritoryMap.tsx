@@ -928,8 +928,8 @@ function ToolButton({
   const tones = {
     default: active
       ? 'bg-sky-600 text-white shadow-sm'
-      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300',
-    danger: 'bg-white text-red-600 hover:bg-red-50 border border-red-200',
+      : 'bg-apple-surface text-apple-secondary hover:text-apple-ink border border-apple-line',
+    danger: 'bg-apple-surface text-apple-red hover:bg-apple-red/10 border border-apple-red/25',
     success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700',
   };
 
@@ -941,7 +941,7 @@ function ToolButton({
       aria-label={title}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]} ${
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40 ${tones[tone]} ${
         active && tone === 'default' ? '' : ''
       }`}
     >
@@ -1585,6 +1585,11 @@ export default function TerritoryMap({
     setNoteDraft('');
   }
 
+  function cancelNoteEdit() {
+    setSelectedNoteId(null);
+    setNoteDraft('');
+  }
+
   function removeSelectedNote() {
     if (!selectedNoteId || !editable) return;
     const note = notes.find((n) => n.id === selectedNoteId);
@@ -1856,10 +1861,19 @@ export default function TerritoryMap({
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
+              onClick={cancelNoteEdit}
+              data-tooltip="Cancelar"
+              aria-label="Cancelar edição"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-secondary transition hover:bg-apple-fill hover:text-apple-ink"
+            >
+              <IconX className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
               onClick={() => void removeSelectedNote()}
               data-tooltip="Remover"
               aria-label="Remover nota"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 transition hover:bg-red-50"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10"
             >
               <IconTrash className="h-5 w-5" />
             </button>
@@ -1868,7 +1882,7 @@ export default function TerritoryMap({
               onClick={saveAndCloseNote}
               data-tooltip="Salvar e fechar"
               aria-label="Salvar e fechar"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
             >
               <IconCheck className="h-5 w-5" />
             </button>
@@ -1927,7 +1941,7 @@ export default function TerritoryMap({
                 onClick={() => void removeSelected()}
                 data-tooltip="Remover área"
                 aria-label="Remover área"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10"
               >
                 <IconTrash className="h-5 w-5" />
               </button>

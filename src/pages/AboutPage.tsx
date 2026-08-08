@@ -44,6 +44,9 @@ const updates: { title: string; items: string[] }[] = [
       'Troca de senha com o mesmo padrão do admin: medidor de força, requisitos e gerador de senha forte',
       'Olho único mostra/oculta todas as senhas da página de uma vez',
       'Erros em toast, com o campo relacionado destacado em vermelho e a mensagem abaixo do input',
+      'Aba Mapa & Imagem no cartão: veja o mapa e a imagem do cartão um abaixo do outro para comparar',
+      'Botão Cancelar no comentário de atenção — sai da edição sem salvar',
+      'Botões de edição do mapa padronizados em formato redondo',
     ],
   },
   {
