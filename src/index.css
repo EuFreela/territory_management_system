@@ -232,6 +232,18 @@ select {
     transform: translateX(-50%) translateY(0) scale(1);
   }
 
+  /* Tooltip abaixo, alinhado à borda direita do elemento (não estoura a margem da tela) */
+  [data-tooltip-side='bottom'][data-tooltip-align='end']::after {
+    left: auto;
+    right: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+
+  [data-tooltip-side='bottom'][data-tooltip-align='end']:hover::after,
+  [data-tooltip-side='bottom'][data-tooltip-align='end']:focus-visible::after {
+    transform: translateY(0) scale(1);
+  }
+
   /* Esquerda / direita */
   [data-tooltip-side='left']::after {
     left: auto;
