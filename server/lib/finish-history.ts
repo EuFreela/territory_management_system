@@ -2,16 +2,20 @@ import pool from './db.js';
 import { todayIsoInAppTz, weekdayForDateStr } from './timezone.js';
 
 function parseHouseNumbers(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === 'string') {
+  let list: string[];
+  if (Array.isArray(value)) list = value.map(String);
+  else if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.map(String) : [];
+      list = Array.isArray(parsed) ? parsed.map(String) : [];
     } catch {
-      return [];
+      list = [];
     }
+  } else {
+    list = [];
   }
-  return [];
+  // Casas duplicadas no não em casa contam uma única vez
+  return [...new Set(list)];
 }
 
 function blockIsFinished(row: Record<string, unknown>) {

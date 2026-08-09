@@ -15,6 +15,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
+import RelatorioFinalizadosPage from './pages/RelatorioFinalizadosPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -66,6 +67,14 @@ export default function App() {
           <Route path="/usuarios" element={
               <RequirePermission scope="user:manage">
                 <UsersPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/relatorios/finalizados"
+            element={
+              <RequirePermission scope="territory:read">
+                <RelatorioFinalizadosPage />
               </RequirePermission>
             }
           />

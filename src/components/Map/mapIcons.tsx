@@ -14,6 +14,7 @@ import {
   Expand,
   Eye,
   EyeOff,
+  FileText,
   Home,
   Image,
   Info,
@@ -103,3 +104,4 @@ export const IconRows = icon(Rows2);
 export const IconColumns = icon(Columns2);
 export const IconPalette = icon(Palette);
 export const IconContrast = icon(Contrast);
+export const IconFileText = icon(FileText);
