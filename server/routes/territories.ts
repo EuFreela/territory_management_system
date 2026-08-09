@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import pool from '../lib/db.js';
-import { recordTerritoryFinished } from '../lib/finish-history.js';
+import { recordTerritoryFinished, listTodayLeaders } from '../lib/finish-history.js';
 import { getMapConfig } from '../lib/map-config.js';
 import { territorySchema, blockSchema, toggleHouseSchema } from '../lib/validations.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -84,14 +84,17 @@ function paramId(value: string | string[]): string {
 }
 
 router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
-  // Lista por Terr. N.º (numérico); sem número por último; desempate por nome
+  // Lista por Terr. N.º (numérico); sem número por último; desempate por nome.
+  // daily_leader_name = dirigente vinculado ao território do dia.
   const [rows] = await pool.execute(
-    `SELECT * FROM territories
+    `SELECT t.*, fa.assignee_name AS daily_leader_name
+     FROM territories t
+     LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
      ORDER BY
-       CASE WHEN number IS NULL OR TRIM(number) = '' THEN 1 ELSE 0 END ASC,
-       CAST(number AS UNSIGNED) ASC,
-       number ASC,
-       name ASC`,
+       CASE WHEN t.number IS NULL OR TRIM(t.number) = '' THEN 1 ELSE 0 END ASC,
+       CAST(t.number AS UNSIGNED) ASC,
+       t.number ASC,
+       t.name ASC`,
   );
   res.json(rows);
 });
@@ -100,20 +103,25 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
   const user = (req as AuthedRequest).user;
 
   const [territories] = await pool.execute(
-    `SELECT * FROM territories
+    `SELECT t.*, fa.assignee_name AS daily_leader_name
+     FROM territories t
+     LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
      ORDER BY
-       CASE WHEN number IS NULL OR TRIM(number) = '' THEN 1 ELSE 0 END ASC,
-       CAST(number AS UNSIGNED) ASC,
-       number ASC,
-       name ASC`,
+       CASE WHEN t.number IS NULL OR TRIM(t.number) = '' THEN 1 ELSE 0 END ASC,
+       CAST(t.number AS UNSIGNED) ASC,
+       t.number ASC,
+       t.name ASC`,
   );
   const territoryList = territories as Array<Record<string, unknown>>;
 
   const [dailyRows] = await pool.execute(
-    'SELECT * FROM territories WHERE is_daily = 1 LIMIT 1',
+    `SELECT t.*, fa.assignee_name AS daily_leader_name
+     FROM territories t
+     LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
+     WHERE t.is_daily = 1
+     ORDER BY t.id ASC`,
   );
   const dailyList = dailyRows as Array<Record<string, unknown>>;
-  const daily = dailyList[0] ?? null;
 
   const [allBlockRows] = await pool.execute(
     `SELECT b.* FROM blocks b
@@ -133,13 +141,25 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
     blocksByTerritory.set(tid, list);
   }
 
-  let dailyBlocks: (typeof allBlocks)[number][] = [];
-  if (daily) {
-    dailyBlocks = blocksByTerritory.get(Number(daily.id)) ?? [];
-  }
-
-  const dailyFinished =
-    dailyBlocks.length > 0 && dailyBlocks.every((b) => Boolean(b.is_finished));
+  // Territórios do dia: um por dirigente (pode haver sem dirigente no legado)
+  const daily = (dailyList as Array<Record<string, unknown>>)
+    .map((t) => {
+      const blocks = blocksByTerritory.get(Number(t.id)) ?? [];
+      const finished = blocks.length > 0 && blocks.every((b) => Boolean(b.is_finished));
+      return {
+        ...t,
+        assignment_id: t.daily_assignment_id != null ? Number(t.daily_assignment_id) : null,
+        blocks,
+        is_finished: finished,
+      } as Record<string, unknown>;
+    })
+    .sort((a, b) => {
+      // Primeiro os vinculados a um dirigente, depois os sem dirigente
+      if (Boolean(a.assignment_id) !== Boolean(b.assignment_id)) {
+        return a.assignment_id ? -1 : 1;
+      }
+      return (a.id as number) - (b.id as number);
+    });
 
   const unfinished = territoryList
     .map((t) => {
@@ -183,9 +203,7 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
       isAdmin: user.isAdmin,
     },
     territories: territoryList,
-    daily: daily
-      ? { ...daily, blocks: dailyBlocks, is_finished: dailyFinished }
-      : null,
+    daily,
     unfinished,
   });
 });
@@ -288,7 +306,7 @@ router.post('/', requireAuth, requirePermission('territory:create'), async (req,
   }
 
   if (is_daily) {
-    await pool.execute('UPDATE territories SET is_daily = 0');
+    await pool.execute('UPDATE territories SET is_daily = 0, daily_assignment_id = NULL');
   }
 
   const [result] = await pool.execute(
@@ -409,10 +427,70 @@ router.post(
       return;
     }
 
-    await pool.execute('UPDATE territories SET is_daily = 0');
-    await pool.execute('UPDATE territories SET is_daily = 1 WHERE id = ?', [id]);
+    const rawAssignment = (req.body as { assignment_id?: unknown })?.assignment_id;
+    let assignmentId: number | null = null;
+    if (rawAssignment != null && rawAssignment !== '') {
+      const n = Number(rawAssignment);
+      if (!Number.isFinite(n) || n < 1) {
+        res.status(400).json({ error: 'Dirigente inválido.' });
+        return;
+      }
+      assignmentId = Math.floor(n);
+    }
 
-    res.json({ message: 'Território do dia atualizado com sucesso.' });
+    const todayLeaders = await listTodayLeaders();
+
+    if (assignmentId != null) {
+      // Dirigente escolhido precisa estar na escala de hoje
+      if (!todayLeaders.some((l) => l.id === assignmentId)) {
+        res.status(400).json({
+          error: 'Dirigente selecionado não está na escala de hoje.',
+        });
+        return;
+      }
+      // O mesmo dirigente só pode ter um território do dia (troca o vínculo anterior)
+      await pool.execute(
+        'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE daily_assignment_id = ?',
+        [assignmentId],
+      );
+      await pool.execute(
+        'UPDATE territories SET is_daily = 1, daily_assignment_id = ? WHERE id = ?',
+        [assignmentId, id],
+      );
+      res.json({ message: 'Território do dia vinculado ao dirigente.' });
+      return;
+    }
+
+    // Sem dirigente explícito: se houver exatamente 1 na escala, vincula a ele;
+    // se houver vários, pede escolha; se não houver, marca sem vínculo (legado).
+    if (todayLeaders.length === 1) {
+      assignmentId = todayLeaders[0].id;
+      await pool.execute(
+        'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE daily_assignment_id = ?',
+        [assignmentId],
+      );
+      await pool.execute(
+        'UPDATE territories SET is_daily = 1, daily_assignment_id = ? WHERE id = ?',
+        [assignmentId, id],
+      );
+      res.json({ message: 'Território do dia vinculado ao dirigente.' });
+      return;
+    }
+
+    if (todayLeaders.length > 1) {
+      res.status(400).json({
+        error:
+          'Há mais de um dirigente hoje. Escolha para qual dirigente este território será o do dia.',
+      });
+      return;
+    }
+
+    // Sem dirigentes hoje: mantém comportamento legado (território do dia sem vínculo)
+    await pool.execute(
+      'UPDATE territories SET is_daily = 1, daily_assignment_id = NULL WHERE id = ?',
+      [id],
+    );
+    res.json({ message: 'Território marcado como do dia (sem dirigente na escala).' });
   },
 );
 
@@ -424,7 +502,10 @@ router.delete(
   async (req, res) => {
     const id = paramId(req.params.id);
 
-    const [result] = await pool.execute('UPDATE territories SET is_daily = 0 WHERE id = ?', [id]);
+    const [result] = await pool.execute(
+      'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE id = ?',
+      [id],
+    );
 
     const updateResult = result as { affectedRows?: number };
     if (!updateResult.affectedRows) {
@@ -471,6 +552,14 @@ router.post(
         return;
       }
       assignmentId = Math.floor(n);
+    } else if (territory.daily_assignment_id != null) {
+      // Território do dia vinculado a um dirigente: usa esse vínculo,
+      // desde que o dirigente ainda esteja na escala de hoje.
+      const linked = Number(territory.daily_assignment_id);
+      const todayLeaders = await listTodayLeaders();
+      if (todayLeaders.some((l) => l.id === linked)) {
+        assignmentId = linked;
+      }
     }
 
     const authUser = (req as AuthedRequest).user;
@@ -499,7 +588,10 @@ router.post(
       return;
     }
 
-    await pool.execute('UPDATE territories SET is_daily = 0 WHERE id = ?', [id]);
+    await pool.execute(
+      'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE id = ?',
+      [id],
+    );
 
     res.json({
       message: 'Território finalizado, registrado no histórico e desvinculado do dia.',

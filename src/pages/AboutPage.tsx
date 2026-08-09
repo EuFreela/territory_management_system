@@ -37,6 +37,19 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Território do dia por dirigente (v0.0.9)',
+    items: [
+      'Cada dirigente da escala de hoje tem seu próprio território do dia — dá para ter mais de um território do dia ao mesmo tempo, um para cada dirigente',
+      'Na lista de Territórios, o botão estrela no card abre uma janela com a opção de escolher o dirigente responsável pelo território',
+      'Vincular troca o vínculo anterior do mesmo dirigente (um dirigente = um território do dia)',
+      'O selo “Território do dia” mostra o nome do dirigente vinculado',
+      'Início (home) lista um cartão por dirigente com o território do dia, e quem ainda não marcou ganha um botão de Marcar território do dia',
+      'Territórios do dia sem dirigente na escala continuam aparecendo separados',
+      'Finalizar o território do dia usa automaticamente o dirigente vinculado no histórico',
+      'Migração automática: npm run migrate:daily-per-leader',
+    ],
+  },
+  {
     title: 'Relatório de finalizações e métricas (v0.0.8.4)',
     items: [
       'Finalize o território do dia mesmo com casas pendentes no não em casa, com aviso de quantas casas restam',
@@ -323,8 +336,9 @@ export default function AboutPage() {
               </p>
               <p>
                 Cada território vira um cartão com área no mapa, casas e quadras para marcar, e o
-                fluxo do <span className="font-medium text-apple-ink">território do dia</span> — o
-                destaque atual do serviço — até a finalização com registro de pessoas e data/hora.
+                fluxo do <span className="font-medium text-apple-ink">território do dia</span> — um
+                por dirigente da escala de hoje, escolhido na lista de Territórios — até a
+                finalização com registro de pessoas e data/hora.
               </p>
             </div>
           </section>

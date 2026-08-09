@@ -14,6 +14,7 @@
     "migrate:finish-history": "node scripts/migrate-finish-history.js",
     "migrate:theme": "node scripts/migrate-theme-preference.js",
     "migrate:block-description": "node scripts/migrate-block-description.js",
+    "migrate:daily-per-leader": "node scripts/migrate-daily-per-leader.js",
     "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {
