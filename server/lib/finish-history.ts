@@ -125,6 +125,30 @@ export async function recordTerritoryFinished(
       : null;
   const finishedByName = options.finishedByName?.trim() || null;
 
+  // Totais de "não em casa" registrados no território no momento da finalização
+  const [bRows] = await pool.execute(
+    'SELECT name, house_numbers, completed_houses FROM blocks WHERE territory_id = ?',
+    [territoryId],
+  );
+  const blocks = bRows as Array<{
+    name: string;
+    house_numbers: unknown;
+    completed_houses: unknown;
+  }>;
+  const quadrasCount = new Set(
+    blocks.map((b) => String(b.name ?? '').trim() || '—'),
+  ).size;
+  const ruasCount = blocks.length;
+  const casasCount = blocks.reduce(
+    (acc, b) => acc + parseHouseNumbers(b.house_numbers).length,
+    0,
+  );
+  const restamCasas = blocks.reduce((acc, b) => {
+    const houses = parseHouseNumbers(b.house_numbers);
+    const completed = new Set(parseHouseNumbers(b.completed_houses));
+    return acc + houses.filter((n) => !completed.has(n)).length;
+  }, 0);
+
   const leaders = await listTodayLeaders();
   let leaderName: string | null = null;
   let fieldTime: string | null = null;
@@ -147,8 +171,9 @@ export async function recordTerritoryFinished(
     await pool.execute(
       `INSERT INTO territory_finish_history
         (territory_id, territory_name, territory_number, field_date, field_time, leader_name,
-         people_count, finished_by_user_id, finished_by_name)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         people_count, quadras_count, ruas_count, casas_count, restam_casas,
+         finished_by_user_id, finished_by_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         territory.id,
         territory.name,
@@ -157,6 +182,10 @@ export async function recordTerritoryFinished(
         fieldTime,
         leaderName,
         peopleCount,
+        quadrasCount,
+        ruasCount,
+        casasCount,
+        restamCasas,
         finishedByUserId,
         finishedByName,
       ],

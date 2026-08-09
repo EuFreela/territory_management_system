@@ -39,6 +39,24 @@ function formatDateTimeBr(iso: string | null | undefined) {
   }).format(date);
 }
 
+/** Só a hora da ação de finalizar (America/Sao_Paulo) */
+function formatTimeBr(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    const s = String(iso).replace('T', ' ').slice(0, 16);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (m) return `${m[4]}:${m[5]}`;
+    return String(iso);
+  }
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
 function normalize(text: string) {
   return text
     .normalize('NFD')
@@ -106,6 +124,7 @@ export default function FinishedTerritoriesPage() {
           r.field_time ?? '',
           r.leader_name ?? '',
           r.people_count != null ? String(r.people_count) : '',
+          r.restam_casas != null ? String(r.restam_casas) : '',
           r.finished_by_name ?? '',
           formatDateTimeBr(r.finished_at),
           String(r.finished_at ?? ''),
@@ -121,7 +140,7 @@ export default function FinishedTerritoriesPage() {
         <p className="app-section-title">Histórico</p>
         <h1 className="app-title mt-1">Finalizados</h1>
         <p className="app-subtitle">
-          Histórico de finalizações — dia do campo, horário, dirigente e data/hora do registro
+          Histórico de finalizações — dia, horário, dirigente, pessoas e o não em casa do território
         </p>
       </div>
 
@@ -177,14 +196,15 @@ export default function FinishedTerritoriesPage() {
           <table className="w-full table-fixed text-left">
             <thead>
               <tr className="bg-apple-fill first:rounded-t-[20px]">
-                <th className={`${thClass} w-[11%] first:rounded-tl-[19px]`}>Dia</th>
-                <th className={`${thClass} w-[10%]`}>Horário</th>
-                <th className={`${thClass} w-[12%]`}>Dirigente</th>
-                <th className={`${thClass} w-[9%]`}>Pessoas</th>
-                <th className={`${thClass} w-[22%]`}>Território</th>
-                <th className={`${thClass} w-[14%]`}>Registrado por</th>
-                <th className={`${thClass} w-[14%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
-                  Data/hora
+                <th className={`${thClass} w-[9%] first:rounded-tl-[19px]`}>Dia</th>
+                <th className={`${thClass} w-[8%]`}>Horário</th>
+                <th className={`${thClass} w-[11%]`}>Dirigente</th>
+                <th className={`${thClass} w-[8%]`}>Presentes</th>
+                <th className={`${thClass} w-[13%]`}>Restam casas</th>
+                <th className={`${thClass} w-[18%]`}>Território</th>
+                <th className={`${thClass} w-[12%]`}>Registrado por</th>
+                <th className={`${thClass} w-[13%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
+                  Hora
                 </th>
                 {isAdmin ? (
                   <th className={`${thClass} w-[8%] rounded-tr-[19px] text-right`}>Ações</th>
@@ -214,6 +234,13 @@ export default function FinishedTerritoriesPage() {
                   <td className={`${tdClass} tabular-nums text-apple-ink`}>
                     {row.people_count != null ? (
                       <span className="font-medium">{row.people_count}</span>
+                    ) : (
+                      <span className="text-apple-tertiary">—</span>
+                    )}
+                  </td>
+                  <td className={`${tdClass} tabular-nums text-apple-ink`}>
+                    {row.restam_casas != null ? (
+                      <span className="font-medium">{row.restam_casas}</span>
                     ) : (
                       <span className="text-apple-tertiary">—</span>
                     )}
@@ -259,7 +286,7 @@ export default function FinishedTerritoriesPage() {
                     )}
                   </td>
                   <td className={`${tdClass} truncate tabular-nums text-[13px] text-apple-secondary`}>
-                    {formatDateTimeBr(row.finished_at)}
+                    {formatTimeBr(row.finished_at)}
                   </td>
                   {isAdmin ? (
                     <td className={`${tdClass} text-right`}>

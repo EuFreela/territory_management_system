@@ -84,6 +84,42 @@ try {
     console.log('finished_by_name already exists');
   }
 
+  if (!(await columnExists(conn, 'territory_finish_history', 'quadras_count'))) {
+    await conn.execute(
+      'ALTER TABLE territory_finish_history ADD COLUMN quadras_count INT NULL AFTER people_count',
+    );
+    console.log('added quadras_count');
+  } else {
+    console.log('quadras_count already exists');
+  }
+
+  if (!(await columnExists(conn, 'territory_finish_history', 'ruas_count'))) {
+    await conn.execute(
+      'ALTER TABLE territory_finish_history ADD COLUMN ruas_count INT NULL AFTER quadras_count',
+    );
+    console.log('added ruas_count');
+  } else {
+    console.log('ruas_count already exists');
+  }
+
+  if (!(await columnExists(conn, 'territory_finish_history', 'casas_count'))) {
+    await conn.execute(
+      'ALTER TABLE territory_finish_history ADD COLUMN casas_count INT NULL AFTER ruas_count',
+    );
+    console.log('added casas_count');
+  } else {
+    console.log('casas_count already exists');
+  }
+
+  if (!(await columnExists(conn, 'territory_finish_history', 'restam_casas'))) {
+    await conn.execute(
+      'ALTER TABLE territory_finish_history ADD COLUMN restam_casas INT NULL AFTER casas_count',
+    );
+    console.log('added restam_casas');
+  } else {
+    console.log('restam_casas already exists');
+  }
+
   // Histórico cumulativo: várias finalizações do mesmo território no mesmo dia
   try {
     const [fks] = await conn.execute(

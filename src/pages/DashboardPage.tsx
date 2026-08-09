@@ -2,12 +2,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
   IconCheckCircle,
+  IconChevronRight,
   IconPencil,
   IconSave,
   IconUnlink,
   IconX,
 } from '@/components/Map/mapIcons';
 import { confirmToast } from '@/lib/confirm-toast';
+import { toast } from 'sonner';
 import { LoadingBox } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -115,6 +117,13 @@ export default function DashboardPage() {
         method: 'POST',
         body: JSON.stringify(body),
       });
+      if (pendingNaoEmCasa > 0) {
+        toast.warning(
+          pendingNaoEmCasa === 1
+            ? 'Atenção: ainda faltou 1 casa para fazer no não em casa.'
+            : `Atenção: ainda faltaram ${pendingNaoEmCasa} casas para fazer no não em casa.`,
+        );
+      }
       setFinishModalId(null);
       setFinishPeople('1');
       setFinishLeaderId('');
@@ -171,6 +180,14 @@ export default function DashboardPage() {
   const fixedLeaders = leaders?.fixed ?? [];
   const finishLeaderOptions = [...datedLeaders, ...fixedLeaders];
 
+  // Casas do "não em casa" que ainda não foram feitas no território do dia
+  const pendingNaoEmCasa =
+    daily?.blocks?.reduce((acc, b) => {
+      const houses = b.house_numbers ?? [];
+      const completed = new Set(b.completed_houses ?? []);
+      return acc + houses.filter((n) => !completed.has(n)).length;
+    }, 0) ?? 0;
+
   return (
     <main className="app-page-wide">
       <header className="mb-10">
@@ -184,74 +201,6 @@ export default function DashboardPage() {
           {error}
         </p>
       ) : null}
-
-      {/* Território do dia */}
-      <section className="mb-10">
-        <h2 className="app-section-title mb-3">Território do dia</h2>
-
-        {daily ? (
-          <div className="app-card flex flex-wrap items-center gap-4 p-5 sm:p-6">
-            <Link
-              to={`/territories/${daily.id}`}
-              className="min-w-0 flex-1 rounded-apple outline-none ring-apple-blue/30 focus-visible:ring-2"
-            >
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="app-badge-blue">Do dia</span>
-                <span className="text-[17px] font-semibold tracking-tightish text-apple-ink">
-                  {daily.name}
-                </span>
-                {daily.number ? (
-                  <span className="text-[14px] text-apple-secondary">
-                    Terr. N.º <span className="font-medium text-apple-ink">{daily.number}</span>
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1.5 text-[13px] text-apple-tertiary">
-                Toque para abrir mapa e checklist · Finalizar grava em Finalizados (com nº de pessoas)
-              </p>
-            </Link>
-
-            <div className="flex items-center gap-2">
-              {can('territory:set_daily') ? (
-                <button
-                  type="button"
-                  disabled={finishing || unlinking}
-                  onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  data-tooltip="Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia"
-                  aria-label="Finalizar território do dia"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
-                >
-                  <IconCheckCircle className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline">Finalizar</span>
-                </button>
-              ) : null}
-              {can('territory:set_daily') ? (
-                <button
-                  type="button"
-                  disabled={unlinking || finishing}
-                  onClick={(e) => void unlinkDaily(e, daily.id)}
-                  data-tooltip="Desvincular território do dia"
-                  aria-label="Desvincular território do dia"
-                  className="app-icon-btn disabled:opacity-50"
-                >
-                  <IconUnlink className="h-4 w-4" />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <div className="app-empty">
-            <p className="text-[15px] font-medium text-apple-ink">Nenhum território do dia</p>
-            <p className="mt-1 text-[13px] text-apple-secondary">
-              Marque um em{' '}
-              <Link to="/territories" className="app-link">
-                Territórios
-              </Link>
-              .
-            </p>
-          </div>
-        )}
-      </section>
 
       {/* Dirigentes */}
       <section className="mb-10">
@@ -394,6 +343,75 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Território do dia */}
+      <section className="mb-10">
+        <h2 className="app-section-title mb-3">Território do dia</h2>
+
+        {daily ? (
+          <div className="app-card flex flex-wrap items-center gap-4 p-5 sm:p-6">
+            <Link
+              to={`/territories/${daily.id}`}
+              className="min-w-0 flex-1 rounded-apple outline-none ring-apple-blue/30 focus-visible:ring-2"
+            >
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="app-badge-blue">Do dia</span>
+                <span className="text-[17px] font-semibold tracking-tightish text-apple-ink">
+                  {daily.name}
+                </span>
+                {daily.number ? (
+                  <span className="text-[14px] text-apple-secondary">
+                    Terr. N.º <span className="font-medium text-apple-ink">{daily.number}</span>
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-[13px] text-apple-tertiary">
+                Toque para abrir mapa e checklist · Finalizar grava em Finalizados (com nº de pessoas)
+              </p>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              {can('territory:set_daily') ? (
+                <button
+                  type="button"
+                  disabled={finishing || unlinking}
+                  onClick={(e) => openFinishModal(e, Number(daily.id))}
+                  data-tooltip="Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia"
+                  aria-label="Finalizar território do dia"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
+                >
+                  <IconCheckCircle className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">Finalizar</span>
+                </button>
+              ) : null}
+              {can('territory:set_daily') ? (
+                <button
+                  type="button"
+                  disabled={unlinking || finishing}
+                  onClick={(e) => void unlinkDaily(e, daily.id)}
+                  data-tooltip="Desvincular território do dia"
+                  aria-label="Desvincular território do dia"
+                  className="app-icon-btn disabled:opacity-50"
+                >
+                  <IconUnlink className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="app-empty">
+            <p className="text-[15px] font-medium text-apple-ink">Nenhum território do dia</p>
+            <p className="mt-1 text-[13px] text-apple-secondary">
+              Marque um em{' '}
+              <Link to="/territories" className="app-link">
+                Territórios
+              </Link>
+              .
+            </p>
+          </div>
+        )}
+      </section>
+
+
       {/* Modal: finalizar + pessoas no campo */}
       {finishModalId != null ? (
         <div
@@ -429,6 +447,14 @@ export default function DashboardPage() {
                 horário, dirigente, pessoas e quem registrou), o território sai do dia e você vai
                 para a lista de finalizados.
               </p>
+
+              {pendingNaoEmCasa > 0 ? (
+                <p className="mt-3 rounded-[12px] border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[13px] leading-relaxed text-apple-ink">
+                  <span className="font-semibold">Atenção:</span> ainda{' '}
+                  {pendingNaoEmCasa === 1 ? 'falta 1 casa' : `faltam ${pendingNaoEmCasa} casas`} para
+                  fazer no não em casa.
+                </p>
+              ) : null}
 
               <div className="mt-5 space-y-4">
                 {finishLeaderOptions.length > 1 ? (
@@ -559,7 +585,7 @@ export default function DashboardPage() {
               <Link
                 key={Number(item.id)}
                 to={`/territories/${item.id}`}
-                className="app-card flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:shadow-card"
+                className="app-card group flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:shadow-card"
               >
                 <div className="min-w-0">
                   <p className="truncate text-[15px] font-semibold tracking-tightish text-apple-ink">
@@ -588,7 +614,13 @@ export default function DashboardPage() {
                     })()}
                   </p>
                 </div>
-                <span className="shrink-0 text-[13px] font-medium text-apple-blue">Continuar</span>
+                <span
+                  className="app-icon-btn hover:border-transparent hover:bg-apple-blue hover:text-white"
+                  data-tooltip="Continuar"
+                  aria-label="Continuar"
+                >
+                  <IconChevronRight className="h-4 w-4" />
+                </span>
               </Link>
             ))}
           </div>

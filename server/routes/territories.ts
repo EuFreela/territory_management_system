@@ -200,6 +200,7 @@ router.get(
       const [rows] = await pool.execute(
         `SELECT id, territory_id, territory_name, territory_number,
                 field_date, field_time, leader_name, people_count,
+                quadras_count, ruas_count, casas_count, restam_casas,
                 finished_by_user_id, finished_by_name, finished_at
          FROM territory_finish_history
          ORDER BY field_date DESC, finished_at DESC, id DESC`,
@@ -210,6 +211,13 @@ router.get(
       if (/doesn't exist|Unknown table|territory_finish_history/i.test(msg)) {
         res.status(503).json({
           error: 'Histórico ainda não configurado. Rode: npm run migrate:finish-history',
+        });
+        return;
+      }
+      if (/Unknown column|quadras_count|ruas_count|casas_count/i.test(msg)) {
+        res.status(503).json({
+          error:
+            'Histórico desatualizado. Rode: npm run migrate:finish-history',
         });
         return;
       }
