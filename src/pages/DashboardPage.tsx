@@ -375,9 +375,9 @@ export default function DashboardPage() {
                   type="button"
                   disabled={finishing || unlinking}
                   onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  data-tooltip="Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia"
+                  data-tooltip="Finaliza campo"
                   aria-label="Finalizar território do dia"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                 >
                   <IconCheckCircle className="h-4 w-4 shrink-0" />
                   <span className="hidden sm:inline">Finalizar</span>
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => void confirmFinishDaily()}
                   disabled={finishing}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-emerald-700 px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                 >
                   <IconCheckCircle className="h-4 w-4" />
                   {finishing ? 'Finalizando…' : 'Finalizar'}

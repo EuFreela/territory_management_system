@@ -37,6 +37,19 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Relatório de finalizações e métricas (v0.0.8.4)',
+    items: [
+      'Finalize o território do dia mesmo com casas pendentes no não em casa, com aviso de quantas casas restam',
+      'Histórico de finalizados registra e exibe as casas que restaram no não em casa no momento da finalização',
+      'Relatório A4 (Imprimir/Salvar PDF): capa, resumo com totais e a relação de finalizações escrita por extenso, legível',
+      'Checklist de seleção na página Finalizados para escolher as linhas do relatório',
+      'Somas do relatório não contam duas vezes o mesmo território finalizado mais de uma vez',
+      'Casas duplicadas no não em casa contam uma única vez nos totais',
+      'Aba Métricas na página Finalizados — base para os gráficos do histórico',
+      'Botão Finalizar no início com verde mais escuro e tooltip “Finaliza campo”',
+    ],
+  },
+  {
     title: 'Login, ícones e polimento (v0.0.8.3)',
     items: [
       'Validação do login em português (PT-BR): nada de mensagens nativas do navegador em inglês',
