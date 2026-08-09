@@ -73,6 +73,14 @@ export type FinishedTerritoryHistory = {
   field_time?: string | null;
   leader_name?: string | null;
   people_count?: number | null;
+  /** Total de quadras de "não em casa" no momento da finalização */
+  quadras_count?: number | null;
+  /** Total de ruas de "não em casa" no momento da finalização */
+  ruas_count?: number | null;
+  /** Total de casas de "não em casa" no momento da finalização */
+  casas_count?: number | null;
+  /** Casas de "não em casa" ainda não visitadas no momento da finalização */
+  restam_casas?: number | null;
   finished_by_user_id?: number | null;
   finished_by_name?: string | null;
   finished_at?: string;

@@ -5,6 +5,7 @@ import {
   ArrowUp,
   Check,
   ChevronDown,
+  ChevronRight,
   CircleAlert,
   CircleCheck,
   CircleHelp,
@@ -95,6 +96,7 @@ export const IconExpand = icon(Expand);
 export const IconCompress = icon(Shrink);
 export const IconFocusAreas = icon(Scan);
 export const IconChevronDown = icon(ChevronDown);
+export const IconChevronRight = icon(ChevronRight);
 export const IconMenu = icon(Menu);
 export const IconWarning = icon(CircleAlert);
 export const IconRows = icon(Rows2);
