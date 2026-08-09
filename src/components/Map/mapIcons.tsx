@@ -9,6 +9,7 @@ import {
   CircleCheck,
   CircleHelp,
   Columns2,
+  Contrast,
   Expand,
   Eye,
   EyeOff,
@@ -24,6 +25,7 @@ import {
   Menu,
   MessageCircle,
   Moon,
+  Palette,
   Pencil,
   Plus,
   Redo2,
@@ -97,3 +99,5 @@ export const IconMenu = icon(Menu);
 export const IconWarning = icon(CircleAlert);
 export const IconRows = icon(Rows2);
 export const IconColumns = icon(Columns2);
+export const IconPalette = icon(Palette);
+export const IconContrast = icon(Contrast);
