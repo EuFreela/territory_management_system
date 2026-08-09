@@ -88,6 +88,7 @@ export default function FinishedTerritoriesPage() {
   /** Checklist do relatório: quais linhas entram no relatório */
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [tab, setTab] = useState<'metrica' | 'historico'>('historico');
 
   useEffect(() => {
     setLoading(true);
@@ -197,7 +198,61 @@ export default function FinishedTerritoriesPage() {
         </p>
       </div>
 
-      <div className="mb-5">
+      <div
+        className="mb-5 inline-flex w-full rounded-full border border-apple-line bg-apple-fill p-1 sm:w-auto"
+        role="tablist"
+        aria-label="Abas"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'metrica'}
+          onClick={() => setTab('metrica')}
+          className={[
+            'inline-flex flex-1 items-center justify-center rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+            tab === 'metrica'
+              ? 'bg-apple-surface text-apple-ink shadow-soft'
+              : 'text-apple-secondary hover:text-apple-ink',
+          ].join(' ')}
+        >
+          Métricas
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'historico'}
+          onClick={() => setTab('historico')}
+          className={[
+            'inline-flex flex-1 items-center justify-center rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+            tab === 'historico'
+              ? 'bg-apple-surface text-apple-ink shadow-soft'
+              : 'text-apple-secondary hover:text-apple-ink',
+          ].join(' ')}
+        >
+          Finalizados
+        </button>
+      </div>
+
+      {tab === 'metrica' ? (
+        <section className="space-y-4">
+          <div>
+            <p className="app-section-title">Análises</p>
+            <h2 className="mt-1 text-[22px] font-semibold tracking-tightish text-apple-ink">
+              Métricas
+            </h2>
+            <p className="mt-1 text-[14px] text-apple-secondary">
+              Gráficos com base no histórico de finalizações ({rows.length} registro(s)).
+            </p>
+          </div>
+          <div className="app-empty">
+            <p className="text-[14px] text-apple-tertiary">
+              Em breve: gráficos das finalizações.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <>
+          <div className="mb-5">
         <label htmlFor="finished-search" className="sr-only">
           Buscar no histórico
         </label>
@@ -437,6 +492,8 @@ export default function FinishedTerritoriesPage() {
           </table>
         </div>
       ) : null}
+        </>
+      )}
     </main>
   );
 }
