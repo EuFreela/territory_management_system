@@ -8,6 +8,7 @@ import {
   IconX,
 } from '@/components/Map/mapIcons';
 import { confirmToast } from '@/lib/confirm-toast';
+import { LoadingBox } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DashboardData, FieldAssignment, FieldLeadersToday } from '@/lib/types';
@@ -160,7 +161,7 @@ export default function DashboardPage() {
   if (!data) {
     return (
       <main className="app-page-wide">
-        <p className="text-[15px] text-apple-secondary">Carregando…</p>
+        <LoadingBox label="Carregando…" className="min-h-[16rem]" />
       </main>
     );
   }

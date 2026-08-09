@@ -8,6 +8,7 @@ import {
 } from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
+import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { FieldAssignment } from '@/lib/types';
@@ -438,7 +439,7 @@ export default function FieldLeadersPage() {
         </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {loading ? <p className="text-apple-secondary">Carregando…</p> : null}
+        {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
 
         {/* Busca */}
         <div>

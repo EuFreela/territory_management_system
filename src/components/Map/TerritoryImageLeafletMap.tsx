@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ImageOverlay, MapContainer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { IconCompress, IconExpand, IconFocusAreas } from '@/components/Map/mapIcons';
+import { LoadingBox } from '@/components/ui/Spinner';
 import type { Territory } from '@/lib/types';
 import { territoryStaticMapCandidates } from '@/lib/territory-map-image';
 
@@ -133,11 +134,7 @@ export default function TerritoryImageLeafletMap({
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[20rem] items-center justify-center rounded-2xl border border-apple-line bg-apple-fill text-[14px] text-apple-secondary">
-        Carregando imagem…
-      </div>
-    );
+    return <LoadingBox label="Carregando imagem…" className="min-h-[20rem]" />;
   }
 
   if (failed || !loaded) {

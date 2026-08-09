@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import RequirePermission from './components/RequirePermission';
 import ScrollToTop from './components/ui/ScrollToTop';
+import { LoadingScreen } from './components/ui/Spinner';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TerritoriesPage from './pages/TerritoriesPage';
@@ -19,7 +20,7 @@ import { useAuth } from './lib/auth-context';
 function HomeRedirect() {
   const { user, loading } = useAuth();
   if (loading) {
-    return <div className="min-h-screen bg-apple-bg" />;
+    return <LoadingScreen label="Carregando sessão…" />;
   }
   return <Navigate to={user ? '/dashboard' : '/login'} replace />;
 }

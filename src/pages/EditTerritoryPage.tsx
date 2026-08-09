@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import FieldError from '@/components/ui/FieldError';
 import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
+import { LoadingBox } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
@@ -364,7 +365,7 @@ export default function EditTerritoryPage() {
   if (loading) {
     return (
       <main className="app-page">
-        <p className="text-[15px] text-apple-secondary">Carregando…</p>
+        <LoadingBox label="Carregando…" className="min-h-[16rem]" />
       </main>
     );
   }

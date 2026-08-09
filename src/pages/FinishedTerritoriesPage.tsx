@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { IconCheckCircle, IconMap, IconSearch, IconTrash } from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
+import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
@@ -151,7 +152,7 @@ export default function FinishedTerritoriesPage() {
         ) : null}
       </div>
 
-      {loading ? <p className="text-[15px] text-apple-secondary">Carregando…</p> : null}
+      {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
       {error ? (
         <p className="rounded-[12px] bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">{error}</p>
       ) : null}
