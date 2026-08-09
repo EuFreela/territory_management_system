@@ -63,11 +63,11 @@ export function SaveActionBar({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-apple-lg border border-apple-line bg-apple-surface p-5 shadow-soft">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-900">Salvar alterações</p>
-          <p className="mt-0.5 text-xs text-slate-500 sm:max-w-md">{hint}</p>
+          <p className="text-sm font-semibold text-apple-ink">Salvar alterações</p>
+          <p className="mt-0.5 text-xs text-apple-secondary sm:max-w-md">{hint}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
           {children}

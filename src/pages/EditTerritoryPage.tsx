@@ -100,7 +100,8 @@ export default function EditTerritoryPage() {
     const current = blockName.trim();
     const set = new Set(mapQuadraOptions);
     if (current) set.add(current);
-    return [...set];
+    const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+    return [...set].sort(collator.compare);
   }, [mapQuadraOptions, blockName]);
 
   /** Agrupa registros de rua pela quadra (mesmo name) */
