@@ -1031,6 +1031,8 @@ export default function TerritoryMap({
   const [seedGeoJson, setSeedGeoJson] = useState<string | null>(() => value ?? null);
   const [mapHovered, setMapHovered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  /** true enquanto o basemap ainda não carregou — mostra o loading sobre o mapa */
+  const [mapReady, setMapReady] = useState(false);
   /** Incrementa a cada toggle de tela cheia para forçar invalidateSize no Leaflet */
   const [sizeToken, setSizeToken] = useState(0);
   /** fullscreen + reexibir aba (sem desmontar) */
@@ -1419,7 +1421,6 @@ export default function TerritoryMap({
   // Esc sai da tela cheia; trava scroll do body enquanto fullscreen
   useEffect(() => {
     if (!isFullscreen) return;
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       // Deixa o modal de confirmação (ou outro dialog) tratar o Esc primeiro
@@ -1438,6 +1439,12 @@ export default function TerritoryMap({
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [isFullscreen]);
+
+  // Segurança: nunca deixa o loading cobrir o mapa para sempre (rede/erro silencioso)
+  useEffect(() => {
+    const t = window.setTimeout(() => setMapReady(true), 30000);
+    return () => window.clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (drawingLocally.current || seededFromServer.current) return;
@@ -2255,7 +2262,7 @@ export default function TerritoryMap({
           <FlyToSearchResult result={searchPin} token={searchFlyToken} />
           <FlyToUserGps position={gpsEnabled ? gpsPosition : null} token={gpsFlyToken} />
           <FocusOnSelected area={selected} focusToken={focusToken} />
-          <GoogleMapsTileLayer type="roadmap" />
+          <GoogleMapsTileLayer type="roadmap" onReady={() => setMapReady(true)} />
 
           <InitialMapView
             centerLat={centerLat}
@@ -2471,6 +2478,20 @@ export default function TerritoryMap({
           <MapClickDraw enabled={editable && drawMode && !noteMode} onAdd={addPoint} />
           <MapClickDraw enabled={editable && noteMode && !drawMode} onAdd={placeNote} />
         </MapContainer>
+
+        {/* Loading dentro do mapa — cobre até o basemap (Google/OSM) carregar */}
+        {!mapReady ? (
+          <div
+            className="absolute inset-0 z-[2000] flex flex-col items-center justify-center gap-3 bg-apple-surface"
+            aria-live="polite"
+          >
+            <span
+              className="h-10 w-10 animate-spin rounded-full border-4 border-apple-blue border-t-transparent"
+              aria-hidden
+            />
+            <p className="text-sm font-medium text-apple-secondary">Carregando mapa…</p>
+          </div>
+        ) : null}
       </div>
 
       {!isFullscreen ? (

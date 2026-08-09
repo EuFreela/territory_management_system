@@ -11,6 +11,8 @@ export type GoogleMapType = 'roadmap' | 'satellite' | 'terrain' | 'hybrid';
 type Props = {
   /** Tipo de mapa do Google. Padrão: roadmap (ruas, atualizado). */
   type?: GoogleMapType;
+  /** Chamado quando o basemap estiver pronto (Google ou fallback OSM). */
+  onReady?: () => void;
 };
 
 declare global {
@@ -70,11 +72,14 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
  * Base map do Google Maps dentro do Leaflet (ToS-compliant via GoogleMutant).
  * Até o Google ficar pronto (ou se falhar), usa OpenStreetMap Shortbread (vector).
  */
-export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
+export function GoogleMapsTileLayer({ type = 'roadmap', onReady }: Props) {
   const map = useMap();
   /** true = ainda sem Google (mostra OSM Shortbread). false = Google ativo. */
   const [showOsm, setShowOsm] = useState(true);
   const layerRef = useRef<Layer | null>(null);
+  /** Sempre chama o callback mais recente sem recriar o efeito (identidade muda a cada render). */
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     if (!API_KEY) {
@@ -125,6 +130,7 @@ export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
         layerRef.current = layer;
         setShowOsm(false);
         console.info('[Campo] Google Maps basemap ativo (Leaflet + GoogleMutant).');
+        onReadyRef.current?.();
       } catch (err) {
         console.error('[Campo] Falha ao carregar Google Maps no Leaflet:', err);
         if (!cancelled) setShowOsm(true);
@@ -146,5 +152,5 @@ export function GoogleMapsTileLayer({ type = 'roadmap' }: Props) {
 
   if (!showOsm) return null;
 
-  return <OsmShortbreadTileLayer />;
+  return <OsmShortbreadTileLayer onReady={onReady} />;
 }

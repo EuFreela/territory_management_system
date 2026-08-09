@@ -72,9 +72,12 @@ function loadShortbreadStyle(): Promise<MapLibreStyle> {
  * Camada base OpenStreetMap Shortbread (vector tiles) no Leaflet via MapLibre GL.
  * Substitui o raster clássico tile.openstreetmap.org.
  */
-export function OsmShortbreadTileLayer() {
+export function OsmShortbreadTileLayer({ onReady }: { onReady?: () => void }) {
   const map = useMap();
   const layerRef = useRef<L.Layer | null>(null);
+  /** Sempre chama o callback mais recente sem recriar o efeito (identidade muda a cada render). */
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +102,7 @@ export function OsmShortbreadTileLayer() {
 
         layerRef.current = layer;
         console.info('[Campo] Basemap OpenStreetMap Shortbread (vector) ativo.');
+        onReadyRef.current?.();
       } catch (err) {
         console.error('[Campo] Falha ao carregar OSM Shortbread:', err);
         // Fallback raster se o vector falhar (rede/CORS/etc.)
@@ -109,6 +113,7 @@ export function OsmShortbreadTileLayer() {
         });
         fallback.addTo(map);
         layerRef.current = fallback;
+        onReadyRef.current?.();
       }
     })();
 

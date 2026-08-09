@@ -168,8 +168,8 @@ select {
   [data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
-    /* Acima de cards/tabelas com shadow; tooltips precisam sobressair */
-    z-index: 200;
+    /* Sempre acima dos demais elementos (header sticky, menu, mapa, modais…) */
+    z-index: 99999;
     left: 50%;
     bottom: calc(100% + 8px);
     transform: translateX(-50%) translateY(4px) scale(0.96);
@@ -266,6 +266,18 @@ select {
   [data-tooltip-side='right']:hover::after,
   [data-tooltip-side='right']:focus-visible::after {
     transform: translateY(50%) translateX(0) scale(1);
+  }
+
+  /* Variante: quebra linha — para nomes completos (ex.: dirigente no histórico) */
+  [data-tooltip][data-tooltip-multiline]::after {
+    width: max-content;
+    max-width: min(22rem, 78vw);
+    min-height: 0;
+    max-height: none;
+    padding: 0.5rem 0.85rem;
+    line-height: 1.35;
+    white-space: normal;
+    text-align: left;
   }
 
   .app-input {
