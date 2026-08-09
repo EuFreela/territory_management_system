@@ -366,9 +366,7 @@ export default function FinishedTerritoriesPage() {
                 </th>
                 <th className={`${thClass} w-[8%]`}>Horário</th>
                 <th className={`${thClass} w-[11%]`}>Dirigente</th>
-                <th className={`${thClass} w-[8%]`}>Presentes</th>
-                <th className={`${thClass} w-[13%]`}>Restam casas</th>
-                <th className={`${thClass} w-[18%]`}>Território</th>
+                <th className={`${thClass} w-[26%]`}>Território</th>
                 <th className={`${thClass} w-[12%]`}>Registro</th>
                 <th className={`${thClass} w-[13%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
                   Fim
@@ -409,21 +407,14 @@ export default function FinishedTerritoriesPage() {
                       '—'
                     )}
                   </td>
-                  <td className={`${tdClass} truncate text-apple-ink`}>
-                    {row.leader_name?.trim() || (
-                      <span className="text-apple-tertiary">—</span>
-                    )}
-                  </td>
-                  <td className={`${tdClass} tabular-nums text-apple-ink`}>
-                    {row.people_count != null ? (
-                      <span className="font-medium">{row.people_count}</span>
-                    ) : (
-                      <span className="text-apple-tertiary">—</span>
-                    )}
-                  </td>
-                  <td className={`${tdClass} tabular-nums text-apple-ink`}>
-                    {row.restam_casas != null ? (
-                      <span className="font-medium">{row.restam_casas}</span>
+                  <td
+                    className={`${tdClass} relative z-10 text-apple-ink`}
+                    {...(row.leader_name?.trim()
+                      ? { 'data-tooltip': row.leader_name.trim(), 'data-tooltip-multiline': '' }
+                      : {})}
+                  >
+                    {row.leader_name?.trim() ? (
+                      <span className="block truncate">{row.leader_name.trim()}</span>
                     ) : (
                       <span className="text-apple-tertiary">—</span>
                     )}
