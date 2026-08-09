@@ -8,6 +8,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'campo',
   waitForConnections: true,
   connectionLimit: 10,
+  timezone: 'Z',
 });
 
 export default pool;
