@@ -1,0 +1,1359 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Identidade Visual — Lapidar Pedras</title>
+    <style>
+      /*
+        Layout A4
+        ----------
+        Folha:     210mm × 297mm
+        Margem:    14mm (todas as bordas)
+        Área útil: 182mm × 269mm
+        Cada .page = exatamente 1 folha A4 na impressão.
+      */
+      :root {
+        --a4-w: 210mm;
+        --a4-h: 297mm;
+        --page-pad-x: 16mm;
+        --page-pad-y: 14mm;
+        --content-w: 178mm; /* 210 - 16*2 */
+        --content-h: 269mm; /* 297 - 14*2 */
+
+        --noir: #111111;
+        --white: #ffffff;
+        --zinc-900: #18181b;
+        --zinc-700: #3f3f46;
+        --zinc-600: #52525b;
+        --zinc-500: #71717a;
+        --stone-50: #fafaf9;
+        --stone-100: #f5f5f4;
+        --stone-200: #e7e5e4;
+        --stone-300: #d6d3d1;
+        --stone-400: #a8a29e;
+        --stone-500: #78716c;
+        --amber-100: #fef3c7;
+        --violet-100: #ede9fe;
+        --desk: #e8e6e2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        color: var(--zinc-900);
+        background: var(--desk);
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        font-size: 10.5pt;
+      }
+
+      /* ========== Tela: pré-visualização A4 ========== */
+      .print-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.85rem 1.25rem;
+        background: rgba(255, 255, 255, 0.92);
+        border-bottom: 1px solid var(--stone-200);
+        backdrop-filter: blur(10px);
+      }
+
+      .print-toolbar p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--zinc-600);
+      }
+
+      .print-toolbar strong {
+        color: var(--zinc-900);
+        font-weight: 500;
+      }
+
+      .print-toolbar button {
+        border: 0;
+        border-radius: 9999px;
+        background: var(--zinc-900);
+        color: var(--white);
+        padding: 0.65rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .print-toolbar button:hover {
+        background: var(--zinc-700);
+      }
+
+      .sheet-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18mm;
+        padding: 12mm 8mm 24mm;
+      }
+
+      /* Uma folha A4 real */
+      .page {
+        width: var(--a4-w);
+        height: var(--a4-h);
+        min-height: var(--a4-h);
+        max-height: var(--a4-h);
+        padding: var(--page-pad-y) var(--page-pad-x);
+        background: var(--white);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .page-inner {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: var(--content-w);
+      }
+
+      .page-foot {
+        margin-top: auto;
+        padding-top: 4mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8pt;
+        letter-spacing: 0.04em;
+        color: var(--zinc-500);
+        border-top: 1px solid var(--stone-200);
+      }
+
+      .page-foot .page-num::before {
+        content: 'Folha ';
+      }
+
+      /* Capa: sem rodapé tipográfico, preenche a folha */
+      .page.cover {
+        padding: 0;
+        background: var(--noir);
+        color: var(--white);
+        justify-content: flex-end;
+      }
+
+      .page.cover .page-inner {
+        max-width: none;
+        width: 100%;
+        height: 100%;
+        padding: 22mm 18mm 18mm;
+        justify-content: flex-end;
+        position: relative;
+      }
+
+      .page.cover .page-inner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.14), transparent 30%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%, rgba(0, 0, 0, 0.35) 100%);
+        pointer-events: none;
+      }
+
+      .page.cover .cover-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .cover-logo {
+        height: 28mm;
+        width: auto;
+        max-width: 42mm;
+        object-fit: contain;
+        margin-bottom: 14mm;
+        display: block;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 8pt;
+        font-weight: 500;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--stone-500);
+      }
+
+      .page.cover .eyebrow {
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      h1 {
+        margin: 3mm 0 0;
+        font-weight: 300;
+        font-size: 28pt;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      h2 {
+        margin: 2mm 0 0;
+        font-weight: 300;
+        font-size: 18pt;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        color: var(--zinc-900);
+      }
+
+      h3 {
+        margin: 5mm 0 2mm;
+        font-weight: 500;
+        font-size: 10pt;
+        color: var(--zinc-900);
+      }
+
+      p {
+        margin: 2.5mm 0 0;
+        color: var(--zinc-600);
+        font-size: 9.5pt;
+      }
+
+      .lead {
+        margin-top: 4mm;
+        max-width: 120mm;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 11pt;
+        line-height: 1.5;
+      }
+
+      .meta {
+        margin-top: 8mm;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2mm 6mm;
+        font-size: 9pt;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      ul {
+        margin: 2.5mm 0 0;
+        padding-left: 4.5mm;
+        color: var(--zinc-600);
+        font-size: 9.5pt;
+      }
+
+      li + li {
+        margin-top: 1.2mm;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5mm;
+        margin-top: 4mm;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 3mm;
+        margin-top: 4mm;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5mm;
+        margin-top: 3mm;
+      }
+
+      .card {
+        background: var(--stone-50);
+        border: 1px solid var(--stone-200);
+        border-radius: 3mm;
+        padding: 3.5mm 4mm;
+      }
+
+      .card p {
+        margin-top: 1.5mm;
+      }
+
+      .card .eyebrow {
+        font-size: 7.5pt;
+      }
+
+      .card strong,
+      .card .value {
+        display: block;
+        margin-top: 1.5mm;
+        color: var(--zinc-900);
+        font-weight: 500;
+        font-size: 9.5pt;
+      }
+
+      .swatch {
+        border-radius: 2.5mm;
+        overflow: hidden;
+        border: 1px solid var(--stone-200);
+        background: var(--white);
+      }
+
+      .swatch-color {
+        height: 14mm;
+      }
+
+      .swatch-meta {
+        padding: 2mm 2.5mm 2.5mm;
+      }
+
+      .swatch-meta strong {
+        display: block;
+        font-size: 8pt;
+        font-weight: 500;
+        color: var(--zinc-900);
+      }
+
+      .swatch-meta span {
+        display: block;
+        margin-top: 0.5mm;
+        font-size: 7.5pt;
+        color: var(--zinc-500);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .logo-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5mm;
+        margin-top: 4mm;
+      }
+
+      .logo-panel {
+        border-radius: 3.5mm;
+        height: 38mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4mm;
+        border: 1px solid var(--stone-200);
+      }
+
+      .logo-panel img {
+        height: 26mm;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+      }
+
+      .logo-panel.light {
+        background: var(--white);
+      }
+
+      .logo-panel.dark {
+        background: var(--noir);
+        border-color: transparent;
+      }
+
+      .logo-caption {
+        margin-top: 1.5mm;
+        font-size: 8pt;
+        color: var(--zinc-600);
+      }
+
+      .logo-caption strong {
+        color: var(--zinc-900);
+        font-weight: 500;
+      }
+
+      .type-sample {
+        margin-top: 4mm;
+        background: var(--stone-50);
+        border: 1px solid var(--stone-200);
+        border-radius: 3.5mm;
+        padding: 5mm;
+      }
+
+      .type-sample .label {
+        font-size: 7.5pt;
+        font-weight: 600;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--stone-500);
+      }
+
+      .type-sample .h-display {
+        margin: 2.5mm 0 0;
+        font-weight: 300;
+        font-size: 15pt;
+        line-height: 1.15;
+        color: var(--zinc-900);
+      }
+
+      .type-sample .body {
+        margin-top: 2.5mm;
+        color: var(--zinc-600);
+        font-size: 9.5pt;
+        line-height: 1.5;
+        max-width: 140mm;
+      }
+
+      .type-sample .caption {
+        margin-top: 2.5mm;
+        font-size: 7.5pt;
+        color: var(--zinc-500);
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2.5mm;
+        margin-top: 3mm;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        padding: 2.2mm 5mm;
+        font-size: 9pt;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid transparent;
+      }
+
+      .btn-dark {
+        background: var(--zinc-900);
+        color: var(--white);
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: var(--zinc-900);
+        border-color: var(--stone-300);
+      }
+
+      .hero-demo {
+        margin-top: 4mm;
+        border-radius: 3.5mm;
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.18)),
+          linear-gradient(135deg, #5c5346, #2a2622 50%, #8a8070);
+        color: var(--white);
+        padding: 7mm 6mm;
+      }
+
+      .hero-demo h3 {
+        margin: 0;
+        font-weight: 300;
+        font-size: 14pt;
+        line-height: 1.15;
+        color: var(--white);
+      }
+
+      .hero-demo p {
+        margin-top: 2.5mm;
+        max-width: 120mm;
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 9pt;
+      }
+
+      .hero-demo .btn-row {
+        margin-top: 4mm;
+      }
+
+      .hero-demo .btn-white {
+        background: var(--white);
+        color: #000;
+      }
+
+      .hero-demo .btn-ghost {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--white);
+        border-color: rgba(255, 255, 255, 0.24);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 3mm;
+        font-size: 8.5pt;
+        background: var(--white);
+        border-radius: 2.5mm;
+        overflow: hidden;
+        border: 1px solid var(--stone-200);
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 2mm 2.5mm;
+        border-bottom: 1px solid var(--stone-200);
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--stone-50);
+        font-weight: 500;
+        color: var(--zinc-900);
+        font-size: 7.5pt;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      td {
+        color: var(--zinc-600);
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .do-dont {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5mm;
+        margin-top: 4mm;
+      }
+
+      .do,
+      .dont {
+        border-radius: 3mm;
+        padding: 4mm;
+        border: 1px solid var(--stone-200);
+        background: var(--stone-50);
+      }
+
+      .do h4,
+      .dont h4 {
+        margin: 0 0 2mm;
+        font-size: 8pt;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .do h4 {
+        color: #166534;
+      }
+
+      .dont h4 {
+        color: #991b1b;
+      }
+
+      .do ul,
+      .dont ul {
+        margin: 0;
+        font-size: 9pt;
+      }
+
+      .icon-row {
+        display: flex;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+
+      .icon-circle {
+        width: 12mm;
+        height: 12mm;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12pt;
+      }
+
+      .toc-list {
+        margin: 6mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .toc-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 4mm;
+        padding: 3.2mm 0;
+        border-bottom: 1px solid var(--stone-200);
+        font-size: 10.5pt;
+        color: var(--zinc-900);
+      }
+
+      .toc-list a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .toc-list .n {
+        color: var(--zinc-500);
+        font-variant-numeric: tabular-nums;
+        font-size: 9.5pt;
+      }
+
+      .quote-card {
+        margin-top: 5mm;
+        border-radius: 3mm;
+        border: 1px solid var(--stone-200);
+        background: var(--stone-50);
+        padding: 5mm 5.5mm;
+      }
+
+      .quote-card p {
+        margin: 0;
+        color: var(--zinc-900);
+        font-weight: 300;
+        font-size: 13pt;
+        line-height: 1.35;
+      }
+
+      code {
+        font-size: 8pt;
+        background: var(--stone-100);
+        padding: 0.3mm 1.2mm;
+        border-radius: 1mm;
+      }
+
+      /* ========== Impressão: 1 seção = 1 folha A4 ========== */
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      @media print {
+        body {
+          background: none;
+          margin: 0;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .print-toolbar {
+          display: none !important;
+        }
+
+        .sheet-stack {
+          display: block;
+          padding: 0;
+          gap: 0;
+        }
+
+        .page {
+          width: var(--a4-w);
+          height: var(--a4-h);
+          min-height: var(--a4-h);
+          max-height: var(--a4-h);
+          margin: 0;
+          box-shadow: none;
+          page-break-after: always;
+          break-after: page;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          overflow: hidden;
+        }
+
+        .page:last-child {
+          page-break-after: auto;
+          break-after: auto;
+        }
+
+        a {
+          text-decoration: none;
+          color: inherit;
+        }
+      }
+
+      /* Escala em telas estreitas (só preview) */
+      @media screen and (max-width: 230mm) {
+        .sheet-stack {
+          transform-origin: top center;
+          transform: scale(0.92);
+          margin-bottom: -8%;
+        }
+      }
+
+      @media screen and (max-width: 200mm) {
+        .sheet-stack {
+          transform: scale(0.78);
+          margin-bottom: -22%;
+        }
+      }
+
+      @media screen and (max-width: 170mm) {
+        .sheet-stack {
+          transform: scale(0.62);
+          margin-bottom: -38%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-toolbar">
+      <p>
+        <strong>Pré-visualização A4</strong> — cada bloco = 1 folha (210×297&nbsp;mm, margem 14–16&nbsp;mm)
+      </p>
+      <button type="button" onclick="window.print()">Imprimir / Salvar PDF</button>
+    </div>
+
+    <div class="sheet-stack">
+      <!-- 01 CAPA -->
+      <article class="page cover" id="capa" aria-label="Capa">
+        <div class="page-inner">
+          <div class="cover-content">
+            <img class="cover-logo" src="n-logo2.svg" alt="Lapidar Pedras" />
+            <p class="eyebrow">Brand guidelines</p>
+            <h1>Identidade Visual</h1>
+            <p class="lead">
+              Guia de marca e interface do site Lapidar Pedras — pedras naturais, revestimentos e
+              acabamentos de alto padrão.
+            </p>
+            <div class="meta">
+              <span>lapidarpedras.com.br</span>
+              <span>Versão 1.0</span>
+              <span>Agosto 2026</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 02 SUMÁRIO -->
+      <article class="page" id="sumario" aria-label="Sumário">
+        <div class="page-inner">
+          <p class="eyebrow">00 · Documento</p>
+          <h2>Sumário</h2>
+          <p>
+            Documento em formato A4. Ao imprimir (Ctrl+P), cada seção ocupa exatamente uma folha.
+            Margens: 14&nbsp;mm vertical · 16&nbsp;mm horizontal.
+          </p>
+          <ol class="toc-list">
+            <li>
+              <a href="#essencia">Essência da marca</a>
+              <span class="n">03</span>
+            </li>
+            <li>
+              <a href="#logo">Logo</a>
+              <span class="n">04</span>
+            </li>
+            <li>
+              <a href="#cores">Cores</a>
+              <span class="n">05</span>
+            </li>
+            <li>
+              <a href="#tipografia">Tipografia</a>
+              <span class="n">06</span>
+            </li>
+            <li>
+              <a href="#componentes">Componentes</a>
+              <span class="n">07</span>
+            </li>
+            <li>
+              <a href="#layout">Layout e imagem</a>
+              <span class="n">08</span>
+            </li>
+            <li>
+              <a href="#voz">Tom de voz</a>
+              <span class="n">09</span>
+            </li>
+            <li>
+              <a href="#regras">Uso correto</a>
+              <span class="n">10</span>
+            </li>
+          </ol>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">02</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 03 ESSÊNCIA -->
+      <article class="page" id="essencia" aria-label="Essência da marca">
+        <div class="page-inner">
+          <p class="eyebrow">01 · Essência</p>
+          <h2>Posicionamento</h2>
+          <p>
+            A Lapidar Pedras une <strong>natureza e sofisticação</strong> em soluções de pedra natural
+            para projetos residenciais e comerciais. A identidade é premium, serena e autêntica —
+            com tipografia leve, neutros de pedra e fotografia de textura real.
+          </p>
+          <div class="grid-3">
+            <div class="card">
+              <p class="eyebrow">Personalidade</p>
+              <span class="value">Premium · Serena · Precisa</span>
+            </div>
+            <div class="card">
+              <p class="eyebrow">Promessa</p>
+              <span class="value">Experiências exclusivas em cada espaço</span>
+            </div>
+            <div class="card">
+              <p class="eyebrow">Palavras-chave</p>
+              <span class="value">Elegância · Naturalidade · Exclusividade</span>
+            </div>
+          </div>
+          <h3>Segmento e canais</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Atributo</th>
+                <th>Direção</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Nome</td>
+                <td>Lapidar Pedras</td>
+              </tr>
+              <tr>
+                <td>Segmento</td>
+                <td>Pedras naturais, revestimentos e acabamentos de alto padrão</td>
+              </tr>
+              <tr>
+                <td>Site</td>
+                <td>lapidarpedras.com.br</td>
+              </tr>
+              <tr>
+                <td>Tom de voz</td>
+                <td>Direto, confiante e acolhedor — sem jargão excessivo</td>
+              </tr>
+              <tr>
+                <td>Prova social</td>
+                <td>+15 anos · +40 pedreiras · +850 projetos</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">03</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 04 LOGO -->
+      <article class="page" id="logo" aria-label="Logo">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Logo</p>
+          <h2>Sistema de marca</h2>
+          <p>
+            Símbolo de pedra facetada + wordmark <strong>LAPIDAR / PEDRAS</strong>. Duas versões no
+            site: positiva (fundos claros) e negativa (hero / header transparente).
+          </p>
+
+          <div class="logo-row">
+            <div>
+              <div class="logo-panel light">
+                <img src="logo2.svg" alt="Logo positiva Lapidar Pedras" />
+              </div>
+              <p class="logo-caption">
+                <strong>Positiva</strong> — <code>logo2.svg</code>
+              </p>
+            </div>
+            <div>
+              <div class="logo-panel dark">
+                <img src="n-logo2.svg" alt="Logo negativa Lapidar Pedras" />
+              </div>
+              <p class="logo-caption">
+                <strong>Negativa</strong> — <code>n-logo2.svg</code>
+              </p>
+            </div>
+          </div>
+
+          <h3>Comportamento no header</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Logo</th>
+                <th>Menu / UI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Topo (sobre o hero)</td>
+                <td>Negativa</td>
+                <td>Texto branco, botão borda branca</td>
+              </tr>
+              <tr>
+                <td>Ao rolar (&gt; 40px)</td>
+                <td>Positiva</td>
+                <td>Texto zinc-900 · fundo branco 92% + blur</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Cores do símbolo</h3>
+          <div class="grid-4">
+            <div class="swatch">
+              <div class="swatch-color" style="background: #393d3e"></div>
+              <div class="swatch-meta">
+                <strong>Carvão</strong>
+                <span>#393D3E</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #bcb3a0"></div>
+              <div class="swatch-meta">
+                <strong>Pedra bege</strong>
+                <span>#BCB3A0</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #d7d0bd"></div>
+              <div class="swatch-meta">
+                <strong>Pedra clara</strong>
+                <span>#D7D0BD</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #968b78"></div>
+              <div class="swatch-meta">
+                <strong>Pedra média</strong>
+                <span>#968B78</span>
+              </div>
+            </div>
+          </div>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">04</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 05 CORES -->
+      <article class="page" id="cores" aria-label="Cores">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Cores</p>
+          <h2>Paleta do site</h2>
+          <p>
+            Interface em <strong>noir, branco e neutros zinc/stone</strong> — pedra, concreto e
+            acabamento arquitetônico.
+          </p>
+
+          <h3>Primárias</h3>
+          <div class="grid-4">
+            <div class="swatch">
+              <div class="swatch-color" style="background: #111111"></div>
+              <div class="swatch-meta">
+                <strong>Noir</strong>
+                <span>#111111 · body</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #18181b"></div>
+              <div class="swatch-meta">
+                <strong>Zinc 900</strong>
+                <span>#18181B · CTA</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #ffffff; border-bottom: 1px solid #e7e5e4"></div>
+              <div class="swatch-meta">
+                <strong>Branco</strong>
+                <span>#FFFFFF · superfície</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #52525b"></div>
+              <div class="swatch-meta">
+                <strong>Zinc 600</strong>
+                <span>#52525B · texto</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>Stone (assinatura)</h3>
+          <div class="grid-4">
+            <div class="swatch">
+              <div class="swatch-color" style="background: #fafaf9; border-bottom: 1px solid #e7e5e4"></div>
+              <div class="swatch-meta">
+                <strong>Stone 50</strong>
+                <span>#FAFAF9 · footer</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #f5f5f4; border-bottom: 1px solid #e7e5e4"></div>
+              <div class="swatch-meta">
+                <strong>Stone 100</strong>
+                <span>#F5F5F4 · ícones</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #a8a29e"></div>
+              <div class="swatch-meta">
+                <strong>Stone 400</strong>
+                <span>#A8A29E · focus</span>
+              </div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-color" style="background: #78716c"></div>
+              <div class="swatch-meta">
+                <strong>Stone 500</strong>
+                <span>#78716C · labels</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>Overlays e acentos</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Uso</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Overlay hero</td>
+                <td>from-black/38 via-black/22 to-black/12</td>
+              </tr>
+              <tr>
+                <td>Navbar sólida</td>
+                <td>rgba(255,255,255,0.92) + blur 10px</td>
+              </tr>
+              <tr>
+                <td>CTA ghost (hero)</td>
+                <td>border-white/24 · bg-white/6</td>
+              </tr>
+              <tr>
+                <td>Acentos de feature</td>
+                <td>stone-100 · amber-100 · violet-100 (só ícones)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--stone-100)">✦</div>
+            <div class="icon-circle" style="background: var(--amber-100)">◇</div>
+            <div class="icon-circle" style="background: var(--violet-100)">⬢</div>
+          </div>
+          <p style="font-size: 8.5pt; margin-top: 2mm">
+            Não usar âmbar ou violeta em botões, logo ou tipografia institucional.
+          </p>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">05</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 06 TIPOGRAFIA -->
+      <article class="page" id="tipografia" aria-label="Tipografia">
+        <div class="page-inner">
+          <p class="eyebrow">04 · Tipografia</p>
+          <h2>Hierarquia editorial</h2>
+          <p>
+            Stack <strong>system sans</strong> (Tailwind). Assinatura: títulos light + labels em
+            caixa alta com tracking largo.
+          </p>
+
+          <div class="type-sample">
+            <div class="label">Sobre a Lapidar</div>
+            <p class="h-display">
+              Elegância, naturalidade e exclusividade para projetos que valorizam cada detalhe.
+            </p>
+            <p class="body">
+              Soluções em pedras naturais, revestimentos e acabamentos para projetos residenciais e
+              comerciais de alto padrão.
+            </p>
+            <p class="caption">
+              Eyebrow · H2 font-light · corpo zinc-600 · tracking 0.25em–0.45em
+            </p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Elemento</th>
+                <th>Escala</th>
+                <th>Peso / cor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>H1 Hero</td>
+                <td>text-4xl → md:text-7xl</td>
+                <td>font-light · branco</td>
+              </tr>
+              <tr>
+                <td>H2 seções</td>
+                <td>text-3xl → md:text-5xl</td>
+                <td>font-light · zinc-900</td>
+              </tr>
+              <tr>
+                <td>Eyebrow</td>
+                <td>text-xs / sm · uppercase</td>
+                <td>tracking largo · stone-500</td>
+              </tr>
+              <tr>
+                <td>Corpo</td>
+                <td>text-base / lg</td>
+                <td>leading-7–9 · zinc-600</td>
+              </tr>
+              <tr>
+                <td>Wordmark footer</td>
+                <td>LAPIDARPEDRAS</td>
+                <td>tracking 0.18em–0.3em · light</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">06</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 07 COMPONENTES -->
+      <article class="page" id="componentes" aria-label="Componentes">
+        <div class="page-inner">
+          <p class="eyebrow">05 · Componentes</p>
+          <h2>Botões e UI</h2>
+
+          <div class="card" style="margin-top: 4mm">
+            <p class="eyebrow">CTAs em seções claras</p>
+            <div class="btn-row">
+              <a class="btn btn-dark" href="#">Solicitar orçamento</a>
+              <a class="btn btn-outline" href="#">Descrição</a>
+            </div>
+          </div>
+
+          <div class="hero-demo">
+            <h3>Transformamos espaços em experiências exclusivas</h3>
+            <p>
+              Soluções em pedras naturais, revestimentos e acabamentos para projetos de alto padrão.
+            </p>
+            <div class="btn-row">
+              <a class="btn btn-white" href="#">Solicitar orçamento</a>
+              <a class="btn btn-ghost" href="#">Ver catálogo</a>
+            </div>
+          </div>
+
+          <h3>Tokens de forma</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Elemento</th>
+                <th>Raio / sombra</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Botões</td>
+                <td>rounded-full (pill)</td>
+              </tr>
+              <tr>
+                <td>Cards de galeria</td>
+                <td>rounded-[1.75rem]</td>
+              </tr>
+              <tr>
+                <td>Blocos de destaque</td>
+                <td>rounded-[1.5rem]–[2rem]</td>
+              </tr>
+              <tr>
+                <td>Float WhatsApp</td>
+                <td>círculo 64px · sombra 0 10px 40px rgba(0,0,0,.18)</td>
+              </tr>
+              <tr>
+                <td>Focus</td>
+                <td>outline 2px #A8A29E · offset 3px</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">07</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 08 LAYOUT -->
+      <article class="page" id="layout" aria-label="Layout e imagem">
+        <div class="page-inner">
+          <p class="eyebrow">06 · Layout e imagem</p>
+          <h2>Grade e fotografia</h2>
+          <div class="grid-2">
+            <div class="card">
+              <p class="eyebrow">Container</p>
+              <span class="value">max-w-7xl</span>
+              <p>Padding: px-5 → md:px-8 → lg:px-12</p>
+              <p>Seções: py-16 → sm:py-24 → lg:py-32</p>
+            </div>
+            <div class="card">
+              <p class="eyebrow">Fotografia</p>
+              <p style="margin-top: 2mm">
+                Pedra real em contexto. Hero com
+                <code>brightness-110 contrast-105</code> e overlay gradiente à esquerda.
+              </p>
+            </div>
+          </div>
+          <h3>Padrão de seção</h3>
+          <div class="type-sample">
+            <div class="label">Catálogo</div>
+            <p class="h-display" style="font-size: 13pt">
+              Catálogo de pedras naturais para fachada, muros e painéis.
+            </p>
+            <p class="body">
+              Eyebrow → título light → parágrafo de apoio → grid de conteúdo ou CTA.
+            </p>
+          </div>
+          <h3>Movimento</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Interação</th>
+                <th>Comportamento</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hover botões</td>
+                <td>scale leve ou translate-y</td>
+              </tr>
+              <tr>
+                <td>Hover imagens</td>
+                <td>scale lento (700ms–1500ms)</td>
+              </tr>
+              <tr>
+                <td>Hero</td>
+                <td>Swiper fade + paginação branca</td>
+              </tr>
+              <tr>
+                <td>Acessibilidade</td>
+                <td>prefers-reduced-motion reduz animações</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">08</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 09 VOZ -->
+      <article class="page" id="voz" aria-label="Tom de voz">
+        <div class="page-inner">
+          <p class="eyebrow">07 · Tom de voz</p>
+          <h2>Como a marca fala</h2>
+          <ul>
+            <li>Frases elegantes e diretas, com ritmo editorial.</li>
+            <li>Ênfase em experiência, detalhe e exclusividade.</li>
+            <li>CTAs claros: Solicitar orçamento · Ver catálogo · Conheça nossos projetos.</li>
+            <li>Prova social com números: +15 anos · +40 pedreiras · +850 projetos.</li>
+            <li>Evitar gírias, superlativos vazios e blocos densos sem hierarquia.</li>
+          </ul>
+          <div class="quote-card">
+            <p>“Transforme seu projeto em algo extraordinário.”</p>
+          </div>
+          <h3>Exemplos do site</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Contexto</th>
+                <th>Frase</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hero</td>
+                <td>Transformamos espaços em experiências exclusivas</td>
+              </tr>
+              <tr>
+                <td>Sobre</td>
+                <td>Elegância, naturalidade e exclusividade…</td>
+              </tr>
+              <tr>
+                <td>Diferenciais</td>
+                <td>Qualidade que se percebe em cada detalhe.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">09</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 10 REGRAS -->
+      <article class="page" id="regras" aria-label="Uso correto">
+        <div class="page-inner">
+          <p class="eyebrow">08 · Uso correto</p>
+          <h2>Faça e não faça</h2>
+          <div class="do-dont">
+            <div class="do">
+              <h4>Faça</h4>
+              <ul>
+                <li>Manter proporção do logo</li>
+                <li>Usar negativa sobre fotos escuras</li>
+                <li>Títulos em font-light</li>
+                <li>Labels uppercase com tracking largo</li>
+                <li>CTAs em formato pill</li>
+                <li>Paleta stone / zinc / noir</li>
+              </ul>
+            </div>
+            <div class="dont">
+              <h4>Não faça</h4>
+              <ul>
+                <li>Distorcer ou recolorir o símbolo</li>
+                <li>Logo clara sobre pedra clara</li>
+                <li>Acentos coloridos em botões de marca</li>
+                <li>Sombras ou efeitos no logo</li>
+                <li>Texto sem contraste sobre foto</li>
+                <li>Tipografia pesada nos títulos</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Checklist rápido</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Verificar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Logo na versão correta para o fundo</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Títulos light + labels stone-500</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>CTAs pill e container max-w-7xl</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Contraste adequado sobre imagens</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-foot">
+            <span>Lapidar Pedras · Identidade Visual</span>
+            <span class="page-num">10</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </body>
+</html>

@@ -28,6 +28,11 @@ export default function ProtectedRoute() {
     return <Outlet />;
   }
 
+  // Relatórios: documento A4 próprio, sem shell (impressão limpa)
+  if (location.pathname.startsWith('/relatorios/')) {
+    return <Outlet />;
+  }
+
   return (
     <AppShell>
       <Outlet />

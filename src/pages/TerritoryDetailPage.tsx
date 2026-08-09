@@ -187,10 +187,10 @@ export default function TerritoryDetailPage() {
   }
 
   function blockProgress(block: Block) {
-    const total = block.house_numbers.length;
-    const done = (block.completed_houses ?? []).filter((h) =>
-      block.house_numbers.some((n) => houseEquals(h, n)),
-    ).length;
+    const houses = new Set((block.house_numbers ?? []).map((n) => String(n).trim()));
+    const completed = new Set((block.completed_houses ?? []).map((n) => String(n).trim()));
+    const total = houses.size;
+    const done = [...completed].filter((h) => houses.has(h)).length;
     const finished = total > 0 && done >= total;
     return { total, done, finished };
   }

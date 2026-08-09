@@ -1,6 +1,14 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { IconCheckCircle, IconMap, IconSearch, IconTrash } from '@/components/Map/mapIcons';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  IconCheck,
+  IconCheckCircle,
+  IconFileText,
+  IconMap,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
@@ -71,11 +79,15 @@ const tdClass = 'px-3 py-3.5 text-[14px] sm:px-4';
 
 export default function FinishedTerritoriesPage() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<FinishedTerritoryHistory[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  /** Checklist do relatório: quais linhas entram no relatório */
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setLoading(true);
@@ -87,6 +99,47 @@ export default function FinishedTerritoriesPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar.'))
       .finally(() => setLoading(false));
   }, []);
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (filtered.length === 0) return;
+    const allSelected = filtered.every((r) => selectedIds.has(Number(r.id)));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        for (const r of filtered) next.delete(Number(r.id));
+      } else {
+        for (const r of filtered) next.add(Number(r.id));
+      }
+      return next;
+    });
+  }
+
+  function startSelection() {
+    setSelectedIds(new Set());
+    setSelectMode(true);
+  }
+
+  function cancelSelection() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  function generateReport() {
+    if (selectedIds.size === 0) return;
+    navigate(`/relatorios/finalizados?ids=${[...selectedIds].join(',')}`);
+  }
 
   function removeHistoryRow(row: FinishedTerritoryHistory) {
     if (!isAdmin) return;
@@ -171,6 +224,61 @@ export default function FinishedTerritoriesPage() {
         ) : null}
       </div>
 
+      {!selectMode ? (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] text-apple-secondary">
+            Gere um relatório A4 com as finalizações — escolha as linhas no checklist.
+          </p>
+          <button
+            type="button"
+            onClick={startSelection}
+            disabled={filtered.length === 0}
+            className="app-btn-secondary disabled:opacity-50"
+          >
+            <IconFileText className="h-4 w-4" />
+            Gerar relatório
+          </button>
+        </div>
+      ) : (
+        <div className="mb-5 rounded-apple border border-apple-line bg-apple-surface p-3.5 shadow-soft">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[13px] text-apple-secondary">
+              <span className="font-semibold text-apple-ink">{selectedIds.size}</span> de{' '}
+              {filtered.length} selecionado(s) — marque as linhas que entram no relatório.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                className="app-btn-secondary"
+              >
+                <IconCheck className="h-4 w-4" />
+                {filtered.every((r) => selectedIds.has(Number(r.id)))
+                  ? 'Limpar seleção'
+                  : 'Selecionar todos'}
+              </button>
+              <button
+                type="button"
+                onClick={generateReport}
+                disabled={selectedIds.size === 0}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-apple-blue px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
+              >
+                <IconFileText className="h-4 w-4" />
+                Gerar relatório ({selectedIds.size})
+              </button>
+              <button
+                type="button"
+                onClick={cancelSelection}
+                className="app-btn-secondary"
+              >
+                <IconX className="h-4 w-4" />
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
       {error ? (
         <p className="rounded-[12px] bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">{error}</p>
@@ -196,15 +304,19 @@ export default function FinishedTerritoriesPage() {
           <table className="w-full table-fixed text-left">
             <thead>
               <tr className="bg-apple-fill first:rounded-t-[20px]">
-                <th className={`${thClass} w-[9%] first:rounded-tl-[19px]`}>Dia</th>
+                <th
+                  className={`${thClass} ${selectMode ? 'w-[16%]' : 'w-[9%]'} first:rounded-tl-[19px]`}
+                >
+                  Dia
+                </th>
                 <th className={`${thClass} w-[8%]`}>Horário</th>
                 <th className={`${thClass} w-[11%]`}>Dirigente</th>
                 <th className={`${thClass} w-[8%]`}>Presentes</th>
                 <th className={`${thClass} w-[13%]`}>Restam casas</th>
                 <th className={`${thClass} w-[18%]`}>Território</th>
-                <th className={`${thClass} w-[12%]`}>Registrado por</th>
+                <th className={`${thClass} w-[12%]`}>Registro</th>
                 <th className={`${thClass} w-[13%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
-                  Hora
+                  Fim
                 </th>
                 {isAdmin ? (
                   <th className={`${thClass} w-[8%] rounded-tr-[19px] text-right`}>Ações</th>
@@ -215,7 +327,23 @@ export default function FinishedTerritoriesPage() {
               {filtered.map((row) => (
                 <tr key={row.id} className="transition hover:bg-apple-fill">
                   <td className={`${tdClass} font-medium tabular-nums text-apple-ink`}>
-                    {formatDateBr(row.field_date)}
+                    <span className="flex min-w-0 items-center gap-2">
+                      {selectMode ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(Number(row.id))}
+                          aria-label={`Incluir no relatório: ${formatDateBr(row.field_date)} — ${row.territory_name}`}
+                          className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                            selectedIds.has(Number(row.id))
+                              ? 'border-transparent bg-apple-blue text-white'
+                              : 'border-apple-line text-transparent hover:border-apple-blue'
+                          }`}
+                        >
+                          <IconCheck className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                      <span>{formatDateBr(row.field_date)}</span>
+                    </span>
                   </td>
                   <td className={`${tdClass} text-apple-secondary`}>
                     {row.field_time?.trim() ? (

@@ -183,9 +183,9 @@ export default function DashboardPage() {
   // Casas do "não em casa" que ainda não foram feitas no território do dia
   const pendingNaoEmCasa =
     daily?.blocks?.reduce((acc, b) => {
-      const houses = b.house_numbers ?? [];
-      const completed = new Set(b.completed_houses ?? []);
-      return acc + houses.filter((n) => !completed.has(n)).length;
+      const houses = new Set((b.house_numbers ?? []).map(String));
+      const completed = new Set((b.completed_houses ?? []).map(String));
+      return acc + [...houses].filter((n) => !completed.has(n)).length;
     }, 0) ?? 0;
 
   return (
