@@ -207,9 +207,7 @@ export default function DashboardPage() {
                 ) : null}
               </div>
               <p className="mt-1.5 text-[13px] text-apple-tertiary">
-                {daily.is_finished
-                  ? 'Checklist concluído — use Finalizar para registrar no histórico'
-                  : 'Toque para abrir mapa e checklist · Finalizar exige todas as casas marcadas'}
+                Toque para abrir mapa e checklist · Finalizar grava em Finalizados (com nº de pessoas)
               </p>
             </Link>
 
@@ -217,20 +215,11 @@ export default function DashboardPage() {
               {can('territory:set_daily') ? (
                 <button
                   type="button"
-                  disabled={finishing || unlinking || !daily.is_finished}
+                  disabled={finishing || unlinking}
                   onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  data-tooltip={
-                    daily.is_finished
-                      ? 'Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia'
-                      : 'Conclua todas as casas do “não em casa” para liberar Finalizar'
-                  }
+                  data-tooltip="Finalizar: grava em Finalizados (com nº de pessoas), desvincula do dia"
                   aria-label="Finalizar território do dia"
-                  className={[
-                    'inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition active:scale-[0.97]',
-                    daily.is_finished
-                      ? 'bg-emerald-600 text-white shadow-soft hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400'
-                      : 'cursor-not-allowed border border-apple-line bg-apple-fill text-apple-secondary',
-                  ].join(' ')}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
                 >
                   <IconCheckCircle className="h-4 w-4 shrink-0" />
                   <span className="hidden sm:inline">Finalizar</span>

@@ -1,9 +1,6 @@
 import { Router } from 'express';
 import pool from '../lib/db.js';
-import {
-  isTerritoryFullyFinished,
-  recordTerritoryFinished,
-} from '../lib/finish-history.js';
+import { recordTerritoryFinished } from '../lib/finish-history.js';
 import { getMapConfig } from '../lib/map-config.js';
 import { territorySchema, blockSchema, toggleHouseSchema } from '../lib/validations.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -454,15 +451,6 @@ router.post(
     if (!Number.isFinite(peopleCount) || peopleCount < 1 || peopleCount > 999) {
       res.status(400).json({
         error: 'Informe o número de pessoas no campo (mínimo 1).',
-      });
-      return;
-    }
-
-    const fullyDone = await isTerritoryFullyFinished(id);
-    if (!fullyDone) {
-      res.status(400).json({
-        error:
-          'Ainda há casas pendentes no “não em casa”. Conclua todas antes de finalizar o território do dia.',
       });
       return;
     }
