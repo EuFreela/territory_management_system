@@ -5,12 +5,14 @@ import {
   IconChevronRight,
   IconPencil,
   IconSave,
+  IconStar,
   IconUnlink,
   IconX,
 } from '@/components/Map/mapIcons';
 import { confirmToast } from '@/lib/confirm-toast';
 import { toast } from 'sonner';
 import { LoadingBox } from '@/components/ui/Spinner';
+import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { DashboardData, FieldAssignment, FieldLeadersToday } from '@/lib/types';
@@ -29,6 +31,14 @@ export default function DashboardPage() {
   /** id de field_assignments — vazio = não escolhido */
   const [finishLeaderId, setFinishLeaderId] = useState('');
   const [finishModalError, setFinishModalError] = useState('');
+  /** Casas de "não em casa" pendentes do território sendo finalizado */
+  const [finishPendingNaoEmCasa, setFinishPendingNaoEmCasa] = useState(0);
+  /** Modal de vínculo território do dia ↔ dirigente */
+  const [dailyModal, setDailyModal] = useState<
+    | { kind: 'for-territory'; territoryId: number }
+    | { kind: 'for-leader'; assignmentId: number }
+    | null
+  >(null);
 
   const [editingLeaderId, setEditingLeaderId] = useState<number | null>(null);
   const [editLeaderName, setEditLeaderName] = useState('');
@@ -72,12 +82,21 @@ export default function DashboardPage() {
   function openFinishModal(event: React.MouseEvent, territoryId: number) {
     event.preventDefault();
     event.stopPropagation();
+    const d = (data?.daily ?? []).find((x) => Number(x.id) === territoryId);
     setFinishModalId(territoryId);
     setFinishPeople('1');
     setFinishModalError('');
+    setFinishPendingNaoEmCasa(
+      d?.blocks?.reduce((acc, b) => {
+        const houses = new Set((b.house_numbers ?? []).map(String));
+        const completed = new Set((b.completed_houses ?? []).map(String));
+        return acc + [...houses].filter((n) => !completed.has(n)).length;
+      }, 0) ?? 0,
+    );
     const todayLeaders = [...(leaders?.dated ?? []), ...(leaders?.fixed ?? [])];
-    // um só: pré-seleciona; vários: usuário escolhe; nenhum: sem campo
-    setFinishLeaderId(todayLeaders.length === 1 ? String(todayLeaders[0].id) : '');
+    // Vinculado a um dirigente: pré-seleciona; vários: usuário escolhe; nenhum: sem campo
+    const linked = d?.assignment_id != null ? String(d.assignment_id) : '';
+    setFinishLeaderId(todayLeaders.some((l) => String(l.id) === linked) ? linked : '');
   }
 
   function closeFinishModal() {
@@ -117,11 +136,11 @@ export default function DashboardPage() {
         method: 'POST',
         body: JSON.stringify(body),
       });
-      if (pendingNaoEmCasa > 0) {
+      if (finishPendingNaoEmCasa > 0) {
         toast.warning(
-          pendingNaoEmCasa === 1
+          finishPendingNaoEmCasa === 1
             ? 'Atenção: ainda faltou 1 casa para fazer no não em casa.'
-            : `Atenção: ainda faltaram ${pendingNaoEmCasa} casas para fazer no não em casa.`,
+            : `Atenção: ainda faltaram ${finishPendingNaoEmCasa} casas para fazer no não em casa.`,
         );
       }
       setFinishModalId(null);
@@ -175,18 +194,27 @@ export default function DashboardPage() {
     );
   }
 
-  const { daily, unfinished = [] } = data;
+  const daily = data.daily ?? [];
+  const unfinished = data.unfinished ?? [];
   const datedLeaders = leaders?.dated ?? [];
   const fixedLeaders = leaders?.fixed ?? [];
   const finishLeaderOptions = [...datedLeaders, ...fixedLeaders];
 
-  // Casas do "não em casa" que ainda não foram feitas no território do dia
-  const pendingNaoEmCasa =
-    daily?.blocks?.reduce((acc, b) => {
-      const houses = new Set((b.house_numbers ?? []).map(String));
-      const completed = new Set((b.completed_houses ?? []).map(String));
-      return acc + [...houses].filter((n) => !completed.has(n)).length;
-    }, 0) ?? 0;
+  // Mapa: dirigente do dia ↔ território do dia (um por dirigente)
+  const dailyByAssignment = new Map<number, (typeof daily)[number]>();
+  for (const d of daily) {
+    if (d.assignment_id != null) dailyByAssignment.set(Number(d.assignment_id), d);
+  }
+
+  const leaderDailyCards = [...datedLeaders, ...fixedLeaders].map((leader) => ({
+    leader,
+    daily: dailyByAssignment.get(Number(leader.id)) ?? null,
+  }));
+
+  // Territórios do dia sem dirigente (legado) ou cujo dirigente não está na escala de hoje
+  const orphanDaily = daily.filter(
+    (d) => d.assignment_id == null || !leaderDailyCards.some((c) => c.daily?.id === d.id),
+  );
 
   return (
     <main className="app-page-wide">
@@ -343,70 +371,201 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Território do dia */}
+      {/* Territórios do dia — um por dirigente */}
       <section className="mb-10">
-        <h2 className="app-section-title mb-3">Território do dia</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="app-section-title">Território do dia</h2>
+          {daily.length > 0 ? <span className="app-badge-blue">{daily.length}</span> : null}
+        </div>
 
-        {daily ? (
-          <div className="app-card flex flex-wrap items-center gap-4 p-5 sm:p-6">
-            <Link
-              to={`/territories/${daily.id}`}
-              className="min-w-0 flex-1 rounded-apple outline-none ring-apple-blue/30 focus-visible:ring-2"
-            >
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="app-badge-blue">Do dia</span>
-                <span className="text-[17px] font-semibold tracking-tightish text-apple-ink">
-                  {daily.name}
-                </span>
-                {daily.number ? (
-                  <span className="text-[14px] text-apple-secondary">
-                    Terr. N.º <span className="font-medium text-apple-ink">{daily.number}</span>
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1.5 text-[13px] text-apple-tertiary">
-                Toque para abrir mapa e checklist · Finalizar grava em Finalizados (com nº de pessoas)
-              </p>
-            </Link>
-
-            <div className="flex items-center gap-2">
-              {can('territory:set_daily') ? (
-                <button
-                  type="button"
-                  disabled={finishing || unlinking}
-                  onClick={(e) => openFinishModal(e, Number(daily.id))}
-                  data-tooltip="Finaliza campo"
-                  aria-label="Finalizar território do dia"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                >
-                  <IconCheckCircle className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline">Finalizar</span>
-                </button>
-              ) : null}
-              {can('territory:set_daily') ? (
-                <button
-                  type="button"
-                  disabled={unlinking || finishing}
-                  onClick={(e) => void unlinkDaily(e, daily.id)}
-                  data-tooltip="Desvincular território do dia"
-                  aria-label="Desvincular território do dia"
-                  className="app-icon-btn disabled:opacity-50"
-                >
-                  <IconUnlink className="h-4 w-4" />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : (
+        {leaderDailyCards.length === 0 && orphanDaily.length === 0 ? (
           <div className="app-empty">
             <p className="text-[15px] font-medium text-apple-ink">Nenhum território do dia</p>
             <p className="mt-1 text-[13px] text-apple-secondary">
               Marque um em{' '}
               <Link to="/territories" className="app-link">
                 Territórios
-              </Link>
-              .
+              </Link>{' '}
+              e escolha o dirigente da escala de hoje.
             </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {leaderDailyCards.map(({ leader, daily: cardDaily }) => {
+              const leaderLabel = leader.fixed_time?.trim()
+                ? `${leader.assignee_name} · ${leader.fixed_time}`
+                : leader.assignee_name;
+              return (
+                <div key={leader.id} className="app-card p-4 sm:p-5">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="flex items-center gap-2 text-[14px] font-semibold text-apple-ink">
+                      <IconStar className="h-4 w-4 text-apple-blue" />
+                      {leaderLabel}
+                    </p>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        leader.is_fixed
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                          : 'bg-apple-fill text-apple-secondary'
+                      }`}
+                    >
+                      {leader.is_fixed ? 'Fixo' : 'Designado'}
+                    </span>
+                  </div>
+
+                  {cardDaily ? (
+                    <div className="flex flex-wrap items-center gap-4">
+                      <Link
+                        to={`/territories/${cardDaily.id}`}
+                        className="min-w-0 flex-1 rounded-apple outline-none ring-apple-blue/30 focus-visible:ring-2"
+                      >
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="app-badge-blue">Do dia</span>
+                          <span className="text-[16px] font-semibold tracking-tightish text-apple-ink">
+                            {cardDaily.name}
+                          </span>
+                          {cardDaily.number ? (
+                            <span className="text-[13px] text-apple-secondary">
+                              Terr. N.º{' '}
+                              <span className="font-medium text-apple-ink">
+                                {cardDaily.number}
+                              </span>
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-[12px] text-apple-tertiary">
+                          Toque para abrir mapa e checklist.
+                        </p>
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        {can('territory:set_daily') ? (
+                          <button
+                            type="button"
+                            disabled={finishing || unlinking}
+                            onClick={(e) => openFinishModal(e, Number(cardDaily.id))}
+                            data-tooltip="Finaliza campo"
+                            aria-label="Finalizar território do dia"
+                            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                          >
+                            <IconCheckCircle className="h-4 w-4 shrink-0" />
+                            <span className="hidden sm:inline">Finalizar</span>
+                          </button>
+                        ) : null}
+                        {can('territory:set_daily') ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={unlinking || finishing}
+                              onClick={() =>
+                                setDailyModal({
+                                  kind: 'for-leader',
+                                  assignmentId: Number(leader.id),
+                                })
+                              }
+                              data-tooltip="Trocar território do dia"
+                              aria-label="Trocar território do dia"
+                              className="app-icon-btn disabled:opacity-50"
+                            >
+                              <IconStar className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={unlinking || finishing}
+                              onClick={(e) => void unlinkDaily(e, Number(cardDaily.id))}
+                              data-tooltip="Desvincular território do dia"
+                              aria-label="Desvincular território do dia"
+                              className="app-icon-btn disabled:opacity-50"
+                            >
+                              <IconUnlink className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-[13px] text-apple-secondary">
+                        Sem território do dia marcado para este dirigente.
+                      </p>
+                      {can('territory:set_daily') ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDailyModal({ kind: 'for-leader', assignmentId: Number(leader.id) })
+                          }
+                          className="inline-flex h-10 items-center gap-1.5 rounded-full bg-apple-blue px-3.5 text-[13px] font-semibold text-white shadow-soft transition hover:bg-apple-blue-hover"
+                        >
+                          <IconStar className="h-4 w-4" />
+                          Marcar território do dia
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {orphanDaily.map((d) => (
+              <div
+                key={d.id}
+                className="app-card flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-apple-tertiary">
+                    Sem dirigente na escala
+                  </p>
+                  <p className="mt-0.5 text-[15px] font-semibold text-apple-ink">
+                    {d.name}
+                    {d.number ? (
+                      <span className="ml-1 font-normal text-apple-secondary">
+                        · N.º {d.number}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {can('territory:set_daily') ? (
+                    <button
+                      type="button"
+                      disabled={finishing || unlinking}
+                      onClick={(e) => openFinishModal(e, Number(d.id))}
+                      data-tooltip="Finaliza campo"
+                      aria-label="Finalizar território do dia"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    >
+                      <IconCheckCircle className="h-4 w-4 shrink-0" />
+                      <span className="hidden sm:inline">Finalizar</span>
+                    </button>
+                  ) : null}
+                  {can('territory:set_daily') ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDailyModal({ kind: 'for-territory', territoryId: Number(d.id) })
+                        }
+                        data-tooltip="Vincular a um dirigente"
+                        aria-label="Vincular a um dirigente"
+                        className="app-icon-btn disabled:opacity-50"
+                      >
+                        <IconStar className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={unlinking || finishing}
+                        onClick={(e) => void unlinkDaily(e, Number(d.id))}
+                        data-tooltip="Desvincular território do dia"
+                        aria-label="Desvincular território do dia"
+                        className="app-icon-btn disabled:opacity-50"
+                      >
+                        <IconUnlink className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -448,10 +607,10 @@ export default function DashboardPage() {
                 para a lista de finalizados.
               </p>
 
-              {pendingNaoEmCasa > 0 ? (
+              {finishPendingNaoEmCasa > 0 ? (
                 <p className="mt-3 rounded-[12px] border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[13px] leading-relaxed text-apple-ink">
                   <span className="font-semibold">Atenção:</span> ainda{' '}
-                  {pendingNaoEmCasa === 1 ? 'falta 1 casa' : `faltam ${pendingNaoEmCasa} casas`} para
+                  {finishPendingNaoEmCasa === 1 ? 'falta 1 casa' : `faltam ${finishPendingNaoEmCasa} casas`} para
                   fazer no não em casa.
                 </p>
               ) : null}
@@ -633,6 +792,19 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {dailyModal ? (
+        <DailyTerritoryModal
+          territoryId={
+            dailyModal.kind === 'for-territory' ? dailyModal.territoryId : undefined
+          }
+          assignmentId={
+            dailyModal.kind === 'for-leader' ? dailyModal.assignmentId : undefined
+          }
+          onClose={() => setDailyModal(null)}
+          onDone={() => void load()}
+        />
+      ) : null}
     </main>
   );
 }

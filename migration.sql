@@ -37,9 +37,11 @@ CREATE TABLE territories (
   map_lat DECIMAL(10,7) NULL,                -- latitude resolvida a partir do CEP
   map_lng DECIMAL(10,7) NULL,                -- longitude resolvida a partir do CEP
   is_daily TINYINT(1) DEFAULT 0,
+  daily_assignment_id INT NULL,              -- território do dia vinculado a um dirigente (field_assignments.id)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (daily_assignment_id) REFERENCES field_assignments(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- "NÃO EM CASA": número da quadra, rua e casas sem resposta

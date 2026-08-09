@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
+import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { tooltipText } from '@/lib/tooltip';
@@ -35,6 +36,8 @@ export default function TerritoriesPage() {
   const [error, setError] = useState('');
   /** Ordenação por Terr. N.º — um botão alterna crescente/decrescente */
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  /** Modal: escolher o dirigente ao marcar/trocar o território do dia */
+  const [dailyModalTerritoryId, setDailyModalTerritoryId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -89,14 +92,8 @@ export default function TerritoriesPage() {
     return sortByTerritoryNumber(base, sortDir);
   }, [territories, query, sortDir]);
 
-  async function setDaily(id: number) {
-    try {
-      await api(`/api/territories/${id}/daily`, { method: 'POST' });
-      await load();
-      toast.success('Território vinculado ao dia.');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao vincular.');
-    }
+  function openDailyModal(territoryId: number) {
+    setDailyModalTerritoryId(territoryId);
   }
 
   function unlinkDaily(id: number) {
@@ -223,33 +220,37 @@ export default function TerritoriesPage() {
                     {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
                   </p>
                   {territory.is_daily ? (
-                    <span className="app-badge-green mt-2">Território do dia</span>
+                    <span className="app-badge-green mt-2">
+                      Território do dia
+                      {territory.daily_leader_name
+                        ? ` · ${territory.daily_leader_name}`
+                        : ''}
+                    </span>
                   ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {can('territory:set_daily') ? (
-                    !territory.is_daily ? (
-                      <button
-                        type="button"
-                        onClick={() => void setDaily(territory.id)}
-                        data-tooltip="Marcar do dia"
-                        aria-label="Marcar do dia"
-                        className="app-icon-btn text-amber-600"
-                      >
-                        <IconStar className="h-4 w-4" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void unlinkDaily(territory.id)}
-                        data-tooltip="Desvincular do dia"
-                        aria-label="Desvincular do dia"
-                        className="app-icon-btn"
-                      >
-                        <IconUnlink className="h-4 w-4" />
-                      </button>
-                    )
+                    <button
+                      type="button"
+                      onClick={() => openDailyModal(Number(territory.id))}
+                      data-tooltip={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
+                      aria-label={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
+                      className="app-icon-btn text-amber-600"
+                    >
+                      <IconStar className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  {can('territory:set_daily') && territory.is_daily ? (
+                    <button
+                      type="button"
+                      onClick={() => void unlinkDaily(territory.id)}
+                      data-tooltip="Desvincular do dia"
+                      aria-label="Desvincular do dia"
+                      className="app-icon-btn"
+                    >
+                      <IconUnlink className="h-4 w-4" />
+                    </button>
                   ) : null}
                   <Link
                     to={`/territories/${territory.id}`}
@@ -285,6 +286,14 @@ export default function TerritoriesPage() {
           ) : null}
         </div>
       </div>
+
+      {dailyModalTerritoryId != null ? (
+        <DailyTerritoryModal
+          territoryId={dailyModalTerritoryId}
+          onClose={() => setDailyModalTerritoryId(null)}
+          onDone={() => void load()}
+        />
+      ) : null}
     </main>
   );
 }

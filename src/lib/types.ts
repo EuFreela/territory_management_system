@@ -8,6 +8,10 @@ export type Territory = {
   map_lat?: number | string | null;
   map_lng?: number | string | null;
   is_daily: number;
+  /** Território do dia vinculado a um dirigente (field_assignments.id) */
+  daily_assignment_id?: number | null;
+  /** Nome do dirigente vinculado (join no servidor) */
+  daily_leader_name?: string | null;
   created_at?: string;
   updated_at?: string;
   blocks?: Block[];
@@ -58,7 +62,14 @@ export type DashboardData = {
     isAdmin?: boolean;
   };
   territories: Territory[];
-  daily: (Territory & { blocks: Block[]; is_finished?: boolean }) | null;
+  /** Territórios do dia — um por dirigente (pode haver sem dirigente no legado) */
+  daily: Array<
+    Territory & {
+      blocks: Block[];
+      is_finished?: boolean;
+      assignment_id?: number | null;
+    }
+  >;
   /** Territórios com ao menos uma quadra de "não em casa" ainda incompleta */
   unfinished?: UnfinishedTerritory[];
 };
