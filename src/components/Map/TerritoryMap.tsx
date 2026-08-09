@@ -25,11 +25,13 @@ import { GoogleMapsTileLayer } from './GoogleMapsTileLayer';
 import {
   IconCheck,
   IconCompress,
+  IconContrast,
   IconExpand,
   IconFocusAreas,
   IconLocate,
   IconLock,
   IconNote,
+  IconPalette,
   IconPencil,
   IconRedo,
   IconSearch,
@@ -1020,6 +1022,8 @@ export default function TerritoryMap({
   const [drawMode, setDrawMode] = useState(false);
   /** true = próximo clique no mapa cria balão de atenção */
   const [noteMode, setNoteMode] = useState(false);
+  /** true = áreas desenhadas em preto e branco (sem as cores da paleta) */
+  const [bwAreas, setBwAreas] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   /** Rascunho do comentário enquanto edita (só grava no mapa ao “Salvar e fechar”) */
@@ -2115,6 +2119,24 @@ export default function TerritoryMap({
         <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
           <button
             type="button"
+            data-tooltip={tooltipText(
+              bwAreas ? 'Áreas coloridas' : 'Áreas em preto e branco',
+            )}
+            data-tooltip-side="left"
+            aria-label={bwAreas ? 'Mostrar áreas coloridas' : 'Mostrar áreas em preto e branco'}
+            aria-pressed={bwAreas}
+            onClick={() => setBwAreas((v) => !v)}
+            className={[
+              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              bwAreas
+                ? 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill'
+                : 'border-apple-blue/30 bg-apple-blue/10 text-apple-blue hover:bg-apple-blue/15',
+            ].join(' ')}
+          >
+            {bwAreas ? <IconContrast className="h-5 w-5" /> : <IconPalette className="h-5 w-5" />}
+          </button>
+          <button
+            type="button"
             data-tooltip={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Tela cheia'}
             data-tooltip-side="left"
             aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
@@ -2266,7 +2288,15 @@ export default function TerritoryMap({
             let dashArray: string | undefined;
             let className: string | undefined;
 
-            if (isFinished && (isSelected || !dimOthers)) {
+            if (bwAreas) {
+              // Modo preto e branco: mesma gradação de cinza em todos os estados
+              color = isSelected ? '#374151' : '#64748b';
+              fillColor = isSelected ? '#9ca3af' : '#cbd5e1';
+              fillOpacity = isSelected ? 0.55 : 0.34;
+              weight = isSelected ? 5 : 2.5;
+              opacity = isSelected ? 1 : 0.85;
+              dashArray = dimOthers ? '5 7' : undefined;
+            } else if (isFinished && (isSelected || !dimOthers)) {
               // Mesmo cinza do card finalizado, com ou sem seleção
               color = '#64748b';
               fillColor = '#cbd5e1';
