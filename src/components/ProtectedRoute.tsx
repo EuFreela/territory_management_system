@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import AppShell from '@/components/layout/AppShell';
+import { LoadingScreen } from '@/components/ui/Spinner';
 import { useAuth } from '@/lib/auth-context';
 
 export default function ProtectedRoute() {
@@ -7,7 +8,7 @@ export default function ProtectedRoute() {
   const location = useLocation();
 
   if (loading) {
-    return <div className="min-h-screen bg-apple-bg" />;
+    return <LoadingScreen label="Carregando sessão…" />;
   }
 
   if (!user) {

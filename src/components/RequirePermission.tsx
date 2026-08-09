@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { LoadingScreen } from '@/components/ui/Spinner';
 import { useAuth } from '@/lib/auth-context';
 import type { Scope } from '@/lib/permissions';
 
@@ -17,7 +18,7 @@ export default function RequirePermission({
   const { user, loading, can } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-apple-bg" />;
+    return <LoadingScreen label="Carregando sessão…" />;
   }
 
   if (!user) {

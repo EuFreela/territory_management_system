@@ -25,6 +25,7 @@ import TerritoryMap, {
 } from '@/components/Map/TerritoryMap';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
+import { LoadingBox } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
@@ -340,7 +341,7 @@ export default function TerritoryDetailPage() {
   if (!territory) {
     return (
       <main className="app-page">
-        <p className="text-[15px] text-apple-secondary">Carregando…</p>
+        <LoadingBox label="Carregando…" className="min-h-[16rem]" />
       </main>
     );
   }

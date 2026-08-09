@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { IconArrowLeft } from '@/components/Map/mapIcons';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
 import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
+import { LoadingBox } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import type { CepLocation } from '@/lib/types';
 
@@ -105,9 +106,7 @@ export default function NewTerritoryPage() {
               </div>
 
               {loadingMap ? (
-                <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-500">
-                  Carregando mapa…
-                </div>
+                <LoadingBox label="Carregando mapa…" className="h-64" />
               ) : (
                 <TerritoryMap
                   value={geojson}

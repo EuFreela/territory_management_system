@@ -11,6 +11,7 @@ import {
 } from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
+import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { tooltipText } from '@/lib/tooltip';
@@ -189,7 +190,7 @@ export default function TerritoriesPage() {
           ) : null}
         </div>
 
-        {loading ? <p className="text-[15px] text-apple-secondary">Carregando…</p> : null}
+        {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
         {error ? <p className="text-[15px] text-apple-red">{error}</p> : null}
 
         <div className="space-y-3">

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { IconHelp, IconPencil, IconPlus, IconSearch, IconTrash, IconUsers } from '@/components/Map/mapIcons';
 import PasswordField from '@/components/ui/PasswordField';
 import RolesModal from '@/components/ui/RolesModal';
+import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { confirmToast } from '@/lib/confirm-toast';
@@ -310,7 +311,7 @@ export default function UsersPage() {
           </div>
 
           {loading ? (
-            <p className="text-apple-secondary">Carregando…</p>
+            <Spinner label="Carregando…" className="text-apple-secondary" />
           ) : users.length === 0 ? (
             <p className="text-apple-secondary">Nenhum usuário.</p>
           ) : filteredUsers.length === 0 ? (
