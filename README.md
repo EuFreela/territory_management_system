@@ -180,6 +180,7 @@ Após alterar `VITE_*`, rode **`npm run build`** e reinicie o processo Node.
 | `npm run migrate:rbac` | Migração RBAC |
 | `npm run migrate:finish-history` | Tabela de histórico de finalizações |
 | `npm run migrate:theme` | Coluna `theme_preference` em `users` |
+| `npm run migrate:daily-per-leader` | Coluna `daily_assignment_id` em `territories` (território do dia por dirigente) |
 | `npm run create:admin` | Cria o primeiro administrador com senha aleatória |
 
 ---
