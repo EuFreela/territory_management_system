@@ -186,7 +186,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-apple-bg">
+    <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-[100] border-b border-apple-line bg-apple-surface/75 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3 sm:gap-6">

@@ -32,7 +32,7 @@ export function Spinner({
 /** Tela cheia de carregamento (auth, proteção de rota) */
 export function LoadingScreen({ label = 'Carregando…' }: { label?: string }) {
   return (
-    <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-3 bg-apple-bg">
+    <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
       <Spinner size="lg" className="text-apple-secondary" />
       {label ? <p className="text-[14px] font-medium text-apple-secondary">{label}</p> : null}
     </div>
