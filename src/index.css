@@ -366,25 +366,18 @@ select {
   }
 
   /* Tooltip Apple (use data-tooltip em vez de title)
-     Caixa compacta: largura fixa máx., 1 linha, reticências — evita altura excessiva. */
+     Renderizado via TooltipLayer (portal no body) para escapar de stacking
+     contexts e ficar sempre acima de tudo. */
   [data-tooltip] {
     position: relative;
   }
 
-  [data-tooltip]::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    /* Sempre acima dos demais elementos (header sticky, menu, mapa, modais…) */
+  .tooltip-layer {
+    position: fixed;
     z-index: 99999;
-    left: 50%;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%) translateY(4px) scale(0.96);
-    /* ~40 caracteres a 12px; caixa mais larga horizontalmente, baixa verticalmente */
-    box-sizing: border-box;
+    pointer-events: none;
     width: max-content;
     max-width: min(15rem, 72vw);
-    min-height: 2rem;
-    max-height: 2rem;
     padding: 0.4rem 0.85rem;
     border-radius: 10px;
     background: rgba(29, 29, 31, 0.92);
@@ -397,89 +390,31 @@ select {
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
-    transition:
-      opacity 0.16s ease 0.28s,
-      transform 0.16s ease 0.28s,
-      visibility 0.16s 0.28s;
+    animation: tooltip-in 0.16s ease;
   }
 
-  .dark [data-tooltip]::after {
+  .dark .tooltip-layer {
     background: rgba(245, 245, 247, 0.94);
     color: #1d1d1f;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   }
 
-  [data-tooltip]:hover::after,
-  [data-tooltip]:focus-visible::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-
-  [data-tooltip]:not(:hover):not(:focus-visible)::after {
-    transition-delay: 0s;
-  }
-
-  /* Abaixo do elemento (ex.: header) */
-  [data-tooltip-side='bottom']::after {
-    bottom: auto;
-    top: calc(100% + 8px);
-    transform: translateX(-50%) translateY(-4px) scale(0.96);
-  }
-
-  [data-tooltip-side='bottom']:hover::after,
-  [data-tooltip-side='bottom']:focus-visible::after {
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-
-  /* Tooltip abaixo, alinhado à borda direita do elemento (não estoura a margem da tela) */
-  [data-tooltip-side='bottom'][data-tooltip-align='end']::after {
-    left: auto;
-    right: 0;
-    transform: translateY(-4px) scale(0.96);
-  }
-
-  [data-tooltip-side='bottom'][data-tooltip-align='end']:hover::after,
-  [data-tooltip-side='bottom'][data-tooltip-align='end']:focus-visible::after {
-    transform: translateY(0) scale(1);
-  }
-
-  /* Esquerda / direita */
-  [data-tooltip-side='left']::after {
-    left: auto;
-    right: calc(100% + 8px);
-    bottom: 50%;
-    transform: translateY(50%) translateX(4px) scale(0.96);
-  }
-
-  [data-tooltip-side='left']:hover::after,
-  [data-tooltip-side='left']:focus-visible::after {
-    transform: translateY(50%) translateX(0) scale(1);
-  }
-
-  [data-tooltip-side='right']::after {
-    left: calc(100% + 8px);
-    bottom: 50%;
-    transform: translateY(50%) translateX(-4px) scale(0.96);
-  }
-
-  [data-tooltip-side='right']:hover::after,
-  [data-tooltip-side='right']:focus-visible::after {
-    transform: translateY(50%) translateX(0) scale(1);
+  @keyframes tooltip-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Variante: quebra linha — para nomes completos (ex.: dirigente no histórico) */
-  [data-tooltip][data-tooltip-multiline]::after {
+  .tooltip-layer[data-multiline] {
     width: max-content;
     max-width: min(22rem, 78vw);
-    min-height: 0;
-    max-height: none;
     padding: 0.5rem 0.85rem;
     line-height: 1.35;
     white-space: normal;
@@ -858,5 +793,33 @@ select {
 }
 
 [data-slot='table-container']::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Scrollbar fina e discreta para listas roláveis (mesmo padrão das tabelas) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: var(--border);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+.scrollbar-thin::-webkit-scrollbar-corner {
   background: transparent;
 }
