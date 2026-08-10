@@ -379,7 +379,9 @@ export default function EditTerritoryPage() {
   if (loading) {
     return (
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
-        <Spinner label="Carregando…" className="min-h-[16rem] text-muted-foreground" />
+        <div className="flex min-h-[16rem] items-center justify-center text-muted-foreground">
+          <Spinner label="Carregando…" />
+        </div>
       </main>
     );
   }
