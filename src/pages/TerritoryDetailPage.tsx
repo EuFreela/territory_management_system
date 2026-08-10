@@ -349,7 +349,9 @@ export default function TerritoryDetailPage() {
   if (!territory) {
     return (
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
-        <Spinner label="Carregando…" className="min-h-[16rem] text-muted-foreground" />
+        <div className="flex min-h-[16rem] items-center justify-center text-muted-foreground">
+          <Spinner label="Carregando…" />
+        </div>
       </main>
     );
   }
@@ -360,8 +362,8 @@ export default function TerritoryDetailPage() {
     <>
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
         <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="gap-0 overflow-hidden p-0">
+            <CardContent className="px-5 pb-5 pt-6 sm:px-6 sm:pb-6">
               <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xl font-bold tracking-tight">Cartão de Mapa de Território</p>
