@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { IconCheckCircle, IconStar, IconX } from '@/components/Map/mapIcons';
+import { IconCheckCircle, IconSearch, IconStar, IconX } from '@/components/Map/mapIcons';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import type { FieldAssignment, Territory } from '@/lib/types';
+
+function normalize(text: string) {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
 
 type Props = {
   /** Já escolheu o território? Então o modal escolhe o dirigente. */
@@ -31,6 +39,7 @@ export default function DailyTerritoryModal({
   const [territories, setTerritories] = useState<Territory[]>([]);
   const [selectedLeader, setSelectedLeader] = useState('');
   const [selectedTerritory, setSelectedTerritory] = useState('');
+  const [territorySearch, setTerritorySearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -90,6 +99,14 @@ export default function DailyTerritoryModal({
       return String(a.name).localeCompare(String(b.name));
     });
   }, [territories]);
+
+  const filteredTerritories = useMemo(() => {
+    const q = normalize(territorySearch);
+    if (!q) return territoryOptions;
+    return territoryOptions.filter((t) =>
+      normalize(`${t.name} ${t.number ?? ''}`).includes(q),
+    );
+  }, [territoryOptions, territorySearch]);
 
   const hasLeaders = leaderOptions.length > 0;
 
@@ -218,28 +235,66 @@ export default function DailyTerritoryModal({
               </div>
             ) : (
               <div>
-                <label htmlFor="daily-territory" className="app-label">
+                <label htmlFor="daily-territory-search" className="app-label">
                   Território do dia
                 </label>
-                <select
-                  id="daily-territory"
-                  value={selectedTerritory}
-                  onChange={(e) => {
-                    setSelectedTerritory(e.target.value);
-                    setError('');
-                  }}
-                  className="app-input"
-                  disabled={saving}
-                  autoFocus
-                >
-                  <option value="">Escolha o território…</option>
-                  {territoryOptions.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.number ? `${t.name} · N.º ${t.number}` : t.name}
-                      {t.is_daily ? ' (do dia)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-apple-tertiary" />
+                  <input
+                    id="daily-territory-search"
+                    type="search"
+                    value={territorySearch}
+                    onChange={(e) => {
+                      setTerritorySearch(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="Buscar por nome ou número…"
+                    className="app-input pl-9"
+                    disabled={saving}
+                    autoFocus
+                  />
+                </div>
+                <div className="mt-2 max-h-56 space-y-1.5 overflow-y-auto rounded-apple border border-apple-line bg-apple-fill p-1.5">
+                  {filteredTerritories.length === 0 ? (
+                    <p className="px-2.5 py-2 text-[13px] text-apple-tertiary">
+                      Nenhum território encontrado.
+                    </p>
+                  ) : (
+                    filteredTerritories.map((t) => {
+                      const isSelected = String(t.id) === selectedTerritory;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTerritory(String(t.id));
+                            setError('');
+                          }}
+                          className={`flex w-full items-center justify-between gap-2 rounded-[10px] px-3 py-2 text-left transition ${
+                            isSelected
+                              ? 'bg-apple-blue text-white'
+                              : 'bg-apple-surface text-apple-ink hover:bg-apple-line'
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                            {t.number ? `${t.name} · N.º ${t.number}` : t.name}
+                          </span>
+                          {t.is_daily ? (
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                isSelected
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-apple-blue/10 text-apple-blue'
+                              }`}
+                            >
+                              do dia
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
                 <p className="mt-1.5 text-[12px] text-apple-tertiary">
                   Se este território já estiver vinculado a outro dirigente, o vínculo é trocado.
                 </p>

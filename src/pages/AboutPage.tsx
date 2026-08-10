@@ -37,6 +37,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Busca no território do dia (v0.0.10.1)',
+    items: [
+      'No modal “Dirigente — território do dia”, o seletor virou uma busca com lista rolável',
+      'Filtra por nome ou número do território (ignora acentos) e destaca o selo “do dia” nos já marcados',
+    ],
+  },
+  {
     title: 'Login com Google (v0.0.10)',
     items: [
       'Novo botão “Continuar com Google” na tela de login — entra direto com a conta Google',
