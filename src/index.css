@@ -223,7 +223,7 @@ html {
 }
 
 body {
-  @apply m-0 min-h-screen bg-apple-bg font-sans text-apple-ink antialiased;
+  @apply m-0 min-h-screen bg-background font-sans text-foreground antialiased;
   letter-spacing: -0.011em;
 }
 

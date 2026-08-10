@@ -9,6 +9,19 @@ import {
   IconUnlink,
   IconX,
 } from '@/components/Map/mapIcons';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { confirmToast } from '@/lib/confirm-toast';
 import { toast } from 'sonner';
 import { LoadingBox } from '@/components/ui/Spinner';
@@ -180,15 +193,22 @@ export default function DashboardPage() {
 
   if (error && !data) {
     return (
-      <main className="app-page-wide">
-        <p className="text-[15px] text-apple-red">{error}</p>
+      <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
+        <Card>
+          <CardContent className="flex flex-col items-start gap-3 pt-4">
+            <p className="text-sm text-destructive">{error}</p>
+            <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+              Recarregar
+            </Button>
+          </CardContent>
+        </Card>
       </main>
     );
   }
 
   if (!data) {
     return (
-      <main className="app-page-wide">
+      <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
         <LoadingBox label="Carregando…" className="min-h-[16rem]" />
       </main>
     );
@@ -216,179 +236,192 @@ export default function DashboardPage() {
     (d) => d.assignment_id == null || !leaderDailyCards.some((c) => c.daily?.id === d.id),
   );
 
+  const sectionTitle =
+    'text-xs font-semibold uppercase tracking-wider text-muted-foreground';
+
   return (
-    <main className="app-page-wide">
+    <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
       <header className="mb-10">
-        <p className="app-section-title">Visão geral</p>
-        <h1 className="app-title mt-1">Início</h1>
-        <p className="app-subtitle">Território do dia, dirigentes e o que ainda falta.</p>
+        <p className="text-sm font-medium text-muted-foreground">Visão geral</p>
+        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">Início</h1>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+          Território do dia, dirigentes e o que ainda falta.
+        </p>
       </header>
 
       {error ? (
-        <p className="mb-6 rounded-apple border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">
-          {error}
-        </p>
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <span>{error}</span>
+        </div>
       ) : null}
 
       {/* Dirigentes */}
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="app-section-title">Dirigente do serviço de campo</h2>
-          <Link to="/dirigentes" className="text-[13px] font-medium text-apple-blue hover:underline">
+          <h2 className={sectionTitle}>Dirigente do serviço de campo</h2>
+          <Link
+            to="/dirigentes"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
             Ver escala
           </Link>
         </div>
 
-        <div className="app-card-pad">
-          <p className="text-[13px] font-medium text-apple-tertiary">
-            {leaders?.weekday_label ?? 'Hoje'}
-            {leaders?.date ? ` · ${leaders.date.split('-').reverse().join('/')}` : ''}
-          </p>
-
-          {datedLeaders.length === 0 && fixedLeaders.length === 0 ? (
-            <p className="mt-3 text-[15px] text-apple-secondary">
-              Nenhum dirigente designado para hoje.
+        <Card>
+          <CardContent className="space-y-3 pt-4">
+            <p className="text-sm text-muted-foreground">
+              {leaders?.weekday_label ?? 'Hoje'}
+              {leaders?.date ? ` · ${leaders.date.split('-').reverse().join('/')}` : ''}
             </p>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {datedLeaders.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple border border-apple-line bg-apple-fill px-4 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-apple-secondary">
-                      Designado ({row.weekday_label}
-                      {row.fixed_time ? ` · ${row.fixed_time}` : ''})
-                    </p>
-                    {editingLeaderId === row.id ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <input
-                          value={editLeaderName}
-                          onChange={(e) => setEditLeaderName(e.target.value)}
-                          className="app-input min-w-[12rem] flex-1 py-2"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          disabled={savingLeader}
-                          onClick={() => void saveLeaderName()}
-                          data-tooltip="Salvar"
-                          aria-label="Salvar"
-                          className="app-icon-btn bg-apple-blue text-white hover:bg-apple-blue-hover"
-                        >
-                          <IconSave className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingLeaderId(null)}
-                          data-tooltip="Cancelar"
-                          aria-label="Cancelar"
-                          className="app-icon-btn"
-                        >
-                          <IconX className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <p className="text-[17px] font-semibold tracking-tightish text-apple-ink">
-                          {row.assignee_name}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => startEditLeader(row)}
-                          data-tooltip="Editar dirigente"
-                          aria-label="Editar dirigente"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-secondary transition hover:bg-apple-line hover:text-apple-ink"
-                        >
-                          <IconPencil className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
 
-              {fixedLeaders.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-apple border border-apple-green/35 bg-apple-green/10 px-4 py-3 dark:border-apple-green/40 dark:bg-apple-green/15"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-semibold text-emerald-700 dark:text-emerald-300">
-                      Fixo · {row.weekday_label}
-                      {row.fixed_time ? ` · ${row.fixed_time}` : ''}
-                    </p>
-                    {editingLeaderId === row.id ? (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <input
-                          value={editLeaderName}
-                          onChange={(e) => setEditLeaderName(e.target.value)}
-                          className="app-input min-w-[12rem] flex-1 py-2"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          disabled={savingLeader}
-                          onClick={() => void saveLeaderName()}
-                          data-tooltip="Salvar"
-                          aria-label="Salvar"
-                          className="app-icon-btn bg-apple-blue text-white hover:bg-apple-blue-hover"
-                        >
-                          <IconSave className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingLeaderId(null)}
-                          data-tooltip="Cancelar"
-                          aria-label="Cancelar"
-                          className="app-icon-btn"
-                        >
-                          <IconX className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <p className="text-[16px] font-semibold tracking-tightish text-apple-ink">
-                          {row.assignee_name}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => startEditLeader(row)}
-                          data-tooltip="Editar dirigente"
-                          aria-label="Editar dirigente"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-apple-secondary transition hover:bg-apple-line hover:text-apple-ink"
-                        >
-                          <IconPencil className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
+            {datedLeaders.length === 0 && fixedLeaders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum dirigente designado para hoje.</p>
+            ) : (
+              <div className="space-y-2">
+                {datedLeaders.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/40 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Designado ({row.weekday_label}
+                        {row.fixed_time ? ` · ${row.fixed_time}` : ''})
+                      </p>
+                      {editingLeaderId === row.id ? (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <Input
+                            value={editLeaderName}
+                            onChange={(e) => setEditLeaderName(e.target.value)}
+                            className="h-8 w-full min-w-[12rem] max-w-[16rem] flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled={savingLeader}
+                            onClick={() => void saveLeaderName()}
+                            aria-label="Salvar"
+                          >
+                            <IconSave />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingLeaderId(null)}
+                            aria-label="Cancelar"
+                          >
+                            <IconX />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <p className="text-base font-semibold tracking-tight">
+                            {row.assignee_name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => startEditLeader(row)}
+                            aria-label="Editar dirigente"
+                          >
+                            <IconPencil />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+
+                {fixedLeaders.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-300/60 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        Fixo · {row.weekday_label}
+                        {row.fixed_time ? ` · ${row.fixed_time}` : ''}
+                      </p>
+                      {editingLeaderId === row.id ? (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <Input
+                            value={editLeaderName}
+                            onChange={(e) => setEditLeaderName(e.target.value)}
+                            className="h-8 w-full min-w-[12rem] max-w-[16rem] flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled={savingLeader}
+                            onClick={() => void saveLeaderName()}
+                            aria-label="Salvar"
+                          >
+                            <IconSave />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingLeaderId(null)}
+                            aria-label="Cancelar"
+                          >
+                            <IconX />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <p className="text-base font-semibold tracking-tight">
+                            {row.assignee_name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => startEditLeader(row)}
+                            aria-label="Editar dirigente"
+                          >
+                            <IconPencil />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Territórios do dia — um por dirigente */}
       <section className="mb-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="app-section-title">Território do dia</h2>
-          {daily.length > 0 ? <span className="app-badge-blue">{daily.length}</span> : null}
+          <h2 className={sectionTitle}>Território do dia</h2>
+          {daily.length > 0 ? <Badge>{daily.length}</Badge> : null}
         </div>
 
         {leaderDailyCards.length === 0 && orphanDaily.length === 0 ? (
-          <div className="app-empty">
-            <p className="text-[15px] font-medium text-apple-ink">Nenhum território do dia</p>
-            <p className="mt-1 text-[13px] text-apple-secondary">
-              Marque um em{' '}
-              <Link to="/territories" className="app-link">
-                Territórios
-              </Link>{' '}
-              e escolha o dirigente da escala de hoje.
-            </p>
-          </div>
+          <Card>
+            <CardContent className="flex flex-col items-center py-10 text-center">
+              <p className="text-sm font-medium">Nenhum território do dia</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Marque um em{' '}
+                <Link
+                  to="/territories"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Territórios
+                </Link>{' '}
+                e escolha o dirigente da escala de hoje.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
             {leaderDailyCards.map(({ leader, daily: cardDaily }) => {
@@ -396,346 +429,322 @@ export default function DashboardPage() {
                 ? `${leader.assignee_name} · ${leader.fixed_time}`
                 : leader.assignee_name;
               return (
-                <div key={leader.id} className="app-card p-4 sm:p-5">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="flex items-center gap-2 text-[14px] font-semibold text-apple-ink">
-                      <IconStar className="h-4 w-4 text-apple-blue" />
-                      {leaderLabel}
-                    </p>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                        leader.is_fixed
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-                          : 'bg-apple-fill text-apple-secondary'
-                      }`}
-                    >
-                      {leader.is_fixed ? 'Fixo' : 'Designado'}
-                    </span>
-                  </div>
+                <Card key={leader.id}>
+                  <CardContent className="space-y-3 pt-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="flex items-center gap-2 text-sm font-semibold">
+                        <IconStar className="size-4 text-primary" />
+                        {leaderLabel}
+                      </p>
+                      <Badge variant={leader.is_fixed ? 'secondary' : 'outline'}>
+                        {leader.is_fixed ? 'Fixo' : 'Designado'}
+                      </Badge>
+                    </div>
 
-                  {cardDaily ? (
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Link
-                        to={`/territories/${cardDaily.id}`}
-                        className="min-w-0 flex-1 rounded-apple outline-none ring-apple-blue/30 focus-visible:ring-2"
-                      >
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="app-badge-blue">Do dia</span>
-                          <span className="text-[16px] font-semibold tracking-tightish text-apple-ink">
-                            {cardDaily.name}
-                          </span>
-                          {cardDaily.number ? (
-                            <span className="text-[13px] text-apple-secondary">
-                              Terr. N.º{' '}
-                              <span className="font-medium text-apple-ink">
-                                {cardDaily.number}
-                              </span>
+                    {cardDaily ? (
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Link to={`/territories/${cardDaily.id}`} className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <Badge className="bg-blue-600/10 text-blue-700 hover:bg-blue-600/15 dark:bg-blue-500/15 dark:text-blue-300">
+                              Do dia
+                            </Badge>
+                            <span className="text-base font-semibold tracking-tight">
+                              {cardDaily.name}
                             </span>
+                            {cardDaily.number ? (
+                              <span className="text-sm text-muted-foreground">
+                                Terr. N.º{' '}
+                                <span className="font-medium text-foreground">
+                                  {cardDaily.number}
+                                </span>
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Toque para abrir mapa e checklist.
+                          </p>
+                        </Link>
+
+                        <div className="flex items-center gap-2">
+                          {can('territory:set_daily') ? (
+                            <Button
+                              type="button"
+                              disabled={finishing || unlinking}
+                              onClick={(e) => openFinishModal(e, Number(cardDaily.id))}
+                              data-tooltip="Finaliza campo"
+                              aria-label="Finalizar território do dia"
+                              className="bg-emerald-600 text-white hover:bg-emerald-700"
+                            >
+                              <IconCheckCircle />
+                              <span className="hidden sm:inline">Finalizar</span>
+                            </Button>
+                          ) : null}
+                          {can('territory:set_daily') ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                disabled={unlinking || finishing}
+                                onClick={() =>
+                                  setDailyModal({
+                                    kind: 'for-leader',
+                                    assignmentId: Number(leader.id),
+                                  })
+                                }
+                                data-tooltip="Trocar território do dia"
+                                aria-label="Trocar território do dia"
+                              >
+                                <IconStar />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                disabled={unlinking || finishing}
+                                onClick={(e) => void unlinkDaily(e, Number(cardDaily.id))}
+                                data-tooltip="Desvincular território do dia"
+                                aria-label="Desvincular território do dia"
+                              >
+                                <IconUnlink />
+                              </Button>
+                            </>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-[12px] text-apple-tertiary">
-                          Toque para abrir mapa e checklist.
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          Sem território do dia marcado para este dirigente.
                         </p>
-                      </Link>
-
-                      <div className="flex items-center gap-2">
                         {can('territory:set_daily') ? (
-                          <button
+                          <Button
                             type="button"
-                            disabled={finishing || unlinking}
-                            onClick={(e) => openFinishModal(e, Number(cardDaily.id))}
-                            data-tooltip="Finaliza campo"
-                            aria-label="Finalizar território do dia"
-                            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                            onClick={() =>
+                              setDailyModal({
+                                kind: 'for-leader',
+                                assignmentId: Number(leader.id),
+                              })
+                            }
                           >
-                            <IconCheckCircle className="h-4 w-4 shrink-0" />
-                            <span className="hidden sm:inline">Finalizar</span>
-                          </button>
-                        ) : null}
-                        {can('territory:set_daily') ? (
-                          <>
-                            <button
-                              type="button"
-                              disabled={unlinking || finishing}
-                              onClick={() =>
-                                setDailyModal({
-                                  kind: 'for-leader',
-                                  assignmentId: Number(leader.id),
-                                })
-                              }
-                              data-tooltip="Trocar território do dia"
-                              aria-label="Trocar território do dia"
-                              className="app-icon-btn disabled:opacity-50"
-                            >
-                              <IconStar className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={unlinking || finishing}
-                              onClick={(e) => void unlinkDaily(e, Number(cardDaily.id))}
-                              data-tooltip="Desvincular território do dia"
-                              aria-label="Desvincular território do dia"
-                              className="app-icon-btn disabled:opacity-50"
-                            >
-                              <IconUnlink className="h-4 w-4" />
-                            </button>
-                          </>
+                            <IconStar />
+                            Marcar território do dia
+                          </Button>
                         ) : null}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-[13px] text-apple-secondary">
-                        Sem território do dia marcado para este dirigente.
-                      </p>
-                      {can('territory:set_daily') ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDailyModal({ kind: 'for-leader', assignmentId: Number(leader.id) })
-                          }
-                          className="inline-flex h-10 items-center gap-1.5 rounded-full bg-apple-blue px-3.5 text-[13px] font-semibold text-white shadow-soft transition hover:bg-apple-blue-hover"
-                        >
-                          <IconStar className="h-4 w-4" />
-                          Marcar território do dia
-                        </button>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </CardContent>
+                </Card>
               );
             })}
 
             {orphanDaily.map((d) => (
-              <div
-                key={d.id}
-                className="app-card flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-apple-tertiary">
-                    Sem dirigente na escala
-                  </p>
-                  <p className="mt-0.5 text-[15px] font-semibold text-apple-ink">
-                    {d.name}
-                    {d.number ? (
-                      <span className="ml-1 font-normal text-apple-secondary">
-                        · N.º {d.number}
-                      </span>
+              <Card key={d.id}>
+                <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Sem dirigente na escala
+                    </p>
+                    <p className="mt-0.5 text-base font-semibold">
+                      {d.name}
+                      {d.number ? (
+                        <span className="ml-1 font-normal text-muted-foreground">
+                          · N.º {d.number}
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {can('territory:set_daily') ? (
+                      <Button
+                        type="button"
+                        disabled={finishing || unlinking}
+                        onClick={(e) => openFinishModal(e, Number(d.id))}
+                        data-tooltip="Finaliza campo"
+                        aria-label="Finalizar território do dia"
+                        className="bg-emerald-600 text-white hover:bg-emerald-700"
+                      >
+                        <IconCheckCircle />
+                        <span className="hidden sm:inline">Finalizar</span>
+                      </Button>
                     ) : null}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {can('territory:set_daily') ? (
-                    <button
-                      type="button"
-                      disabled={finishing || unlinking}
-                      onClick={(e) => openFinishModal(e, Number(d.id))}
-                      data-tooltip="Finaliza campo"
-                      aria-label="Finalizar território do dia"
-                      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 text-[13px] font-semibold text-white shadow-soft transition active:scale-[0.97] hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                    >
-                      <IconCheckCircle className="h-4 w-4 shrink-0" />
-                      <span className="hidden sm:inline">Finalizar</span>
-                    </button>
-                  ) : null}
-                  {can('territory:set_daily') ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDailyModal({ kind: 'for-territory', territoryId: Number(d.id) })
-                        }
-                        data-tooltip="Vincular a um dirigente"
-                        aria-label="Vincular a um dirigente"
-                        className="app-icon-btn disabled:opacity-50"
-                      >
-                        <IconStar className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={unlinking || finishing}
-                        onClick={(e) => void unlinkDaily(e, Number(d.id))}
-                        data-tooltip="Desvincular território do dia"
-                        aria-label="Desvincular território do dia"
-                        className="app-icon-btn disabled:opacity-50"
-                      >
-                        <IconUnlink className="h-4 w-4" />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-              </div>
+                    {can('territory:set_daily') ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() =>
+                            setDailyModal({ kind: 'for-territory', territoryId: Number(d.id) })
+                          }
+                          data-tooltip="Vincular a um dirigente"
+                          aria-label="Vincular a um dirigente"
+                        >
+                          <IconStar />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          disabled={unlinking || finishing}
+                          onClick={(e) => void unlinkDaily(e, Number(d.id))}
+                          data-tooltip="Desvincular território do dia"
+                          aria-label="Desvincular território do dia"
+                        >
+                          <IconUnlink />
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
       </section>
 
-
       {/* Modal: finalizar + pessoas no campo */}
       {finishModalId != null ? (
-        <div
-          className="fixed inset-0 z-[10050] flex items-center justify-center p-4"
-          role="presentation"
+        <Dialog
+          open={finishModalId != null}
+          onOpenChange={(open) => {
+            if (!open) closeFinishModal();
+          }}
         >
-          <button
-            type="button"
-            aria-label="Fechar"
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] dark:bg-black/55"
-            onClick={closeFinishModal}
-            disabled={finishing}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="finish-modal-title"
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-[22px] border border-apple-line bg-apple-surface shadow-float"
-          >
-            <div className="h-1 w-full bg-apple-green" />
-            <div className="px-6 pb-6 pt-5">
-              <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-apple-green/15 text-apple-green">
-                <IconCheckCircle className="h-5 w-5" />
-              </div>
-              <h2
-                id="finish-modal-title"
-                className="mt-3 text-[17px] font-semibold tracking-tightish text-apple-ink"
-              >
-                Finalizar território do dia?
-              </h2>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-apple-secondary">
-                Será gravado em <span className="font-medium text-apple-ink">Finalizados</span> (dia,
-                horário, dirigente, pessoas e quem registrou), o território sai do dia e você vai
-                para a lista de finalizados.
+          <DialogContent className="sm:max-w-md" showCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>Finalizar território do dia?</DialogTitle>
+              <DialogDescription>
+                Será gravado em{' '}
+                <span className="font-medium text-foreground">Finalizados</span> (dia, horário,
+                dirigente, pessoas e quem registrou), o território sai do dia e você vai para a
+                lista de finalizados.
+              </DialogDescription>
+            </DialogHeader>
+
+            {finishPendingNaoEmCasa > 0 ? (
+              <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">
+                <span className="font-semibold">Atenção:</span> ainda{' '}
+                {finishPendingNaoEmCasa === 1
+                  ? 'falta 1 casa'
+                  : `faltam ${finishPendingNaoEmCasa} casas`}{' '}
+                para fazer no não em casa.
               </p>
+            ) : null}
 
-              {finishPendingNaoEmCasa > 0 ? (
-                <p className="mt-3 rounded-[12px] border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[13px] leading-relaxed text-apple-ink">
-                  <span className="font-semibold">Atenção:</span> ainda{' '}
-                  {finishPendingNaoEmCasa === 1 ? 'falta 1 casa' : `faltam ${finishPendingNaoEmCasa} casas`} para
-                  fazer no não em casa.
-                </p>
-              ) : null}
-
-              <div className="mt-5 space-y-4">
-                {finishLeaderOptions.length > 1 ? (
-                  <div>
-                    <label htmlFor="finish-leader" className="app-label">
-                      Dirigente
-                    </label>
-                    <select
-                      id="finish-leader"
-                      value={finishLeaderId}
-                      onChange={(e) => {
-                        setFinishLeaderId(e.target.value);
-                        setFinishModalError('');
-                      }}
-                      className="app-input"
-                      disabled={finishing}
-                      required
-                      autoFocus
-                    >
-                      <option value="">Selecione o dirigente…</option>
-                      {finishLeaderOptions.map((row) => {
-                        const kind = row.is_fixed ? 'Fixo' : 'Designado';
-                        const time = row.fixed_time?.trim();
-                        const label = time
-                          ? `${row.assignee_name} · ${time} (${kind})`
-                          : `${row.assignee_name} (${kind})`;
-                        return (
-                          <option key={row.id} value={row.id}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <p className="mt-1.5 text-[12px] text-apple-tertiary">
-                      Há mais de um dirigente hoje — escolha quem dirigiu este território.
-                    </p>
-                  </div>
-                ) : finishLeaderOptions.length === 1 ? (
-                  <div className="rounded-apple border border-apple-line bg-apple-fill px-3.5 py-2.5">
-                    <p className="text-[12px] font-medium text-apple-secondary">Dirigente</p>
-                    <p className="mt-0.5 text-[15px] font-semibold text-apple-ink">
-                      {finishLeaderOptions[0].assignee_name}
-                      {finishLeaderOptions[0].fixed_time?.trim()
-                        ? ` · ${finishLeaderOptions[0].fixed_time}`
-                        : ''}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="rounded-apple border border-apple-line bg-apple-fill px-3.5 py-2.5 text-[13px] text-apple-secondary">
-                    Nenhum dirigente na escala de hoje — o histórico ficará sem dirigente.
-                  </p>
-                )}
-
-                <div>
-                  <label htmlFor="finish-people" className="app-label">
-                    Pessoas no campo
-                  </label>
-                  <input
-                    id="finish-people"
-                    type="number"
-                    min={1}
-                    max={999}
-                    step={1}
-                    inputMode="numeric"
-                    value={finishPeople}
+            <div className="space-y-4">
+              {finishLeaderOptions.length > 1 ? (
+                <div className="grid gap-1.5">
+                  <Label htmlFor="finish-leader">Dirigente</Label>
+                  <select
+                    id="finish-leader"
+                    value={finishLeaderId}
                     onChange={(e) => {
-                      setFinishPeople(e.target.value);
+                      setFinishLeaderId(e.target.value);
                       setFinishModalError('');
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        void confirmFinishDaily();
-                      }
-                    }}
-                    className="app-input"
-                    autoFocus={finishLeaderOptions.length <= 1}
+                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     disabled={finishing}
-                  />
-                  <p className="mt-1.5 text-[12px] text-apple-tertiary">
-                    Informe quantas pessoas participaram do campo neste horário.
+                    required
+                    autoFocus
+                  >
+                    <option value="">Selecione o dirigente…</option>
+                    {finishLeaderOptions.map((row) => {
+                      const kind = row.is_fixed ? 'Fixo' : 'Designado';
+                      const time = row.fixed_time?.trim();
+                      const label = time
+                        ? `${row.assignee_name} · ${time} (${kind})`
+                        : `${row.assignee_name} (${kind})`;
+                      return (
+                        <option key={row.id} value={row.id}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Há mais de um dirigente hoje — escolha quem dirigiu este território.
                   </p>
                 </div>
-              </div>
-
-              {finishModalError ? (
-                <p className="mt-3 rounded-[12px] border border-apple-red/25 bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">
-                  {finishModalError}
+              ) : finishLeaderOptions.length === 1 ? (
+                <div className="rounded-lg border bg-muted/40 px-3.5 py-2.5">
+                  <p className="text-xs font-medium text-muted-foreground">Dirigente</p>
+                  <p className="mt-0.5 text-base font-semibold">
+                    {finishLeaderOptions[0].assignee_name}
+                    {finishLeaderOptions[0].fixed_time?.trim()
+                      ? ` · ${finishLeaderOptions[0].fixed_time}`
+                      : ''}
+                  </p>
+                </div>
+              ) : (
+                <p className="rounded-lg border bg-muted/40 px-3.5 py-2.5 text-sm text-muted-foreground">
+                  Nenhum dirigente na escala de hoje — o histórico ficará sem dirigente.
                 </p>
-              ) : null}
+              )}
 
-              <div className="mt-6 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeFinishModal}
+              <div className="grid gap-1.5">
+                <Label htmlFor="finish-people">Pessoas no campo</Label>
+                <Input
+                  id="finish-people"
+                  type="number"
+                  min={1}
+                  max={999}
+                  step={1}
+                  inputMode="numeric"
+                  value={finishPeople}
+                  onChange={(e) => {
+                    setFinishPeople(e.target.value);
+                    setFinishModalError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void confirmFinishDaily();
+                    }
+                  }}
+                  autoFocus={finishLeaderOptions.length <= 1}
                   disabled={finishing}
-                  className="app-btn-secondary"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void confirmFinishDaily()}
-                  disabled={finishing}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-emerald-700 px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-emerald-800 disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                >
-                  <IconCheckCircle className="h-4 w-4" />
-                  {finishing ? 'Finalizando…' : 'Finalizar'}
-                </button>
+                />
+                <p className="text-xs text-muted-foreground">
+                  Informe quantas pessoas participaram do campo neste horário.
+                </p>
               </div>
             </div>
-          </div>
-        </div>
+
+            {finishModalError ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {finishModalError}
+              </p>
+            ) : null}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeFinishModal}
+                disabled={finishing}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void confirmFinishDaily()}
+                disabled={finishing}
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <IconCheckCircle />
+                {finishing ? 'Finalizando…' : 'Finalizar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {/* Não finalizados */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="app-section-title">Não finalizados</h2>
-          {unfinished.length > 0 ? (
-            <span className="app-badge-amber">{unfinished.length}</span>
-          ) : null}
+          <h2 className={sectionTitle}>Não finalizados</h2>
+          {unfinished.length > 0 ? <Badge variant="secondary">{unfinished.length}</Badge> : null}
         </div>
 
         {unfinished.length > 0 ? (
@@ -744,16 +753,14 @@ export default function DashboardPage() {
               <Link
                 key={Number(item.id)}
                 to={`/territories/${item.id}`}
-                className="app-card group flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:shadow-card"
+                className="group flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3.5 transition-colors hover:bg-muted/50"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold tracking-tightish text-apple-ink">
-                    {item.name}
-                  </p>
-                  <p className="mt-0.5 text-[13px] text-apple-tertiary">
+                  <p className="truncate text-sm font-semibold tracking-tight">{item.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {item.number ? (
                       <>
-                        Terr. N.º <span className="font-medium text-apple-secondary">{item.number}</span>
+                        Terr. N.º <span className="font-medium text-foreground">{item.number}</span>
                         {' · '}
                       </>
                     ) : null}
@@ -773,23 +780,19 @@ export default function DashboardPage() {
                     })()}
                   </p>
                 </div>
-                <span
-                  className="app-icon-btn hover:border-transparent hover:bg-apple-blue hover:text-white"
-                  data-tooltip="Continuar"
-                  aria-label="Continuar"
-                >
-                  <IconChevronRight className="h-4 w-4" />
-                </span>
+                <IconChevronRight className="size-4 shrink-0 text-muted-foreground transition group-hover:text-foreground" />
               </Link>
             ))}
           </div>
         ) : (
-          <div className="app-empty">
-            <p className="text-[15px] font-medium text-apple-ink">Nada pendente</p>
-            <p className="mt-1 text-[13px] text-apple-secondary">
-              Todas as quadras de “não em casa” estão finalizadas (ou ainda não há registros).
-            </p>
-          </div>
+          <Card>
+            <CardContent className="flex flex-col items-center py-10 text-center">
+              <p className="text-sm font-medium">Nada pendente</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Todas as quadras de “não em casa” estão finalizadas (ou ainda não há registros).
+              </p>
+            </CardContent>
+          </Card>
         )}
       </section>
 
