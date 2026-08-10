@@ -9,6 +9,10 @@ import {
   IconStar,
   IconUnlink,
 } from '@/components/Map/mapIcons';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
@@ -114,21 +118,29 @@ export default function TerritoriesPage() {
   }
 
   return (
-    <main className="app-page">
+    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div>
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="app-section-title">Cartões</p>
-            <h1 className="app-title mt-1">Territórios</h1>
-            <p className="app-subtitle">Localidade, Terr. N.º</p>
+            <p className="text-sm font-medium text-muted-foreground">Cartões</p>
+            <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+              Territórios
+            </h1>
+            <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+              Localidade, Terr. N.º
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
               data-tooltip={tooltipText(
-                sortDir === 'asc' ? 'N.º crescente · clique: decrescente' : 'N.º decrescente · clique: crescente',
+                sortDir === 'asc'
+                  ? 'N.º crescente · clique: decrescente'
+                  : 'N.º decrescente · clique: crescente',
               )}
               data-tooltip-side="bottom"
               aria-label={
@@ -137,25 +149,26 @@ export default function TerritoriesPage() {
                   : 'Ordenar Terr. N.º crescente'
               }
               aria-pressed={sortDir === 'desc'}
-              className="app-icon-btn"
             >
               <IconArrowUp
                 className={[
-                  'h-4 w-4 transition-transform duration-200',
+                  'size-4 transition-transform duration-200',
                   sortDir === 'desc' ? 'rotate-180' : '',
                 ].join(' ')}
               />
-            </button>
+            </Button>
             {can('territory:create') ? (
-              <Link
-                to="/territories/new"
+              <Button
+                asChild
+                size="icon"
                 data-tooltip="Novo território"
                 data-tooltip-side="bottom"
                 aria-label="Novo território"
-                className="app-icon-btn-ink"
               >
-                <IconPlus className="h-4 w-4" />
-              </Link>
+                <Link to="/territories/new">
+                  <IconPlus />
+                </Link>
+              </Button>
             ) : null}
           </div>
         </div>
@@ -165,21 +178,19 @@ export default function TerritoriesPage() {
             Buscar território
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-apple-tertiary">
-              <IconSearch className="h-4 w-4" />
-            </span>
-            <input
+            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
               id="territory-search"
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por localidade, Terr. N.º…"
-              className="app-input pl-10"
+              className="pl-9"
               autoComplete="off"
             />
           </div>
           {!loading && territories.length > 0 ? (
-            <p className="mt-2 text-xs text-apple-tertiary">
+            <p className="mt-2 text-xs text-muted-foreground">
               {query.trim()
                 ? `${filtered.length} de ${territories.length} território(s)`
                 : `${territories.length} território(s)`}
@@ -187,102 +198,118 @@ export default function TerritoriesPage() {
           ) : null}
         </div>
 
-        {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
-        {error ? <p className="text-[15px] text-apple-red">{error}</p> : null}
+        {loading ? <Spinner label="Carregando…" className="text-muted-foreground" /> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <div className="space-y-3">
           {filtered.map((territory) => {
             const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
             return (
-              <div
-                key={territory.id}
-                className="app-card flex flex-wrap items-center justify-between gap-4 p-5 transition hover:shadow-card"
-              >
-                <div>
-                  <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-apple-tertiary">
-                    Localidade
-                  </p>
-                  <h2 className="text-[18px] font-semibold tracking-tightish text-apple-ink">
-                    {territory.name}
-                  </h2>
-                  {territory.number ? (
-                    <p className="text-[14px] text-apple-secondary">
-                      Terr. N.º <span className="font-medium text-apple-ink">{territory.number}</span>
+              <Card key={territory.id}>
+                <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Localidade
                     </p>
-                  ) : null}
-                  <p
-                    className={`mt-1.5 text-[12px] font-medium ${
-                      hasArea
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : 'text-amber-700 dark:text-amber-400'
-                    }`}
-                  >
-                    {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
-                  </p>
-                  {territory.is_daily ? (
-                    <span className="app-badge-green mt-2">
-                      Território do dia
-                      {territory.daily_leader_name
-                        ? ` · ${territory.daily_leader_name}`
-                        : ''}
-                    </span>
-                  ) : null}
-                </div>
+                    <h2 className="mt-0.5 text-lg font-semibold tracking-tight">
+                      {territory.name}
+                    </h2>
+                    {territory.number ? (
+                      <p className="text-sm text-muted-foreground">
+                        Terr. N.º{' '}
+                        <span className="font-medium text-foreground">{territory.number}</span>
+                      </p>
+                    ) : null}
+                    <p
+                      className={`mt-1.5 text-xs font-medium ${
+                        hasArea
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-amber-700 dark:text-amber-400'
+                      }`}
+                    >
+                      {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
+                    </p>
+                    {territory.is_daily ? (
+                      <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300">
+                        Território do dia
+                        {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
+                      </Badge>
+                    ) : null}
+                  </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {can('territory:set_daily') ? (
-                    <button
-                      type="button"
-                      onClick={() => openDailyModal(Number(territory.id))}
-                      data-tooltip={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
-                      aria-label={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
-                      className="app-icon-btn text-amber-600"
+                  <div className="flex flex-wrap gap-2">
+                    {can('territory:set_daily') ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openDailyModal(Number(territory.id))}
+                        data-tooltip={
+                          territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'
+                        }
+                        aria-label={
+                          territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'
+                        }
+                        className="text-amber-600 dark:text-amber-400"
+                      >
+                        <IconStar />
+                      </Button>
+                    ) : null}
+                    {can('territory:set_daily') && territory.is_daily ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => void unlinkDaily(territory.id)}
+                        data-tooltip="Desvincular do dia"
+                        aria-label="Desvincular do dia"
+                      >
+                        <IconUnlink />
+                      </Button>
+                    ) : null}
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="icon"
+                      data-tooltip="Ver cartão"
+                      aria-label="Ver cartão"
                     >
-                      <IconStar className="h-4 w-4" />
-                    </button>
-                  ) : null}
-                  {can('territory:set_daily') && territory.is_daily ? (
-                    <button
-                      type="button"
-                      onClick={() => void unlinkDaily(territory.id)}
-                      data-tooltip="Desvincular do dia"
-                      aria-label="Desvincular do dia"
-                      className="app-icon-btn"
-                    >
-                      <IconUnlink className="h-4 w-4" />
-                    </button>
-                  ) : null}
-                  <Link
-                    to={`/territories/${territory.id}`}
-                    data-tooltip="Ver cartão"
-                    aria-label="Ver cartão"
-                    className="app-icon-btn"
-                  >
-                    <IconEye className="h-4 w-4" />
-                  </Link>
-                  {can('territory:update') || can('block:manage') ? (
-                    <Link
-                      to={`/territories/${territory.id}/edit`}
-                      data-tooltip="Editar área"
-                      aria-label="Editar área"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90 active:scale-[0.97]"
-                    >
-                      <IconPencil className="h-4 w-4" />
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
+                      <Link to={`/territories/${territory.id}`}>
+                        <IconEye />
+                      </Link>
+                    </Button>
+                    {can('territory:update') || can('block:manage') ? (
+                      <Button
+                        asChild
+                        size="icon"
+                        data-tooltip="Editar área"
+                        aria-label="Editar área"
+                      >
+                        <Link to={`/territories/${territory.id}/edit`}>
+                          <IconPencil />
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
 
           {!loading && territories.length === 0 ? (
-            <div className="app-empty text-apple-secondary">Nenhum território cadastrado.</div>
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                Nenhum território cadastrado.
+              </CardContent>
+            </Card>
           ) : null}
 
           {!loading && territories.length > 0 && filtered.length === 0 ? (
-            <div className="app-empty text-apple-secondary">
-              Nenhum território encontrado para “{query.trim()}”.
-            </div>
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                Nenhum território encontrado para “{query.trim()}”.
+              </CardContent>
+            </Card>
           ) : null}
         </div>
       </div>
