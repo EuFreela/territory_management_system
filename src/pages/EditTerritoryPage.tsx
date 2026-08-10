@@ -512,7 +512,7 @@ export default function EditTerritoryPage() {
                 }}
                 className={`app-input max-w-md ${
                   blockNameError
-                    ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                    ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25'
                     : ''
                 }`}
                 disabled={mapQuadraOptions.length === 0 && !blockName}
@@ -600,7 +600,7 @@ export default function EditTerritoryPage() {
                       placeholder="Ex: Rua das Mangabeiras…"
                       className={`app-input ${
                         streetRowErrors[row.key]?.streetName
-                          ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                          ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25'
                           : ''
                       }`}
                       aria-invalid={Boolean(streetRowErrors[row.key]?.streetName)}
@@ -633,7 +633,7 @@ export default function EditTerritoryPage() {
                       placeholder="Ex: 101, 103, 105, 210"
                       className={`app-input ${
                         streetRowErrors[row.key]?.houseNumbers
-                          ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25'
+                          ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25'
                           : ''
                       }`}
                       aria-invalid={Boolean(streetRowErrors[row.key]?.houseNumbers)}

@@ -28,7 +28,7 @@ function classifyError(msg: string): keyof FieldErrors | null {
 }
 
 function inputClass(hasError: boolean) {
-  return `app-input ${hasError ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25' : ''}`;
+  return `app-input ${hasError ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25' : ''}`;
 }
 
 /** Input de senha com cadeado à esquerda e visibilidade controlada pelo olho único externo. */
