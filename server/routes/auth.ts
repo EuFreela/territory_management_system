@@ -204,10 +204,17 @@ router.post('/change-password', requireAuth, changePasswordLimiter, async (req, 
     const [rows] = await pool.execute('SELECT id, password_hash FROM users WHERE id = ?', [
       authUser.id,
     ]);
-    const list = rows as Array<{ id: number; password_hash: string }>;
+    const list = rows as Array<{ id: number; password_hash: string | null }>;
     const row = list[0];
     if (!row) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    if (!row.password_hash) {
+      res.status(400).json({
+        error: 'Esta conta entrou só com Google e não tem senha. Defina uma senha em Perfil.',
+      });
       return;
     }
 

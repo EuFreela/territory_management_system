@@ -1,5 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { FcGoogle } from 'react-icons/fc';
 import { toast } from 'sonner';
 import { IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
 import FieldError from '@/components/ui/FieldError';
@@ -18,6 +19,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [startingGoogle, setStartingGoogle] = useState(false);
+
+  useEffect(() => {
+    api<{ enabled: boolean }>('/api/config/google')
+      .then((data) => setGoogleEnabled(Boolean(data?.enabled)))
+      .catch(() => setGoogleEnabled(false));
+  }, []);
+
+  // Erro vindo do callback do Google (?error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error) {
+      toast.error(error);
+      params.delete('error');
+      const q = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${q ? `?${q}` : ''}`);
+    }
+  }, []);
 
   if (!loading && user) {
     return <Navigate to="/dashboard" replace />;
@@ -100,13 +121,6 @@ export default function LoginPage() {
           </div>
 
           <div className="app-card-pad sm:p-7">
-            <h2 className="mb-1 text-[17px] font-semibold tracking-tightish text-apple-ink">
-              Entrar
-            </h2>
-            <p className="mb-6 text-[14px] leading-relaxed text-apple-secondary">
-              Use o email e a senha fornecidos pelo administrador.
-            </p>
-
             <form onSubmit={onSubmit} noValidate className="space-y-4">
               <div>
                 <label htmlFor="email" className="app-label">
@@ -174,13 +188,37 @@ export default function LoginPage() {
                 className="app-btn-primary mt-1 h-11 w-full disabled:opacity-60"
               >
                 <IconLogIn className="h-4 w-4" />
-                {submitting ? 'Entrando…' : 'Continuar'}
+                {submitting ? 'Entrando…' : 'Entrar'}
               </button>
             </form>
+
+            <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-apple-line" />
+                  <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-apple-tertiary">
+                    ou
+                  </span>
+                  <span className="h-px flex-1 bg-apple-line" />
+                </div>
+                <button
+                  type="button"
+                  disabled={startingGoogle}
+                  onClick={() => {
+                    if (!googleEnabled) {
+                      toast.error('Login com Google não configurado no servidor.');
+                      return;
+                    }
+                    setStartingGoogle(true);
+                    window.location.href = '/api/auth/google';
+                  }}
+                  className="flex h-11 w-full items-center justify-center gap-2.5 rounded-full border border-apple-line bg-apple-surface text-[14px] font-semibold text-apple-ink shadow-sm transition hover:bg-apple-fill active:scale-[0.99] disabled:opacity-60"
+                >
+                  <FcGoogle className="h-5 w-5" />
+                  {startingGoogle ? 'Redirecionando…' : 'Continuar com Google'}
+                </button>
           </div>
 
           <p className="mt-6 text-center text-[12px] leading-relaxed text-apple-tertiary">
-            Acesso restrito. Contas são criadas pelo administrador.
+            Acesso restrito. Contas são criadas pelo administrador ou na primeira entrada com Google.
           </p>
         </div>
       </div>

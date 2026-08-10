@@ -37,6 +37,17 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Login com Google (v0.0.10)',
+    items: [
+      'Novo botão “Continuar com Google” na tela de login — entra direto com a conta Google',
+      'Conta nova (e-mail ainda sem acesso) é criada automaticamente com o papel Campo (field)',
+      'Quem já tem conta pelo e-mail continua com o mesmo papel e dados',
+      'O histórico de finalizações registra normalmente quem entrou pelo Google',
+      'Migração automática: npm run migrate:google-oauth',
+      'Configuração no servidor: GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET (ver .env.example)',
+    ],
+  },
+  {
     title: 'Território do dia por dirigente (v0.0.9)',
     items: [
       'Cada dirigente da escala de hoje tem seu próprio território do dia — dá para ter mais de um território do dia ao mesmo tempo, um para cada dirigente',
