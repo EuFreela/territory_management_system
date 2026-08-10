@@ -2,6 +2,10 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { IconKey } from '@/components/Map/mapIcons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { onInputClearValidity, onInvalidPtBr } from '@/lib/form-validation-pt';
@@ -39,93 +43,96 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="app-page max-w-2xl space-y-6">
-      <div className="space-y-6">
-        <div>
-          <p className="app-section-title">Conta</p>
-          <h1 className="app-title">Minha conta</h1>
-          <p className="app-subtitle">
-            Edite seu nome e troque sua senha. Email e papel são definidos pelo administrador.
-          </p>
-        </div>
+    <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:px-8 sm:py-10">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Conta</p>
+        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+          Minha conta
+        </h1>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+          Edite seu nome e troque sua senha. Email e papel são definidos pelo administrador.
+        </p>
 
-        <section className="app-card-pad">
-          <h2 className="mb-1 text-[17px] font-semibold tracking-tightish text-apple-ink">Perfil</h2>
-          <p className="mb-4 text-[13px] text-apple-secondary">
-            O nome aparece para os demais usuários no mapa (GPS) e nas listas do sistema.
-          </p>
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold tracking-tight">Perfil</h2>
+            <p className="mb-4 mt-1 text-sm leading-relaxed text-muted-foreground">
+              O nome aparece para os demais usuários no mapa (GPS) e nas listas do sistema.
+            </p>
 
-          <form
-            onSubmit={onSubmit}
-            onInvalidCapture={onInvalidPtBr}
-            onInput={onInputClearValidity}
-            className="space-y-4"
-          >
-            <div>
-              <label htmlFor="profile-name" className="app-label">
-                Nome
-              </label>
-              <input
-                id="profile-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="app-input"
-                required
-                minLength={2}
-                maxLength={150}
-                autoComplete="name"
-              />
-            </div>
+            <form
+              onSubmit={onSubmit}
+              onInvalidCapture={onInvalidPtBr}
+              onInput={onInputClearValidity}
+              className="space-y-4"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="profile-name">Nome</Label>
+                <Input
+                  id="profile-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={2}
+                  maxLength={150}
+                  autoComplete="name"
+                />
+              </div>
 
-            <div>
-              <label className="app-label">Email</label>
-              <input
-                value={user?.email ?? ''}
-                className="app-input cursor-not-allowed opacity-70"
-                disabled
-                readOnly
-                tabIndex={-1}
-                aria-readonly
-              />
-              <p className="mt-1.5 text-[12px] text-apple-tertiary">
-                Email só pode ser alterado pelo administrador.
-              </p>
-            </div>
+              <div className="grid gap-1.5">
+                <Label>Email</Label>
+                <Input
+                  value={user?.email ?? ''}
+                  className="cursor-not-allowed opacity-70"
+                  disabled
+                  readOnly
+                  tabIndex={-1}
+                  aria-readonly
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email só pode ser alterado pelo administrador.
+                </p>
+              </div>
 
-            <div>
-              <label className="app-label">Papel</label>
-              <input
-                value={user?.role?.name ?? '—'}
-                className="app-input cursor-not-allowed opacity-70"
-                disabled
-                readOnly
-                tabIndex={-1}
-                aria-readonly
-              />
-              <p className="mt-1.5 text-[12px] text-apple-tertiary">
-                Papel só pode ser alterado pelo administrador.
-              </p>
-            </div>
+              <div className="grid gap-1.5">
+                <Label>Papel</Label>
+                <Input
+                  value={user?.role?.name ?? '—'}
+                  className="cursor-not-allowed opacity-70"
+                  disabled
+                  readOnly
+                  tabIndex={-1}
+                  aria-readonly
+                />
+                <p className="text-xs text-muted-foreground">
+                  Papel só pode ser alterado pelo administrador.
+                </p>
+              </div>
 
-            <div className="flex justify-end pt-1">
-              <button type="submit" disabled={saving} className="app-btn-primary disabled:opacity-60">
-                {saving ? 'Salvando…' : 'Salvar nome'}
-              </button>
-            </div>
-          </form>
-        </section>
+              <div className="flex justify-end pt-1">
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Salvando…' : 'Salvar nome'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-        <section className="app-card-pad">
-          <h2 className="mb-1 text-[17px] font-semibold tracking-tightish text-apple-ink">Senha</h2>
-          <p className="mb-4 text-[13px] text-apple-secondary">
-            Use uma senha forte: mínimo 10 caracteres, com maiúscula, minúscula, número e caractere
-            especial.
-          </p>
-          <Link to="/change-password" className="app-btn-primary inline-flex items-center gap-2">
-            <IconKey className="h-4 w-4" />
-            Alterar senha
-          </Link>
-        </section>
+        <Card className="mt-4">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold tracking-tight">Senha</h2>
+            <p className="mb-4 mt-1 text-sm leading-relaxed text-muted-foreground">
+              Use uma senha forte: mínimo 10 caracteres, com maiúscula, minúscula, número e
+              caractere especial.
+            </p>
+            <Button asChild>
+              <Link to="/change-password" className="gap-2">
+                <IconKey className="size-4" />
+                Alterar senha
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

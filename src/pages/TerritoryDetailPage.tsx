@@ -24,15 +24,21 @@ import TerritoryMap, {
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
 import { confirmToast } from '@/lib/confirm-toast';
-import { LoadingBox } from '@/components/ui/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
+import { cn } from '@/lib/utils';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
 type MapViewTab = 'mapa' | 'imagem' | 'mapa-imagem';
+
+const LINK_CLASS = 'font-medium text-primary underline underline-offset-4';
 
 export default function TerritoryDetailPage() {
   const { id } = useParams();
@@ -334,16 +340,16 @@ export default function TerritoryDetailPage() {
 
   if (error) {
     return (
-      <main className="app-page">
-        <p className="text-[15px] text-apple-red">{error}</p>
+      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <p className="text-[15px] text-destructive">{error}</p>
       </main>
     );
   }
 
   if (!territory) {
     return (
-      <main className="app-page">
-        <LoadingBox label="Carregando…" className="min-h-[16rem]" />
+      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <Spinner label="Carregando…" className="min-h-[16rem] text-muted-foreground" />
       </main>
     );
   }
@@ -352,175 +358,489 @@ export default function TerritoryDetailPage() {
 
   return (
     <>
-    <main className="app-page space-y-6">
-      <div className="space-y-6">
-        <div className="app-card-pad">
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-center text-xl font-bold tracking-tightish text-apple-ink md:text-left">
-                Cartão de Mapa de Território
-              </p>
-              <div className="mt-4 grid gap-2 text-sm text-apple-secondary sm:grid-cols-2">
-                <p>
-                  <span className="font-medium text-apple-secondary">Localidade:</span>{' '}
-                  <span className="text-lg font-semibold text-apple-ink">{territory.name}</span>
-                </p>
-                <p>
-                  <span className="font-medium text-apple-secondary">Terr. N.º:</span>{' '}
-                  <span className="text-lg font-semibold text-apple-ink">
-                    {territory.number || '—'}
-                  </span>
+      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xl font-bold tracking-tight">Cartão de Mapa de Território</p>
+                  <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                    <p>
+                      <span className="font-medium">Localidade:</span>{' '}
+                      <span className="text-lg font-semibold text-foreground">{territory.name}</span>
+                    </p>
+                    <p>
+                      <span className="font-medium">Terr. N.º:</span>{' '}
+                      <span className="text-lg font-semibold text-foreground">
+                        {territory.number || '—'}
+                      </span>
+                    </p>
+                  </div>
+                  {territory.is_daily ? (
+                    <Badge className="mt-3 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300">
+                      Território do dia
+                      {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
+                    </Badge>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {can('territory:set_daily') ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => void setDaily()}
+                      data-tooltip={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
+                      aria-label={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
+                      className="text-amber-600 dark:text-amber-400"
+                    >
+                      <IconStar />
+                    </Button>
+                  ) : null}
+                  {can('territory:set_daily') && territory.is_daily ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => void unlinkDaily()}
+                      data-tooltip="Desvincular do dia"
+                      aria-label="Desvincular do dia"
+                    >
+                      <IconUnlink />
+                    </Button>
+                  ) : null}
+                  {can('territory:update') || can('block:manage') ? (
+                    <Button asChild data-tooltip="Editar área" aria-label="Editar área">
+                      <Link to={`/territories/${id}/edit`}>
+                        <IconPencil />
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {can('territory:delete') ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => void onDelete()}
+                      data-tooltip="Excluir território"
+                      aria-label="Excluir território"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <IconTrash />
+                    </Button>
+                  ) : null}
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    data-tooltip="Voltar à lista"
+                    aria-label="Voltar à lista"
+                  >
+                    <Link to="/territories">
+                      <IconArrowLeft />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    data-tooltip="Início"
+                    aria-label="Início"
+                  >
+                    <Link to="/dashboard">
+                      <IconHome />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              <div id="territorio-mapa" className="mb-2 scroll-mt-6">
+                <p className="mb-2 text-sm font-medium text-muted-foreground">Área no mapa</p>
+
+                <div
+                  className="mb-3 inline-flex w-full rounded-full bg-muted p-1 sm:w-auto"
+                  role="tablist"
+                  aria-label="Visualização do mapa"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tab-mapa-interativo"
+                    aria-selected={mapViewTab === 'mapa'}
+                    onClick={() => selectMapView('mapa')}
+                    className={cn(
+                      'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
+                      mapViewTab === 'mapa'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <IconMap className="size-3.5 shrink-0" />
+                    Mapa
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tab-mapa-imagem"
+                    aria-selected={mapViewTab === 'imagem'}
+                    onClick={() => selectMapView('imagem')}
+                    className={cn(
+                      'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
+                      mapViewTab === 'imagem'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <IconImage className="size-3.5 shrink-0" />
+                    Imagem
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="tab-mapa-imagem-juntas"
+                    aria-selected={mapViewTab === 'mapa-imagem'}
+                    onClick={() => selectMapView('mapa-imagem')}
+                    className={cn(
+                      'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
+                      mapViewTab === 'mapa-imagem'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <span className="flex shrink-0 items-center">
+                      <IconMap className="size-3.5" />
+                      <IconImage className="-ml-1 size-3.5" />
+                    </span>
+                  </button>
+                </div>
+
+                {/* Painéis sempre no DOM após montar — evita reload do Google Maps a cada troca de aba */}
+                <div
+                  role="tabpanel"
+                  aria-labelledby="tab-mapa-interativo"
+                  hidden={mapViewTab !== 'mapa'}
+                  className={mapViewTab === 'mapa' ? 'mb-4' : 'hidden'}
+                >
+                  <p className="mb-2 text-[13px] leading-relaxed text-muted-foreground">
+                    Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
+                    correspondente. A página não rola sozinha — suba ou desça quando quiser. Use o
+                    botão ✕ no mapa para limpar o destaque.
+                  </p>
+                  {linkHint ? (
+                    <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                      {linkHint}
+                    </p>
+                  ) : null}
+                  <TerritoryMap
+                    value={territory.geojson}
+                    centerLat={
+                      territory.map_lat != null ? Number(territory.map_lat) : mapConfig?.lat ?? null
+                    }
+                    centerLng={
+                      territory.map_lng != null ? Number(territory.map_lng) : mapConfig?.lng ?? null
+                    }
+                    cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                    editable={false}
+                    selectedKey={linkedKey}
+                    focusToken={mapFocusToken}
+                    resizeToken={mapResizeToken}
+                    onAreaSelect={onMapAreaSelect}
+                    onClearSelection={() => {
+                      setLinkedKey(null);
+                      setMapFocusToken(0);
+                      setLinkHint('');
+                    }}
+                    finishedKeys={blocksByQuadra
+                      .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
+                      .map(([name]) => name)}
+                  />
+                  {!hasArea ? (
+                    <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                      Ainda não há polígono salvo.{' '}
+                      <Link to={`/territories/${id}/edit`} className={LINK_CLASS}>
+                        Desenhar área agora
+                      </Link>
+                    </p>
+                  ) : null}
+                </div>
+
+                {imagePanelReady || mapViewTab === 'imagem' || mapViewTab === 'mapa-imagem' ? (
+                  <div
+                    role="tabpanel"
+                    aria-labelledby="tab-mapa-imagem"
+                    hidden={mapViewTab !== 'imagem'}
+                    className={mapViewTab === 'imagem' ? '' : 'hidden'}
+                  >
+                    {hasTerritoryStaticMapCandidate(territory) ? (
+                      <TerritoryImageLeafletMap
+                        territory={territory}
+                        resizeToken={imageResizeToken}
+                      />
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-border bg-muted px-4 py-10 text-center text-sm text-muted-foreground">
+                        Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão
+                        para associar a imagem (ex.: N.º 28 →{' '}
+                        <code className="text-xs">t28.webp</code> ou{' '}
+                        <code className="text-xs">t28.jpg</code>).
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+
+          <section id="nao-em-casa-cards" className="scroll-mt-6">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Checklist</p>
+                <h2 className="mt-1 text-[1.375rem] font-semibold tracking-tight">Não em casa</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Toque no card para destacar no mapa · toque no número para marcar · várias ruas por
+                  quadra
                 </p>
               </div>
-              {territory.is_daily ? (
-                <span className="app-badge-green mt-3">
-                  Território do dia
-                  {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
-                </span>
+              {can('block:manage') ? (
+                <Button asChild variant="ghost" className="text-sm">
+                  <Link to={`/territories/${id}/edit#nao-em-casa`}>Gerenciar</Link>
+                </Button>
               ) : null}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {can('territory:set_daily') ? (
-                <button
-                  type="button"
-                  onClick={() => void setDaily()}
-                  data-tooltip={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
-                  aria-label={territory.is_daily ? 'Trocar dirigente do dia' : 'Marcar do dia'}
-                  className="app-icon-btn text-amber-600"
-                >
-                  <IconStar className="h-4 w-4" />
-                </button>
-              ) : null}
-              {can('territory:set_daily') && territory.is_daily ? (
-                <button
-                  type="button"
-                  onClick={() => void unlinkDaily()}
-                  data-tooltip="Desvincular do dia"
-                  aria-label="Desvincular do dia"
-                  className="app-icon-btn"
-                >
-                  <IconUnlink className="h-4 w-4" />
-                </button>
-              ) : null}
-              {can('territory:update') || can('block:manage') ? (
-                <Link
-                  to={`/territories/${id}/edit`}
-                  data-tooltip="Editar área"
-                  aria-label="Editar área"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-apple-ink text-apple-bg shadow-soft transition hover:opacity-90"
-                >
-                  <IconPencil className="h-4 w-4" />
-                </Link>
-              ) : null}
-              {can('territory:delete') ? (
-                <button
-                  type="button"
-                  onClick={() => void onDelete()}
-                  data-tooltip="Excluir território"
-                  aria-label="Excluir território"
-                  className="app-icon-btn text-apple-red"
-                >
-                  <IconTrash className="h-4 w-4" />
-                </button>
-              ) : null}
-              <Link
-                to="/territories"
-                data-tooltip="Voltar à lista"
-                aria-label="Voltar à lista"
-                className="app-icon-btn"
+            {blocksByQuadra.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {blocksByQuadra.map(([quadraName, streetBlocks]) => {
+                  const doneSum = streetBlocks.reduce((s, b) => s + blockProgress(b).done, 0);
+                  const totalSum = streetBlocks.reduce((s, b) => s + blockProgress(b).total, 0);
+                  const finished = streetBlocks.every((b) => blockProgress(b).finished);
+                  const linked = streetBlocks.some((b) => isBlockLinked(b));
+                  const progress = totalSum > 0 ? Math.round((doneSum / totalSum) * 100) : 0;
+                  const primary = streetBlocks[0];
+
+                  return (
+                    <div
+                      key={quadraName}
+                      id={`block-card-${primary?.id ?? quadraName}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => primary && onBlockCardSelect(primary)}
+                      onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && primary) {
+                          e.preventDefault();
+                          onBlockCardSelect(primary);
+                        }
+                      }}
+                      className={cn(
+                        'scroll-mt-6 cursor-pointer rounded-[20px] border bg-card p-5 transition duration-200 hover:shadow-lg',
+                        finished
+                          ? linked
+                            ? 'border-transparent bg-emerald-500/10 shadow-[0_0_0_2px_rgb(52,199,89),0_8px_24px_rgba(52,199,89,0.14)] dark:bg-emerald-500/15'
+                            : 'border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/12'
+                          : linked
+                            ? 'border-transparent bg-card shadow-[0_0_0_2px_var(--primary),0_8px_24px_rgba(0,113,227,0.12)]'
+                            : 'border-border bg-card',
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p
+                            className={cn(
+                              'text-[11px] font-medium uppercase tracking-[0.08em]',
+                              finished ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground',
+                            )}
+                          >
+                            Quadra{finished ? ' · concluída' : ''} · {streetBlocks.length}{' '}
+                            {streetBlocks.length === 1 ? 'rua' : 'ruas'}
+                          </p>
+                          <p
+                            className={cn(
+                              'mt-1 text-[26px] font-semibold leading-none tracking-tight',
+                              finished ? 'text-emerald-950 dark:text-emerald-100' : 'text-foreground',
+                            )}
+                          >
+                            {quadraName}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          {finished ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+                              <IconCheckCircle className="size-3.5" />
+                              Finalizado
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold tabular-nums text-muted-foreground">
+                              {doneSum}/{totalSum}
+                            </span>
+                          )}
+                          {linked ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                              No mapa
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {!finished && totalSum > 0 ? (
+                        <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className="mt-4 space-y-4">
+                        {streetBlocks.map((block) => {
+                          const { finished: streetFinished } = blockProgress(block);
+                          return (
+                            <div
+                              key={block.id}
+                              className="border-t border-border pt-3 first:border-t-0 first:pt-0"
+                            >
+                              <p
+                                className={cn(
+                                  'mb-1 text-sm font-semibold',
+                                  streetFinished
+                                    ? 'text-emerald-800 dark:text-emerald-200'
+                                    : 'text-foreground',
+                                )}
+                              >
+                                {block.street_name?.trim() || 'Sem rua'}
+                              </p>
+                              {block.description?.trim() ? (
+                                <p className="mb-2 select-text text-[13px] leading-relaxed text-muted-foreground">
+                                  {block.description.trim()}
+                                </p>
+                              ) : null}
+                              <div className="flex flex-wrap gap-2">
+                                {block.house_numbers.map((item) => {
+                                  const house = String(item);
+                                  const doneHouse = isHouseDone(block, house);
+                                  const busy = togglingKey === `${block.id}:${house}`;
+                                  return (
+                                    <button
+                                      key={`${block.id}:${house}`}
+                                      type="button"
+                                      disabled={busy || !can('block:manage')}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void toggleHouse(block, house);
+                                      }}
+                                      data-tooltip={tooltipText(
+                                        !can('block:manage')
+                                          ? 'Sem permissão para alterar'
+                                          : doneHouse
+                                            ? 'Desmarcar (pede confirmação)'
+                                            : 'Marcar como feito',
+                                      )}
+                                      className={cn(
+                                        'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
+                                        'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',
+                                        doneHouse
+                                          ? 'bg-emerald-600 text-white shadow-sm'
+                                          : streetFinished
+                                            ? 'bg-card/90 text-emerald-900 ring-1 ring-emerald-500/30 dark:text-emerald-100'
+                                            : 'bg-muted text-foreground hover:bg-border',
+                                      )}
+                                    >
+                                      {doneHouse ? (
+                                        <>
+                                          <IconCheck className="size-3.5" />
+                                          {house}
+                                        </>
+                                      ) : (
+                                        house
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border px-4 py-10 text-center">
+                <p className="text-[15px] font-medium text-foreground">Nenhum registro ainda</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  Adicione quadras e casas na edição do território.
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+
+      {/* Modal de comparação Mapa & Imagem — tela cheia, dois quadros */}
+      {splitOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mapa e Imagem lado a lado"
+          className="fixed inset-0 z-[9000] flex flex-col bg-slate-100 dark:bg-black"
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-3 py-2 shadow-sm sm:px-4">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <span className="flex items-center">
+                <IconMap className="size-4" />
+                <IconImage className="-ml-1 size-4" />
+              </span>
+              Mapa &amp; Imagem
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="max-w-[240px] truncate text-xs font-medium text-muted-foreground">
+                {splitAreaCount}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={rotateSplit}
+                data-tooltip={
+                  splitOrientation === 'horizontal'
+                    ? 'Empilhar na vertical'
+                    : 'Colocar lado a lado (horizontal)'
+                }
+                data-tooltip-side="bottom"
+                aria-label="Girar orientação"
+                aria-pressed={splitOrientation === 'vertical'}
               >
-                <IconArrowLeft className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/dashboard"
-                data-tooltip="Início"
-                aria-label="Início"
-                className="app-icon-btn"
+                {splitOrientation === 'horizontal' ? (
+                  <IconRows className="size-5" />
+                ) : (
+                  <IconColumns className="size-5" />
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={closeSplit}
+                data-tooltip="Fechar (Esc)"
+                data-tooltip-side="bottom"
+                data-tooltip-align="end"
+                aria-label="Fechar"
               >
-                <IconHome className="h-4 w-4" />
-              </Link>
+                <IconX className="size-5" />
+              </Button>
             </div>
           </div>
 
-          <div id="territorio-mapa" className="mb-2 scroll-mt-6">
-            <h2 className="app-section-title mb-2">Área no mapa</h2>
-
-            {/* Abas: mapa interativo × imagem do cartão */}
-            <div
-              className="mb-3 inline-flex w-full rounded-full border border-apple-line bg-apple-fill p-1 sm:w-auto"
-              role="tablist"
-              aria-label="Visualização do mapa"
-            >
-              <button
-                type="button"
-                role="tab"
-                id="tab-mapa-interativo"
-                aria-selected={mapViewTab === 'mapa'}
-                onClick={() => selectMapView('mapa')}
-                className={[
-                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
-                  mapViewTab === 'mapa'
-                    ? 'bg-apple-surface text-apple-ink shadow-soft'
-                    : 'text-apple-secondary hover:text-apple-ink',
-                ].join(' ')}
-              >
-                <IconMap className="h-3.5 w-3.5 shrink-0" />
-                Mapa
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-mapa-imagem"
-                aria-selected={mapViewTab === 'imagem'}
-                onClick={() => selectMapView('imagem')}
-                className={[
-                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
-                  mapViewTab === 'imagem'
-                    ? 'bg-apple-surface text-apple-ink shadow-soft'
-                    : 'text-apple-secondary hover:text-apple-ink',
-                ].join(' ')}
-              >
-                <IconImage className="h-3.5 w-3.5 shrink-0" />
-                Imagem
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-mapa-imagem-juntas"
-                aria-selected={mapViewTab === 'mapa-imagem'}
-                onClick={() => selectMapView('mapa-imagem')}
-                className={[
-                  'inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
-                  mapViewTab === 'mapa-imagem'
-                    ? 'bg-apple-surface text-apple-ink shadow-soft'
-                    : 'text-apple-secondary hover:text-apple-ink',
-                ].join(' ')}
-              >
-                <span className="flex shrink-0 items-center">
-                  <IconMap className="h-3.5 w-3.5" />
-                  <IconImage className="-ml-1 h-3.5 w-3.5" />
-                </span>
-              </button>
-            </div>
-
-            {/* Painéis sempre no DOM após montar — evita reload do Google Maps a cada troca de aba */}
-            <div
-              role="tabpanel"
-              aria-labelledby="tab-mapa-interativo"
-              hidden={mapViewTab !== 'mapa'}
-              className={mapViewTab === 'mapa' ? 'mb-4' : 'hidden'}
-            >
-              <p className="mb-2 text-[13px] leading-relaxed text-apple-secondary">
-                Clique em uma área do mapa ou em um card de não em casa para destacar a quadra
-                correspondente. A página não rola sozinha — suba ou desça quando quiser. Use o botão
-                ✕ no mapa para limpar o destaque.
-              </p>
-              {linkHint ? (
-                <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                  {linkHint}
-                </p>
-              ) : null}
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 gap-2 p-2 sm:gap-3 sm:p-3',
+              splitOrientation === 'horizontal' ? 'flex-col sm:flex-row' : 'flex-col',
+            )}
+          >
+            {/* Quadro: mapa principal */}
+            <div className="min-h-0 flex-1 overflow-hidden">
               <TerritoryMap
                 value={territory.geojson}
                 centerLat={
@@ -531,349 +851,42 @@ export default function TerritoryDetailPage() {
                 }
                 cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
                 editable={false}
-                selectedKey={linkedKey}
-                focusToken={mapFocusToken}
-                resizeToken={mapResizeToken}
-                onAreaSelect={onMapAreaSelect}
-                onClearSelection={() => {
-                  setLinkedKey(null);
-                  setMapFocusToken(0);
-                  setLinkHint('');
-                }}
+                hideSearch
+                hideAreaCount
+                fillHeight
+                resizeToken={splitResizeToken}
                 finishedKeys={blocksByQuadra
                   .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
                   .map(([name]) => name)}
               />
-              {!hasArea ? (
-                <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                  Ainda não há polígono salvo.{' '}
-                  <Link to={`/territories/${id}/edit`} className="app-link">
-                    Desenhar área agora
-                  </Link>
-                </p>
-              ) : null}
             </div>
 
-            {imagePanelReady || mapViewTab === 'imagem' || mapViewTab === 'mapa-imagem' ? (
-              <div
-                role="tabpanel"
-                aria-labelledby="tab-mapa-imagem"
-                hidden={mapViewTab !== 'imagem'}
-                className={mapViewTab === 'imagem' ? '' : 'hidden'}
-              >
-                {hasTerritoryStaticMapCandidate(territory) ? (
-                  <TerritoryImageLeafletMap
-                    territory={territory}
-                    resizeToken={imageResizeToken}
-                  />
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-apple-line bg-apple-fill px-4 py-10 text-center text-[14px] text-apple-secondary">
-                    Defina o <strong className="text-apple-ink">Terr. N.º</strong> do cartão para
-                    associar a imagem (ex.: N.º 28 →{' '}
-                    <code className="text-[12px]">t28.webp</code> ou{' '}
-                    <code className="text-[12px]">t28.jpg</code>).
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <section id="nao-em-casa-cards" className="scroll-mt-6">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="app-section-title">Checklist</p>
-              <h2 className="mt-1 text-[22px] font-semibold tracking-tightish text-apple-ink">
-                Não em casa
-              </h2>
-              <p className="mt-1 text-[14px] text-apple-secondary">
-                Toque no card para destacar no mapa · toque no número para marcar · várias ruas por
-                quadra
-              </p>
-            </div>
-            {can('block:manage') ? (
-              <Link to={`/territories/${id}/edit#nao-em-casa`} className="app-btn-ghost text-[13px]">
-                Gerenciar
-              </Link>
-            ) : null}
-          </div>
-
-          {blocksByQuadra.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {blocksByQuadra.map(([quadraName, streetBlocks]) => {
-                const doneSum = streetBlocks.reduce((s, b) => s + blockProgress(b).done, 0);
-                const totalSum = streetBlocks.reduce((s, b) => s + blockProgress(b).total, 0);
-                const finished = streetBlocks.every((b) => blockProgress(b).finished);
-                const linked = streetBlocks.some((b) => isBlockLinked(b));
-                const progress = totalSum > 0 ? Math.round((doneSum / totalSum) * 100) : 0;
-                const primary = streetBlocks[0];
-
-                return (
-                  <div
-                    key={quadraName}
-                    id={`block-card-${primary?.id ?? quadraName}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => primary && onBlockCardSelect(primary)}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && primary) {
-                        e.preventDefault();
-                        onBlockCardSelect(primary);
-                      }
-                    }}
-                    className={[
-                      'scroll-mt-6 cursor-pointer rounded-[20px] border p-5 transition duration-200 hover:shadow-card',
-                      finished
-                        ? linked
-                          ? 'border-transparent bg-emerald-500/10 shadow-[0_0_0_2px_rgb(52,199,89),0_8px_24px_rgba(52,199,89,0.14)] dark:bg-emerald-500/15'
-                          : 'border-apple-green/30 bg-emerald-500/10 shadow-soft dark:bg-emerald-500/12'
-                        : linked
-                          ? 'border-transparent bg-apple-surface shadow-[0_0_0_2px_rgb(var(--apple-blue)),0_8px_24px_rgba(0,113,227,0.12)]'
-                          : 'border-apple-line bg-apple-surface shadow-soft',
-                    ].join(' ')}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p
-                          className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
-                            finished
-                              ? 'text-emerald-700 dark:text-emerald-300'
-                              : 'text-apple-tertiary'
-                          }`}
-                        >
-                          Quadra{finished ? ' · concluída' : ''} · {streetBlocks.length}{' '}
-                          {streetBlocks.length === 1 ? 'rua' : 'ruas'}
-                        </p>
-                        <p
-                          className={`mt-1 text-[26px] font-semibold leading-none tracking-tightish ${
-                            finished
-                              ? 'text-emerald-950 dark:text-emerald-100'
-                              : 'text-apple-ink'
-                          }`}
-                        >
-                          {quadraName}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        {finished ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-apple-green px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
-                            <IconCheckCircle className="h-3.5 w-3.5" />
-                            Finalizado
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-apple-fill px-2.5 py-1 text-[11px] font-semibold tabular-nums text-apple-secondary">
-                            {doneSum}/{totalSum}
-                          </span>
-                        )}
-                        {linked ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-apple-blue/10 px-2.5 py-1 text-[11px] font-semibold text-apple-blue">
-                            <span className="h-1.5 w-1.5 rounded-full bg-apple-blue" />
-                            No mapa
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {!finished && totalSum > 0 ? (
-                      <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-apple-fill">
-                        <div
-                          className="h-full rounded-full bg-apple-blue transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    ) : null}
-
-                    <div className="mt-4 space-y-4">
-                      {streetBlocks.map((block) => {
-                        const { finished: streetFinished } = blockProgress(block);
-                        return (
-                          <div
-                            key={block.id}
-                            className="border-t border-apple-line pt-3 first:border-t-0 first:pt-0"
-                          >
-                            <p
-                              className={`mb-1 text-[14px] font-semibold ${
-                                streetFinished
-                                  ? 'text-emerald-800 dark:text-emerald-200'
-                                  : 'text-apple-ink'
-                              }`}
-                            >
-                              {block.street_name?.trim() || 'Sem rua'}
-                            </p>
-                            {block.description?.trim() ? (
-                              <p className="mb-2 select-text text-[13px] leading-relaxed text-apple-secondary">
-                                {block.description.trim()}
-                              </p>
-                            ) : null}
-                            <div className="flex flex-wrap gap-2">
-                              {block.house_numbers.map((item) => {
-                                const house = String(item);
-                                const doneHouse = isHouseDone(block, house);
-                                const busy = togglingKey === `${block.id}:${house}`;
-                                return (
-                                  <button
-                                    key={`${block.id}:${house}`}
-                                    type="button"
-                                    disabled={busy || !can('block:manage')}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void toggleHouse(block, house);
-                                    }}
-                                    data-tooltip={tooltipText(
-                                      !can('block:manage')
-                                        ? 'Sem permissão para alterar'
-                                        : doneHouse
-                                          ? 'Desmarcar (pede confirmação)'
-                                          : 'Marcar como feito',
-                                    )}
-                                    className={[
-                                      'inline-flex min-w-[2.5rem] items-center justify-center gap-1 rounded-full px-3 py-1.5',
-                                      'text-[13px] font-medium tabular-nums transition active:scale-[0.97] disabled:opacity-50',
-                                      doneHouse
-                                        ? 'bg-apple-green text-white shadow-sm'
-                                        : streetFinished
-                                          ? 'bg-apple-surface/90 text-emerald-900 ring-1 ring-apple-green/30 dark:text-emerald-100'
-                                          : 'bg-apple-fill text-apple-ink hover:bg-apple-line',
-                                    ].join(' ')}
-                                  >
-                                    {doneHouse ? (
-                                      <>
-                                        <IconCheck className="h-3.5 w-3.5" />
-                                        {house}
-                                      </>
-                                    ) : (
-                                      house
-                                    )}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="app-empty">
-              <p className="text-[15px] font-medium text-apple-ink">Nenhum registro ainda</p>
-              <p className="mt-1 text-[13px] text-apple-tertiary">
-                Adicione quadras e casas na edição do território.
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-
-    {/* Modal de comparação Mapa & Imagem — tela cheia, dois quadros */}    {splitOpen ? (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Mapa e Imagem lado a lado"
-        className="fixed inset-0 z-[9000] flex flex-col bg-slate-100 dark:bg-black"
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-apple-line bg-apple-surface px-3 py-2 shadow-sm sm:px-4">
-          <p className="flex items-center gap-2 text-sm font-semibold text-apple-ink">
-            <span className="flex items-center">
-              <IconMap className="h-4 w-4" />
-              <IconImage className="-ml-1 h-4 w-4" />
-            </span>
-            Mapa &amp; Imagem
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="max-w-[240px] truncate text-[12px] font-medium text-apple-secondary">
-              {splitAreaCount}
-            </span>
-            <button
-              type="button"
-              onClick={rotateSplit}
-              data-tooltip={
-                splitOrientation === 'horizontal'
-                  ? 'Empilhar na vertical'
-                  : 'Colocar lado a lado (horizontal)'
-              }
-              data-tooltip-side="bottom"
-              aria-label="Girar orientação"
-              aria-pressed={splitOrientation === 'vertical'}
-              className="app-icon-btn"
-            >
-              {splitOrientation === 'horizontal' ? (
-                <IconRows className="h-5 w-5" />
+            {/* Quadro: imagem do cartão */}
+            <div className="min-h-0 flex-1 overflow-hidden">
+              {hasTerritoryStaticMapCandidate(territory) ? (
+                <TerritoryImageLeafletMap
+                  territory={territory}
+                  resizeToken={splitResizeToken}
+                  fillHeight
+                />
               ) : (
-                <IconColumns className="h-5 w-5" />
+                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 text-center text-sm text-muted-foreground">
+                  Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão para
+                  associar a imagem (ex.: N.º 28 → <code className="mx-1 text-xs">t28.webp</code>).
+                </div>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={closeSplit}
-              data-tooltip="Fechar (Esc)"
-              data-tooltip-side="bottom"
-              data-tooltip-align="end"
-              aria-label="Fechar"
-              className="app-icon-btn"
-            >
-              <IconX className="h-5 w-5" />
-            </button>
+            </div>
           </div>
         </div>
+      ) : null}
 
-        <div
-          className={`flex min-h-0 flex-1 gap-2 p-2 sm:gap-3 sm:p-3 ${
-            splitOrientation === 'horizontal' ? 'flex-col sm:flex-row' : 'flex-col'
-          }`}
-        >
-          {/* Quadro: mapa principal */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <TerritoryMap
-              value={territory.geojson}
-              centerLat={
-                territory.map_lat != null ? Number(territory.map_lat) : mapConfig?.lat ?? null
-              }
-              centerLng={
-                territory.map_lng != null ? Number(territory.map_lng) : mapConfig?.lng ?? null
-              }
-              cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
-              editable={false}
-              hideSearch
-              hideAreaCount
-              fillHeight
-              resizeToken={splitResizeToken}
-              finishedKeys={blocksByQuadra
-                .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
-                .map(([name]) => name)}
-            />
-          </div>
-
-          {/* Quadro: imagem do cartão */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            {hasTerritoryStaticMapCandidate(territory) ? (
-              <TerritoryImageLeafletMap
-                territory={territory}
-                resizeToken={splitResizeToken}
-                fillHeight
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-apple-line bg-apple-fill px-4 text-center text-[14px] text-apple-secondary">
-                Defina o <strong className="text-apple-ink">Terr. N.º</strong> do cartão para
-                associar a imagem (ex.: N.º 28 →{' '}
-                <code className="mx-1 text-[12px]">t28.webp</code>).
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    ) : null}
-
-    {dailyModalOpen ? (
-      <DailyTerritoryModal
-        territoryId={Number(id)}
-        onClose={() => setDailyModalOpen(false)}
-        onDone={loadTerritory}
-      />
-    ) : null}
+      {dailyModalOpen ? (
+        <DailyTerritoryModal
+          territoryId={Number(id)}
+          onClose={() => setDailyModalOpen(false)}
+          onDone={loadTerritory}
+        />
+      ) : null}
     </>
   );
 }

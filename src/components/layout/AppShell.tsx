@@ -208,7 +208,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       setTerritoriesOpen((o) => !o);
                     }}
                     className={[
-                      'inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition',
+                      'inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] leading-none font-medium transition',
                       territoriesMenuActive || territoriesOpen
                         ? 'bg-apple-ink text-apple-bg shadow-soft'
                         : 'text-apple-secondary hover:bg-apple-fill hover:text-apple-ink',

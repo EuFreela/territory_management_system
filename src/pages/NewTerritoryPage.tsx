@@ -2,8 +2,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { IconArrowLeft } from '@/components/Map/mapIcons';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
-import SaveButton, { SaveActionBar } from '@/components/ui/SaveButton';
-import { LoadingBox } from '@/components/ui/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import type { CepLocation } from '@/lib/types';
 
@@ -52,85 +55,92 @@ export default function NewTerritoryPage() {
   }
 
   return (
-    <main className="app-page space-y-6">
-      <div className="space-y-6">
-        <div className="app-card-pad">
-          <Link to="/territories" data-tooltip="Voltar" aria-label="Voltar" className="app-icon-btn">
-            <IconArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="app-title mt-4">Novo território</h1>
-          <p className="app-subtitle">
-            Preencha a localidade e o número, desenhe a área no mapa e salve.
-          </p>
+    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <div>
+        <Link
+          to="/territories"
+          data-tooltip="Voltar"
+          aria-label="Voltar"
+          className="inline-flex"
+        >
+          <Button type="button" variant="outline" size="icon">
+            <IconArrowLeft className="size-4" />
+          </Button>
+        </Link>
+        <p className="mt-4 text-sm font-medium text-muted-foreground">Cartões</p>
+        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+          Novo território
+        </h1>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+          Preencha a localidade e o número, desenhe a área no mapa e salve.
+        </p>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="localidade" className="mb-1 block text-sm font-medium text-slate-700">
-                  Localidade
-                </label>
-                <input
-                  id="localidade"
-                  value={localidade}
-                  onChange={(event) => setLocalidade(event.target.value)}
-                  placeholder="Ex: Mundo Novo"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                  required
-                  disabled={submitting}
-                />
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+            <form onSubmit={onSubmit} className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="localidade">Localidade</Label>
+                  <Input
+                    id="localidade"
+                    value={localidade}
+                    onChange={(event) => setLocalidade(event.target.value)}
+                    placeholder="Ex: Mundo Novo"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <Label htmlFor="number">Terr. N.º</Label>
+                  <Input
+                    id="number"
+                    value={number}
+                    onChange={(event) => setNumber(event.target.value)}
+                    placeholder="Ex: 31"
+                    disabled={submitting}
+                  />
+                </div>
               </div>
 
               <div>
-                <label htmlFor="number" className="mb-1 block text-sm font-medium text-slate-700">
-                  Terr. N.º
-                </label>
-                <input
-                  id="number"
-                  value={number}
-                  onChange={(event) => setNumber(event.target.value)}
-                  placeholder="Ex: 31"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                  disabled={submitting}
-                />
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <Label className="text-sm font-medium text-foreground">
+                    Área do território no mapa
+                  </Label>
+                  {mapConfig ? (
+                    <span className="text-xs text-muted-foreground">
+                      CEP base: {mapConfig.cep} · {mapConfig.city}/{mapConfig.state}
+                    </span>
+                  ) : null}
+                </div>
+
+                {loadingMap ? (
+                  <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-muted/40">
+                    <Spinner label="Carregando mapa…" className="text-muted-foreground" />
+                  </div>
+                ) : (
+                  <TerritoryMap
+                    value={geojson}
+                    onChange={setGeojson}
+                    centerLat={mapConfig?.lat ?? null}
+                    centerLng={mapConfig?.lng ?? null}
+                    cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                    editable
+                  />
+                )}
               </div>
-            </div>
 
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="block text-sm font-medium text-slate-700">Área do território no mapa</label>
-                {mapConfig ? (
-                  <span className="text-xs text-slate-500">
-                    CEP base: {mapConfig.cep} · {mapConfig.city}/{mapConfig.state}
-                  </span>
-                ) : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+              <div className="flex justify-end">
+                <Button type="submit" disabled={submitting || loadingMap}>
+                  {submitting ? 'Salvando…' : 'Salvar território e área'}
+                </Button>
               </div>
-
-              {loadingMap ? (
-                <LoadingBox label="Carregando mapa…" className="h-64" />
-              ) : (
-                <TerritoryMap
-                  value={geojson}
-                  onChange={setGeojson}
-                  centerLat={mapConfig?.lat ?? null}
-                  centerLng={mapConfig?.lng ?? null}
-                  cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
-                  editable
-                />
-              )}
-            </div>
-
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <SaveActionBar>
-              <SaveButton
-                loading={submitting}
-                disabled={loadingMap}
-                label="Salvar território e área"
-                loadingLabel="Salvando…"
-              />
-            </SaveActionBar>
-          </form>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

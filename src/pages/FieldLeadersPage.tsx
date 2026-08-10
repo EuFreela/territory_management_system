@@ -6,11 +6,22 @@ import {
   IconTrash,
   IconX,
 } from '@/components/Map/mapIcons';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from '@/components/ui/table';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { cn } from '@/lib/utils';
 import type { FieldAssignment } from '@/lib/types';
 
 /** Todos os dias da semana (ordem de exibição e opções do formulário) */
@@ -66,11 +77,6 @@ function periodHintForTime(time: string) {
   return '';
 }
 
-/** Mesmas larguras em todas as tabelas (uma debaixo da outra) */
-const TABLE_CLASS = 'w-full table-fixed text-left text-sm';
-const TH_CLASS = 'px-4 py-3 text-xs font-medium uppercase tracking-wide text-apple-tertiary';
-const TD_CLASS = 'px-4 py-3 align-middle';
-
 function ScheduleTimeBadge({
   value,
   muted = false,
@@ -80,7 +86,7 @@ function ScheduleTimeBadge({
 }) {
   const label = formatScheduleTime(value);
   if (muted) {
-    return <span className="text-sm font-medium text-apple-tertiary">{label}</span>;
+    return <span className="text-sm font-medium text-muted-foreground">{label}</span>;
   }
   const period = periodHintForTime(label);
   const tone =
@@ -88,7 +94,7 @@ function ScheduleTimeBadge({
       ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
       : period === 'Manhã' || label === 'Manhã' || label === '09:00' || label === '08:00'
         ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300'
-        : 'bg-apple-fill text-apple-ink';
+        : 'bg-muted text-foreground';
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${tone}`}>
       {label}
@@ -96,6 +102,7 @@ function ScheduleTimeBadge({
   );
 }
 
+/** Mesmas larguras em todas as tabelas (uma debaixo da outra) */
 function AssignmentTableColgroup({ canManage }: { canManage: boolean }) {
   return (
     <colgroup>
@@ -107,18 +114,9 @@ function AssignmentTableColgroup({ canManage }: { canManage: boolean }) {
   );
 }
 
-function AssignmentTableHead({ canManage }: { canManage: boolean }) {
-  return (
-    <thead>
-      <tr className="border-b border-apple-line bg-apple-fill">
-        <th className={`${TH_CLASS} text-left`}>Dia</th>
-        <th className={`${TH_CLASS} text-left`}>Horário</th>
-        <th className={`${TH_CLASS} text-left`}>Designado</th>
-        {canManage ? <th className={`${TH_CLASS} text-right`}>Ações</th> : null}
-      </tr>
-    </thead>
-  );
-}
+const TD_CLASS = 'px-4 py-3 align-middle';
+const SELECT_CLASS =
+  'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
 
 function formatDateBr(iso: string | null | undefined) {
   if (!iso) return '—';
@@ -430,421 +428,431 @@ export default function FieldLeadersPage() {
   }
 
   return (
-    <main className="app-page space-y-6">
-      <div className="space-y-6">
-        <div>
-          <p className="app-section-title">Escala</p>
-          <h1 className="app-title mt-1">Dirigentes do serviço de campo</h1>
-          <p className="app-subtitle">Designações por data e dias fixos</p>
+    <main className="mx-auto w-full max-w-5xl space-y-6 px-5 py-8 sm:px-8 sm:py-10">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Escala</p>
+        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+          Dirigentes do serviço de campo
+        </h1>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+          Designações por data e dias fixos
+        </p>
+      </div>
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {loading ? <Spinner label="Carregando…" className="text-muted-foreground" /> : null}
+
+      {/* Busca */}
+      <div>
+        <label htmlFor="leaders-search" className="sr-only">
+          Buscar designação
+        </label>
+        <div className="relative">
+          <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="leaders-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nome, dia da semana, data ou horário…"
+            className="pl-9"
+            autoComplete="off"
+          />
         </div>
-
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
-
-        {/* Busca */}
-        <div>
-          <label htmlFor="leaders-search" className="sr-only">
-            Buscar designação
-          </label>
-          <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-apple-tertiary">
-              <IconSearch className="h-5 w-5" />
-            </span>
-            <input
-              id="leaders-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome, dia da semana, data ou horário…"
-              className="app-input pl-10"
-              autoComplete="off"
-            />
-          </div>
-          {!loading && rows.length > 0 ? (
-            <p className="mt-2 text-xs text-apple-tertiary">
-              {query.trim()
-                ? `${filteredRows.length} de ${rows.length} designação(ões)`
-                : `${rows.length} designação(ões)`}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Nova linha datada */}
-        {canManage ? (
-          <section className="app-card-pad">
-            <h2 className="app-section-title mb-4">Adicionar designação (por data)</h2>
-            <form onSubmit={addDated} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div>
-                <label htmlFor="new-assignment-date" className="app-label">
-                  Data
-                </label>
-                <input
-                  id="new-assignment-date"
-                  type="date"
-                  value={newDate}
-                  onChange={(e) => onDateChange(e.target.value)}
-                  className="app-input"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="new-assignment-weekday" className="app-label">
-                  Dia da semana
-                </label>
-                <select
-                  id="new-assignment-weekday"
-                  value={newWeekday}
-                  onChange={(e) => onWeekdayChange(e.target.value)}
-                  className="app-input"
-                  required
-                >
-                  {WEEKDAYS_ALL.map((w) => (
-                    <option key={w} value={w}>
-                      {w}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="new-assignment-time" className="app-label">
-                  Horário
-                </label>
-                <select
-                  id="new-assignment-time"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
-                  className="app-input"
-                  required
-                >
-                  {TIME_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="new-assignment-name" className="app-label">
-                  Designado
-                </label>
-                <input
-                  id="new-assignment-name"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Nome do dirigente"
-                  className="app-input"
-                  required
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  disabled={adding}
-                  data-tooltip="Adicionar"
-                  aria-label="Adicionar"
-                  className="app-btn-primary h-11 w-11 !rounded-full !px-0 disabled:opacity-60"
-                >
-                  <IconPlus className="h-5 w-5" />
-                </button>
-              </div>
-            </form>
-          </section>
+        {!loading && rows.length > 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {query.trim()
+              ? `${filteredRows.length} de ${rows.length} designação(ões)`
+              : `${rows.length} designação(ões)`}
+          </p>
         ) : null}
+      </div>
 
-        {!loading && rows.length > 0 && filteredRows.length === 0 ? (
-          <div className="app-empty text-apple-secondary">
+      {/* Nova linha datada */}
+      {canManage ? (
+        <Card className="p-5 sm:p-6">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Adicionar designação (por data)
+          </h2>
+          <form onSubmit={addDated} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-assignment-date">Data</Label>
+              <Input
+                id="new-assignment-date"
+                type="date"
+                value={newDate}
+                onChange={(e) => onDateChange(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-assignment-weekday">Dia da semana</Label>
+              <select
+                id="new-assignment-weekday"
+                value={newWeekday}
+                onChange={(e) => onWeekdayChange(e.target.value)}
+                className={SELECT_CLASS}
+                required
+              >
+                {WEEKDAYS_ALL.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-assignment-time">Horário</Label>
+              <select
+                id="new-assignment-time"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className={SELECT_CLASS}
+                required
+              >
+                {TIME_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="new-assignment-name">Designado</Label>
+              <Input
+                id="new-assignment-name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nome do dirigente"
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" disabled={adding} className="h-8 w-full" aria-label="Adicionar">
+                <IconPlus />
+                Adicionar
+              </Button>
+            </div>
+          </form>
+        </Card>
+      ) : null}
+
+      {!loading && rows.length > 0 && filteredRows.length === 0 ? (
+        <Card>
+          <div className="py-10 text-center text-sm text-muted-foreground">
             Nenhuma designação encontrada para “{query.trim()}”.
           </div>
-        ) : null}
+        </Card>
+      ) : null}
 
-        {/* Cards: o que tem “Hoje” sempre em primeiro */}
-        {displayCards.map((card) => {
-          if (card.kind === 'dated') {
-            const group = card.group;
-            return (
-              <section key={card.key} className="app-card overflow-hidden">
-                <div
-                  className={`border-b px-5 py-3.5 ${
-                    card.hasToday
-                      ? 'border-apple-blue/15 bg-apple-blue/[0.06]'
-                      : 'border-apple-line bg-apple-fill'
-                  }`}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-bold text-apple-ink">{group.label}</h2>
-                    {card.hasToday ? (
-                      <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        Hoje
-                      </span>
-                    ) : null}
-                  </div>
-                  {group.label === 'Sábado' ? (
-                    <p className="text-xs font-medium text-amber-800 dark:text-amber-300">Manhã · início 08:00</p>
-                  ) : group.label === 'Domingo' ? (
-                    <p className="text-xs font-medium text-amber-800 dark:text-amber-300">Manhã · início 09:00</p>
-                  ) : isEveningWeekday(group.label) ? (
-                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Campo à noite · início 18:00</p>
-                  ) : null}
-                </div>
-                <div className="w-full">
-                  <table className={TABLE_CLASS}>
-                    <AssignmentTableColgroup canManage={canManage} />
-                    <AssignmentTableHead canManage={canManage} />
-                    <tbody>
-                      {group.items.map((row) => {
-                        const isToday = isTodayRow(row, today, todayWeekday);
-                        const isPast = isPastDatedRow(row, today);
-                        return (
-                          <tr
-                            key={row.id}
-                            className={`border-b border-apple-line last:border-0 transition ${
-                              isToday
-                                ? 'bg-sky-50 inset-ring-2 inset-ring-sky-400 dark:bg-sky-500/15 dark:inset-ring-sky-500'
-                                : isPast
-                                  ? 'bg-apple-fill text-apple-tertiary opacity-60'
-                                  : ''
-                            }`}
-                          >
-                            <td
-                              className={`${TD_CLASS} font-medium ${
-                                isPast ? 'text-apple-tertiary' : 'text-apple-ink'
-                              }`}
-                            >
-                              <span className="inline-flex flex-wrap items-center gap-2">
-                                <span className={isPast ? 'line-through decoration-apple-tertiary' : ''}>
-                                  {formatDateBr(row.service_date)}
-                                </span>
-                                {isToday ? (
-                                  <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                                    Hoje
-                                  </span>
-                                ) : null}
-                                {isPast ? (
-                                  <span className="rounded-full bg-apple-fill px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-apple-tertiary">
-                                    Finalizado
-                                  </span>
-                                ) : null}
-                              </span>
-                            </td>
-                            <td className={TD_CLASS}>
-                              <ScheduleTimeBadge value={row.fixed_time} muted={isPast} />
-                            </td>
-                            <td className={TD_CLASS}>
-                              {canManage && editingId === row.id ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <input
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    className="app-input min-w-0 flex-1 !rounded-lg !px-2 !py-1.5"
-                                    autoFocus
-                                  />
-                                  <button
-                                    type="button"
-                                    disabled={savingId === row.id}
-                                    onClick={() => void saveName(row.id)}
-                                    data-tooltip="Salvar"
-                                    aria-label="Salvar"
-                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white"
-                                  >
-                                    <IconSave className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingId(null)}
-                                    data-tooltip="Cancelar"
-                                    aria-label="Cancelar"
-                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
-                                  >
-                                    <IconX className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              ) : canManage ? (
-                                <button
-                                  type="button"
-                                  onClick={() => startEdit(row)}
-                                  className={`truncate font-semibold hover:text-apple-blue ${
-                                    isToday
-                                      ? 'text-sky-900 dark:text-sky-300'
-                                      : isPast
-                                        ? 'text-apple-tertiary'
-                                        : 'text-apple-ink'
-                                  }`}
-                                  data-tooltip="Clique para editar"
-                                >
-                                  {row.assignee_name}
-                                </button>
-                              ) : (
-                                <span
-                                  className={`truncate font-semibold ${
-                                    isToday
-                                      ? 'text-sky-900 dark:text-sky-300'
-                                      : isPast
-                                        ? 'text-apple-tertiary'
-                                        : 'text-apple-ink'
-                                  }`}
-                                >
-                                  {row.assignee_name}
-                                </span>
-                              )}
-                            </td>
-                            {canManage ? (
-                              <td className={`${TD_CLASS} text-right`}>
-                                <button
-                                  type="button"
-                                  onClick={() => void removeRow(row.id)}
-                                  data-tooltip="Remover"
-                                  aria-label="Remover"
-                                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
-                                    isPast
-                                      ? 'border-apple-line text-apple-tertiary'
-                                      : 'border-apple-red/25 text-apple-red hover:bg-apple-red/10'
-                                  }`}
-                                >
-                                  <IconTrash className="h-4 w-4" />
-                                </button>
-                              </td>
-                            ) : null}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            );
-          }
-
-          // card.kind === 'fixed'
+      {/* Cards: o que tem “Hoje” sempre em primeiro */}
+      {displayCards.map((card) => {
+        if (card.kind === 'dated') {
+          const group = card.group;
           return (
-            <section key={card.key} className="app-card overflow-hidden">
+            <Card key={card.key} className="gap-0 overflow-hidden p-0">
               <div
-                className={`border-b px-5 py-3.5 ${
+                className={cn(
+                  'border-b px-5 py-3.5',
                   card.hasToday
-                    ? 'border-apple-green/40 bg-apple-green/15'
-                    : 'border-apple-line bg-apple-green/10'
-                }`}
+                    ? 'border-blue-200/60 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10'
+                    : 'border-border bg-muted/40',
+                )}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-apple-ink">Dias fixos</h2>
+                  <h2 className="text-lg font-bold">{group.label}</h2>
                   {card.hasToday ? (
-                    <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                       Hoje
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                  Manhã — horário e dirigente fixos
-                </p>
+                {group.label === 'Sábado' ? (
+                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                    Manhã · início 08:00
+                  </p>
+                ) : group.label === 'Domingo' ? (
+                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                    Manhã · início 09:00
+                  </p>
+                ) : isEveningWeekday(group.label) ? (
+                  <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                    Campo à noite · início 18:00
+                  </p>
+                ) : null}
               </div>
               <div className="w-full">
-                <table className={TABLE_CLASS}>
+                <Table className="table-fixed">
                   <AssignmentTableColgroup canManage={canManage} />
-                  <AssignmentTableHead canManage={canManage} />
-                  <tbody>
-                    {fixedRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={canManage ? 4 : 3} className="px-4 py-6 text-center text-sm text-apple-tertiary">
-                          Nenhum dia fixo neste filtro.
-                        </td>
-                      </tr>
-                    ) : null}
-                    {fixedRows.map((row) => {
+                  <TableBody>
+                    {group.items.map((row) => {
                       const isToday = isTodayRow(row, today, todayWeekday);
+                      const isPast = isPastDatedRow(row, today);
                       return (
-                        <tr
+                        <TableRow
                           key={row.id}
-                          className={`border-b border-apple-line last:border-0 ${
+                          className={cn(
                             isToday
-                              ? 'bg-emerald-50 inset-ring-2 inset-ring-emerald-400 dark:bg-emerald-500/15 dark:inset-ring-emerald-500'
-                              : ''
-                          }`}
+                              ? 'bg-blue-50 inset-ring-2 inset-ring-sky-400 dark:bg-sky-500/15 dark:inset-ring-sky-500'
+                              : isPast
+                                ? 'bg-muted/40 opacity-60'
+                                : '',
+                          )}
                         >
-                          <td className={`${TD_CLASS} font-medium text-apple-ink`}>
+                          <TableCell className={cn(TD_CLASS, 'font-medium')}>
                             <span className="inline-flex flex-wrap items-center gap-2">
-                              {row.weekday_label}
+                              <span className={isPast ? 'line-through text-muted-foreground' : ''}>
+                                {formatDateBr(row.service_date)}
+                              </span>
                               {isToday ? (
-                                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                                   Hoje
                                 </span>
                               ) : null}
+                              {isPast ? (
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  Finalizado
+                                </span>
+                              ) : null}
                             </span>
-                          </td>
-                          <td className={TD_CLASS}>
-                            <ScheduleTimeBadge value={row.fixed_time} />
-                          </td>
-                          <td className={TD_CLASS}>
+                          </TableCell>
+                          <TableCell className={TD_CLASS}>
+                            <ScheduleTimeBadge value={row.fixed_time} muted={isPast} />
+                          </TableCell>
+                          <TableCell className={TD_CLASS}>
                             {canManage && editingId === row.id ? (
                               <div className="flex flex-wrap items-center gap-2">
-                                <input
+                                <Input
                                   value={editName}
                                   onChange={(e) => setEditName(e.target.value)}
-                                  className="app-input min-w-0 flex-1 !rounded-lg !px-2 !py-1.5"
+                                  className="h-8 min-w-0 flex-1"
                                   autoFocus
                                 />
-                                <button
+                                <Button
                                   type="button"
+                                  variant="outline"
+                                  size="icon"
                                   disabled={savingId === row.id}
                                   onClick={() => void saveName(row.id)}
                                   data-tooltip="Salvar"
                                   aria-label="Salvar"
-                                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white"
                                 >
-                                  <IconSave className="h-4 w-4" />
-                                </button>
-                                <button
+                                  <IconSave />
+                                </Button>
+                                <Button
                                   type="button"
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => setEditingId(null)}
                                   data-tooltip="Cancelar"
                                   aria-label="Cancelar"
-                                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-apple-line text-apple-secondary hover:bg-apple-fill"
                                 >
-                                  <IconX className="h-4 w-4" />
-                                </button>
+                                  <IconX />
+                                </Button>
                               </div>
                             ) : canManage ? (
                               <button
                                 type="button"
                                 onClick={() => startEdit(row)}
-                                className={`truncate font-semibold hover:text-apple-blue ${
-                                  isToday ? 'text-emerald-900 dark:text-emerald-300' : 'text-apple-ink'
-                                }`}
+                                className={cn(
+                                  'block max-w-full truncate font-semibold',
+                                  isToday
+                                    ? 'text-sky-900 hover:underline dark:text-sky-300'
+                                    : isPast
+                                      ? 'text-muted-foreground'
+                                      : 'text-foreground hover:underline',
+                                )}
                                 data-tooltip="Clique para editar"
                               >
                                 {row.assignee_name}
                               </button>
                             ) : (
                               <span
-                                className={`truncate font-semibold ${
-                                  isToday ? 'text-emerald-900 dark:text-emerald-300' : 'text-apple-ink'
-                                }`}
+                                className={cn(
+                                  'block max-w-full truncate font-semibold',
+                                  isToday
+                                    ? 'text-sky-900 dark:text-sky-300'
+                                    : isPast
+                                      ? 'text-muted-foreground'
+                                      : 'text-foreground',
+                                )}
                               >
                                 {row.assignee_name}
                               </span>
                             )}
-                          </td>
+                          </TableCell>
                           {canManage ? (
-                            <td className={`${TD_CLASS} text-right`}>
-                              <button
+                            <TableCell className={cn(TD_CLASS, 'text-right')}>
+                              <Button
                                 type="button"
+                                variant="outline"
+                                size="icon"
                                 onClick={() => void removeRow(row.id)}
                                 data-tooltip="Remover"
                                 aria-label="Remover"
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-apple-red/25 text-apple-red hover:bg-apple-red/10"
+                                className={cn(
+                                  isPast
+                                    ? 'text-muted-foreground'
+                                    : 'border-destructive/30 text-destructive hover:bg-destructive/10',
+                                )}
                               >
-                                <IconTrash className="h-4 w-4" />
-                              </button>
-                            </td>
+                                <IconTrash />
+                              </Button>
+                            </TableCell>
                           ) : null}
-                        </tr>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
-            </section>
+            </Card>
           );
-        })}
-      </div>
+        }
+
+        // card.kind === 'fixed'
+        return (
+          <Card key={card.key} className="gap-0 overflow-hidden p-0">
+            <div
+              className={cn(
+                'border-b px-5 py-3.5',
+                card.hasToday
+                  ? 'border-emerald-300/60 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10'
+                  : 'border-border bg-emerald-50/60 dark:bg-emerald-500/5',
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold">Dias fixos</h2>
+                {card.hasToday ? (
+                  <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    Hoje
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                Manhã — horário e dirigente fixos
+              </p>
+            </div>
+            <div className="w-full">
+                <Table className="table-fixed">
+                  <AssignmentTableColgroup canManage={canManage} />
+                  <TableBody>
+                  {fixedRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={canManage ? 4 : 3}
+                        className="py-6 text-center text-sm text-muted-foreground"
+                      >
+                        Nenhum dia fixo neste filtro.
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                  {fixedRows.map((row) => {
+                    const isToday = isTodayRow(row, today, todayWeekday);
+                    return (
+                      <TableRow
+                        key={row.id}
+                        className={
+                          isToday
+                            ? 'bg-emerald-50 inset-ring-2 inset-ring-emerald-400 dark:bg-emerald-500/15 dark:inset-ring-emerald-500'
+                            : ''
+                        }
+                      >
+                        <TableCell className={cn(TD_CLASS, 'font-medium')}>
+                          <span className="inline-flex flex-wrap items-center gap-2">
+                            {row.weekday_label}
+                            {isToday ? (
+                              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                Hoje
+                              </span>
+                            ) : null}
+                          </span>
+                        </TableCell>
+                        <TableCell className={TD_CLASS}>
+                          <ScheduleTimeBadge value={row.fixed_time} />
+                        </TableCell>
+                        <TableCell className={TD_CLASS}>
+                          {canManage && editingId === row.id ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Input
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="h-8 min-w-0 flex-1"
+                                autoFocus
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                disabled={savingId === row.id}
+                                onClick={() => void saveName(row.id)}
+                                data-tooltip="Salvar"
+                                aria-label="Salvar"
+                              >
+                                <IconSave />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingId(null)}
+                                data-tooltip="Cancelar"
+                                aria-label="Cancelar"
+                              >
+                                <IconX />
+                              </Button>
+                            </div>
+                          ) : canManage ? (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(row)}
+                              className={cn(
+                                'block max-w-full truncate font-semibold',
+                                isToday
+                                  ? 'text-emerald-900 hover:underline dark:text-emerald-300'
+                                  : 'text-foreground hover:underline',
+                              )}
+                              data-tooltip="Clique para editar"
+                            >
+                              {row.assignee_name}
+                            </button>
+                          ) : (
+                            <span
+                              className={cn(
+                                'block max-w-full truncate font-semibold',
+                                isToday
+                                  ? 'text-emerald-900 dark:text-emerald-300'
+                                  : 'text-foreground',
+                              )}
+                            >
+                              {row.assignee_name}
+                            </span>
+                          )}
+                        </TableCell>
+                        {canManage ? (
+                          <TableCell className={cn(TD_CLASS, 'text-right')}>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => void removeRow(row.id)}
+                              data-tooltip="Remover"
+                              aria-label="Remover"
+                              className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                            >
+                              <IconTrash />
+                            </Button>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        );
+      })}
     </main>
   );
 }

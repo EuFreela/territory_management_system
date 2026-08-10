@@ -211,7 +211,7 @@ export default function TerritoriesPage() {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Localidade
                     </p>
-                    <h2 className="mt-0.5 text-lg font-semibold tracking-tight">
+                    <h2 className="mt-0.5 text-base font-semibold tracking-tight">
                       {territory.name}
                     </h2>
                     {territory.number ? (
