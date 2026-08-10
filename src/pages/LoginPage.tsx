@@ -110,6 +110,7 @@ export default function LoginPage() {
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
+          data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
           aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
         >
           {theme === 'dark' ? <IconSun /> : <IconMoon />}
@@ -187,9 +188,14 @@ export default function LoginPage() {
                   ) : null}
                 </div>
 
-                <Button type="submit" disabled={submitting} className="w-full">
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  size="icon"
+                  className="mx-auto"
+                  data-tooltip="Entrar"
+                >
                   <IconLogIn />
-                  {submitting ? 'Entrando…' : 'Entrar'}
                 </Button>
               </form>
 
@@ -202,6 +208,7 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
+                size="icon"
                 disabled={startingGoogle}
                 onClick={() => {
                   if (!googleEnabled) {
@@ -211,10 +218,10 @@ export default function LoginPage() {
                   setStartingGoogle(true);
                   window.location.href = '/api/auth/google';
                 }}
-                className="w-full"
+                className="mx-auto"
+                data-tooltip="Continuar com Google"
               >
                 <FcGoogle className="h-4 w-4" />
-                {startingGoogle ? 'Redirecionando…' : 'Continuar com Google'}
               </Button>
             </CardContent>
           </Card>

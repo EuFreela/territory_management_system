@@ -2032,10 +2032,9 @@ export default function TerritoryMap({
             aria-label="Buscar endereço"
             disabled={addressSearching}
             onClick={() => void searchAddress()}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 border-l border-apple-line bg-apple-blue px-3 text-sm font-semibold text-white hover:bg-apple-blue-hover disabled:opacity-60"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-l border-apple-line bg-apple-blue text-white hover:bg-apple-blue-hover disabled:opacity-60"
           >
             <IconSearch className="h-4 w-4" />
-            <span className="hidden sm:inline">{addressSearching ? 'Buscando…' : 'Buscar'}</span>
           </button>
         </div>
 
@@ -2134,7 +2133,7 @@ export default function TerritoryMap({
             aria-pressed={bwAreas}
             onClick={() => setBwAreas((v) => !v)}
             className={[
-              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-md transition',
               bwAreas
                 ? 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill'
                 : 'border-apple-blue/30 bg-apple-blue/10 text-apple-blue hover:bg-apple-blue/15',
@@ -2149,7 +2148,7 @@ export default function TerritoryMap({
             aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             aria-pressed={isFullscreen}
             onClick={toggleFullscreen}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
           >
             {isFullscreen ? <IconCompress /> : <IconExpand />}
           </button>
@@ -2166,7 +2165,7 @@ export default function TerritoryMap({
             }
             onClick={fitToStart}
             className={[
-              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-md transition',
               gpsEnabled && gpsPosition
                 ? 'border-sky-500/40 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:bg-sky-500/15 dark:text-sky-200 dark:hover:bg-sky-500/25'
                 : 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill',
@@ -2185,7 +2184,7 @@ export default function TerritoryMap({
             disabled={gpsLoading}
             onClick={toggleGps}
             className={[
-              'inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-md transition',
+              'inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-md transition',
               gpsEnabled
                 ? 'border-sky-500/40 bg-sky-600 text-white hover:bg-sky-700'
                 : 'border-apple-line bg-apple-surface text-apple-ink hover:bg-apple-fill',
@@ -2208,7 +2207,7 @@ export default function TerritoryMap({
               data-tooltip-side="left"
               aria-label="Limpar destaque da área"
               onClick={clearSelection}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-blue/30 bg-apple-blue/10 text-apple-blue shadow-md transition hover:bg-apple-blue/15"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-blue/30 bg-apple-blue/10 text-apple-blue shadow-md transition hover:bg-apple-blue/15"
             >
               <IconX />
             </button>

@@ -241,10 +241,11 @@ export default function PasswordField({
                   type="button"
                   onClick={() => onChange(generateStrongPassword())}
                   disabled={disabled}
-                  className="inline-flex h-9 w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-apple-line bg-apple-surface px-3 text-[13px] font-semibold text-apple-ink shadow-soft transition hover:bg-apple-bg active:scale-[0.99] disabled:opacity-40 sm:w-auto"
+                  data-tooltip="Gerar senha forte"
+                  aria-label="Gerar senha forte"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-soft transition hover:bg-apple-bg active:scale-[0.99] disabled:opacity-40"
                 >
-                  <IconRefresh className="h-3.5 w-3.5 text-apple-blue" />
-                  Gerar senha forte
+                  <IconRefresh className="h-4 w-4 text-apple-blue" />
                 </button>
               ) : null}
             </div>

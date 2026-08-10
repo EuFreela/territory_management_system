@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { IconEye, IconEyeOff, IconKey } from '@/components/Map/mapIcons';
+import { IconEye, IconEyeOff, IconKey, IconSave } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -220,8 +220,14 @@ export default function ChangePasswordPage() {
                 ) : null}
               </div>
 
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? 'Salvando…' : 'Salvar nova senha'}
+              <Button
+                type="submit"
+                size="icon"
+                disabled={submitting}
+                className="mx-auto"
+                data-tooltip="Salvar nova senha"
+              >
+                <IconSave />
               </Button>
             </form>
 

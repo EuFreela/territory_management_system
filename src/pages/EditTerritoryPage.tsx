@@ -520,12 +520,12 @@ export default function EditTerritoryPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="icon"
                       onClick={clearBlockForm}
-                      className="h-8 px-3 text-xs"
+                      data-tooltip="Nova entrada"
+                      aria-label="Nova entrada"
                     >
-                      <IconX className="size-3.5" />
-                      Nova entrada
+                      <IconX />
                     </Button>
                   </div>
                 ) : null}
@@ -707,8 +707,15 @@ export default function EditTerritoryPage() {
                     <IconPlus />
                   </Button>
                   {editingBlockId != null ? (
-                    <Button type="button" variant="outline" onClick={clearBlockForm}>
-                      Cancelar
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={clearBlockForm}
+                      data-tooltip="Cancelar"
+                      aria-label="Cancelar"
+                    >
+                      <IconX />
                     </Button>
                   ) : null}
                 </div>
@@ -739,14 +746,18 @@ export default function EditTerritoryPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="icon"
                       disabled={bulkBusy || bulkSelectedIds.length === 0}
                       onClick={() => void bulkDeleteSelected()}
-                      className="h-9 px-3 text-[13px] text-destructive hover:text-destructive"
+                      data-tooltip={
+                        bulkSelectedIds.length > 0
+                          ? `Apagar (${bulkSelectedIds.length})`
+                          : 'Apagar'
+                      }
+                      aria-label="Apagar selecionadas"
+                      className="text-destructive hover:text-destructive"
                     >
-                      <IconTrash className="size-3.5" />
-                      Apagar
-                      {bulkSelectedIds.length > 0 ? ` (${bulkSelectedIds.length})` : ''}
+                      <IconTrash />
                     </Button>
                   </div>
                 </div>
@@ -931,23 +942,22 @@ export default function EditTerritoryPage() {
               <Button
                 asChild
                 variant="outline"
+                size="icon"
                 data-tooltip="Sair sem salvar localidade/mapa"
-                className="gap-2 px-5 py-3"
               >
                 <Link to={`/territories/${id}`}>
-                  <IconArrowLeft className="size-4 shrink-0" />
-                  Sair da edição
+                  <IconArrowLeft />
                 </Link>
               </Button>
               <Button
                 type="submit"
                 form="territory-form"
+                size="icon"
                 disabled={saving}
                 aria-busy={saving}
-                className="gap-2.5 px-6 py-3"
+                data-tooltip="Salvar localidade e área"
               >
-                <IconSave className="size-5 shrink-0" />
-                {saving ? 'Salvando…' : 'Salvar localidade e área'}
+                <IconSave />
               </Button>
             </div>
           </CardContent>

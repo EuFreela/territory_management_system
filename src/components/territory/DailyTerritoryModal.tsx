@@ -309,8 +309,15 @@ export default function DailyTerritoryModal({
           ) : null}
 
           <div className="mt-6 flex flex-wrap justify-end gap-2">
-            <button type="button" onClick={onClose} disabled={saving} className="app-btn-secondary">
-              Cancelar
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              data-tooltip="Cancelar"
+              aria-label="Cancelar"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-soft transition hover:bg-apple-fill"
+            >
+              <IconX className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -320,10 +327,11 @@ export default function DailyTerritoryModal({
                 (assignmentId != null && !selectedTerritory) ||
                 (territoryId != null && hasLeaders && !selectedLeader)
               }
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-apple-blue px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
+              data-tooltip={saving ? 'Vinculando…' : 'Vincular ao dia'}
+              aria-label="Vincular ao dia"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apple-blue px-0 text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
             >
               <IconCheckCircle className="h-4 w-4" />
-              {saving ? 'Vinculando…' : 'Vincular ao dia'}
             </button>
           </div>
         </div>

@@ -380,22 +380,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </NavLink>
             </nav>
 
-            <div className="space-y-2 border-t border-apple-line p-4">
+            <div className="flex items-center justify-center gap-2 border-t border-apple-line p-4">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex w-full items-center justify-center gap-2 rounded-full border border-apple-line bg-apple-fill px-4 py-3 text-[14px] font-medium text-apple-ink transition hover:bg-apple-line"
+                data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+                aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                className="app-icon-btn"
               >
                 {theme === 'dark' ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
-                {theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
               </button>
               <button
                 type="button"
                 onClick={() => void onLogout()}
-                className="flex w-full items-center justify-center gap-2 rounded-full border border-apple-line bg-apple-surface px-4 py-3 text-[14px] font-medium text-apple-ink transition hover:bg-apple-fill"
+                data-tooltip="Sair"
+                aria-label="Sair"
+                className="app-icon-btn"
               >
                 <IconLogOut className="h-4 w-4" />
-                Sair
               </button>
             </div>
           </div>

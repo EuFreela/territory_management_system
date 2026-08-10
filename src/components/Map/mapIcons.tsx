@@ -30,6 +30,7 @@ import {
   Palette,
   Pencil,
   Plus,
+  Printer,
   Redo2,
   RefreshCw,
   RotateCcw,
@@ -105,3 +106,4 @@ export const IconColumns = icon(Columns2);
 export const IconPalette = icon(Palette);
 export const IconContrast = icon(Contrast);
 export const IconFileText = icon(FileText);
+export const IconPrinter = icon(Printer);

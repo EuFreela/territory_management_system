@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { IconKey } from '@/components/Map/mapIcons';
+import { IconKey, IconSave } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,8 +110,13 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex justify-end pt-1">
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Salvando…' : 'Salvar nome'}
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={saving}
+                  data-tooltip="Salvar nome"
+                >
+                  <IconSave />
                 </Button>
               </div>
             </form>
@@ -125,10 +130,9 @@ export default function ProfilePage() {
               Use uma senha forte: mínimo 10 caracteres, com maiúscula, minúscula, número e
               caractere especial.
             </p>
-            <Button asChild>
-              <Link to="/change-password" className="gap-2">
+            <Button asChild size="icon" data-tooltip="Alterar senha">
+              <Link to="/change-password">
                 <IconKey className="size-4" />
-                Alterar senha
               </Link>
             </Button>
           </CardContent>

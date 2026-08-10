@@ -183,7 +183,7 @@ export default function TerritoryImageLeafletMap({
             aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
             aria-pressed={isFullscreen}
             onClick={toggleFullscreen}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
           >
             {isFullscreen ? <IconCompress /> : <IconExpand />}
           </button>
@@ -193,7 +193,7 @@ export default function TerritoryImageLeafletMap({
             data-tooltip-side="left"
             aria-label="Centralizar e enquadrar a imagem"
             onClick={fitToImage}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
           >
             <IconFocusAreas />
           </button>

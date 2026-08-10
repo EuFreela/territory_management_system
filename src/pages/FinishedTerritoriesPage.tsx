@@ -296,11 +296,12 @@ export default function FinishedTerritoriesPage() {
               <Button
                 type="button"
                 variant="outline"
+                size="icon"
                 onClick={startSelection}
                 disabled={filtered.length === 0}
+                data-tooltip="Gerar relatório"
               >
                 <IconFileText />
-                Gerar relatório
               </Button>
             </div>
           ) : (
@@ -311,23 +312,36 @@ export default function FinishedTerritoriesPage() {
                   {filtered.length} selecionado(s) — marque as linhas que entram no relatório.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button type="button" variant="outline" onClick={toggleSelectAll}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleSelectAll}
+                    data-tooltip={
+                      filtered.every((r) => selectedIds.has(Number(r.id)))
+                        ? 'Limpar seleção'
+                        : 'Selecionar todos'
+                    }
+                  >
                     <IconCheck />
-                    {filtered.every((r) => selectedIds.has(Number(r.id)))
-                      ? 'Limpar seleção'
-                      : 'Selecionar todos'}
                   </Button>
                   <Button
                     type="button"
+                    size="icon"
                     onClick={generateReport}
                     disabled={selectedIds.size === 0}
+                    data-tooltip={`Gerar relatório (${selectedIds.size})`}
                   >
                     <IconFileText />
-                    Gerar relatório ({selectedIds.size})
                   </Button>
-                  <Button type="button" variant="outline" onClick={cancelSelection}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={cancelSelection}
+                    data-tooltip="Cancelar"
+                  >
                     <IconX />
-                    Cancelar
                   </Button>
                 </div>
               </CardContent>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { LoadingScreen } from '@/components/ui/Spinner';
+import { IconArrowLeft, IconPrinter } from '@/components/Map/mapIcons';
 import type { FinishedTerritoryHistory } from '@/lib/types';
 
 /** Registros por folha A4 */
@@ -96,15 +97,17 @@ const REP_CSS = `
     border-radius: 9999px;
     background: var(--zinc-900);
     color: var(--white);
-    padding: 0.65rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
+    padding: 0;
+    width: 2.5rem;
+    height: 2.5rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
   }
+  .rep-btn svg { width: 1.15rem; height: 1.15rem; }
   .rep-btn:hover { background: var(--zinc-700); }
 
   .rep-btn-ghost {
@@ -441,11 +444,22 @@ export default function RelatorioFinalizadosPage() {
           {selected.length} registro(s) selecionado(s)
         </p>
         <div className="rep-actions">
-          <Link className="rep-btn rep-btn-ghost" to="/territories/finalizados">
-            Voltar
+          <Link
+            className="rep-btn rep-btn-ghost"
+            to="/territories/finalizados"
+            data-tooltip="Voltar"
+            aria-label="Voltar"
+          >
+            <IconArrowLeft />
           </Link>
-          <button className="rep-btn" type="button" onClick={() => window.print()}>
-            Imprimir / Salvar PDF
+          <button
+            className="rep-btn"
+            type="button"
+            onClick={() => window.print()}
+            data-tooltip="Imprimir / Salvar PDF"
+            aria-label="Imprimir / Salvar PDF"
+          >
+            <IconPrinter />
           </button>
         </div>
       </div>
