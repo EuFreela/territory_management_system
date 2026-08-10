@@ -254,7 +254,7 @@ export default function DailyTerritoryModal({
                     autoFocus
                   />
                 </div>
-                <div className="mt-2 max-h-56 space-y-1.5 overflow-y-auto rounded-apple border border-apple-line bg-apple-fill p-1.5">
+                <div className="scrollbar-thin mt-2 max-h-56 space-y-1.5 overflow-y-auto rounded-apple border border-apple-line bg-apple-fill p-1.5">
                   {filteredTerritories.length === 0 ? (
                     <p className="px-2.5 py-2 text-[13px] text-apple-tertiary">
                       Nenhum território encontrado.
