@@ -10,6 +10,7 @@ import { rateLimit } from './middleware/rateLimit.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import authRoutes from './routes/auth.js';
 import fieldAssignmentRoutes from './routes/field-assignments.js';
+import googleAuthRoutes, { googleLoginEnabled } from './routes/google-auth.js';
 import presenceRoutes from './routes/presence.js';
 import territoryRoutes from './routes/territories.js';
 import userRoutes from './routes/users.js';
@@ -43,6 +44,11 @@ app.get('/api/config/map', async (_req, res) => {
   }
 });
 
+/** Login com Google habilitado? (botão visível no login apenas quando configurado) */
+app.get('/api/config/google', (_req, res) => {
+  res.json({ enabled: googleLoginEnabled() });
+});
+
 const geocodeLimiter = rateLimit({
   name: 'geocode',
   windowMs: 60 * 1000,
@@ -63,6 +69,7 @@ app.get('/api/config/geocode', requireAuth, geocodeLimiter, async (req, res) => 
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
 app.use('/api/territories', territoryRoutes);
 app.use('/api/field-assignments', fieldAssignmentRoutes);
 app.use('/api/users', userRoutes);

@@ -98,7 +98,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
 }
 
 /** Secure cookie só em HTTPS. Em HTTP (LAN) o browser ignora Secure. */
-function cookieSecure() {
+export function cookieSecure() {
   if (process.env.COOKIE_SECURE === 'true') return true;
   if (process.env.COOKIE_SECURE === 'false') return false;
   const appUrl = process.env.VITE_APP_URL || '';
