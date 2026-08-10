@@ -9,12 +9,25 @@ import {
   IconTrash,
   IconX,
 } from '@/components/Map/mapIcons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
+import { cn } from '@/lib/utils';
 import type { FinishedTerritoryHistory } from '@/lib/types';
 
 function formatDateBr(iso: string | null | undefined) {
@@ -73,9 +86,7 @@ function normalize(text: string) {
     .trim();
 }
 
-const thClass =
-  'px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-apple-tertiary sm:px-4';
-const tdClass = 'px-3 py-3.5 text-[14px] sm:px-4';
+const thClass = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground';
 
 export default function FinishedTerritoriesPage() {
   const { isAdmin } = useAuth();
@@ -189,17 +200,19 @@ export default function FinishedTerritoriesPage() {
   }, [rows, query]);
 
   return (
-    <main className="app-page">
+    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="mb-8">
-        <p className="app-section-title">Histórico</p>
-        <h1 className="app-title mt-1">Finalizados</h1>
-        <p className="app-subtitle">
+        <p className="text-sm font-medium text-muted-foreground">Histórico</p>
+        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+          Finalizados
+        </h1>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
           Histórico de finalizações — dia, horário, dirigente, pessoas e o não em casa do território
         </p>
       </div>
 
       <div
-        className="mb-5 inline-flex w-full rounded-full border border-apple-line bg-apple-fill p-1 sm:w-auto"
+        className="mb-5 inline-flex w-full rounded-full bg-muted p-1 sm:w-auto"
         role="tablist"
         aria-label="Abas"
       >
@@ -208,12 +221,12 @@ export default function FinishedTerritoriesPage() {
           role="tab"
           aria-selected={tab === 'metrica'}
           onClick={() => setTab('metrica')}
-          className={[
-            'inline-flex flex-1 items-center justify-center rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+          className={cn(
+            'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
             tab === 'metrica'
-              ? 'bg-apple-surface text-apple-ink shadow-soft'
-              : 'text-apple-secondary hover:text-apple-ink',
-          ].join(' ')}
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
         >
           Métricas
         </button>
@@ -222,12 +235,12 @@ export default function FinishedTerritoriesPage() {
           role="tab"
           aria-selected={tab === 'historico'}
           onClick={() => setTab('historico')}
-          className={[
-            'inline-flex flex-1 items-center justify-center rounded-full px-4 py-2 text-[13px] font-semibold transition sm:flex-none sm:px-5',
+          className={cn(
+            'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
             tab === 'historico'
-              ? 'bg-apple-surface text-apple-ink shadow-soft'
-              : 'text-apple-secondary hover:text-apple-ink',
-          ].join(' ')}
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
         >
           Finalizados
         </button>
@@ -235,254 +248,241 @@ export default function FinishedTerritoriesPage() {
 
       {tab === 'metrica' ? (
         <section className="space-y-4">
-          <div>
-            <p className="app-section-title">Análises</p>
-            <h2 className="mt-1 text-[22px] font-semibold tracking-tightish text-apple-ink">
-              Métricas
-            </h2>
-            <p className="mt-1 text-[14px] text-apple-secondary">
-              Gráficos com base no histórico de finalizações ({rows.length} registro(s)).
-            </p>
-          </div>
-          <div className="app-empty">
-            <p className="text-[14px] text-apple-tertiary">
-              Em breve: gráficos das finalizações.
-            </p>
-          </div>
-        </section>
-      ) : (
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Análises</p>
+              <h2 className="mt-1 text-[1.375rem] font-semibold tracking-tight">Métricas</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Gráficos com base no histórico de finalizações ({rows.length} registro(s)).
+              </p>
+            </div>
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                Em breve: gráficos das finalizações.
+              </CardContent>
+            </Card>
+          </section>
+        ) : (
         <>
           <div className="mb-5">
-        <label htmlFor="finished-search" className="sr-only">
-          Buscar no histórico
-        </label>
-        <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-apple-tertiary">
-            <IconSearch className="h-4 w-4" />
-          </span>
-          <input
-            id="finished-search"
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por dia, horário, dirigente ou território…"
-            className="app-input pl-10"
-            autoComplete="off"
-          />
-        </div>
-        {!loading && rows.length > 0 ? (
-          <p className="mt-2 text-[12px] text-apple-tertiary">
-            {query.trim()
-              ? `${filtered.length} de ${rows.length} registro(s)`
-              : `${rows.length} registro(s)`}
-          </p>
-        ) : null}
-      </div>
-
-      {!selectMode ? (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] text-apple-secondary">
-            Gere um relatório A4 com as finalizações — escolha as linhas no checklist.
-          </p>
-          <button
-            type="button"
-            onClick={startSelection}
-            disabled={filtered.length === 0}
-            className="app-btn-secondary disabled:opacity-50"
-          >
-            <IconFileText className="h-4 w-4" />
-            Gerar relatório
-          </button>
-        </div>
-      ) : (
-        <div className="mb-5 rounded-apple border border-apple-line bg-apple-surface p-3.5 shadow-soft">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[13px] text-apple-secondary">
-              <span className="font-semibold text-apple-ink">{selectedIds.size}</span> de{' '}
-              {filtered.length} selecionado(s) — marque as linhas que entram no relatório.
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className="app-btn-secondary"
-              >
-                <IconCheck className="h-4 w-4" />
-                {filtered.every((r) => selectedIds.has(Number(r.id)))
-                  ? 'Limpar seleção'
-                  : 'Selecionar todos'}
-              </button>
-              <button
-                type="button"
-                onClick={generateReport}
-                disabled={selectedIds.size === 0}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-apple-blue px-4 text-[14px] font-semibold text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
-              >
-                <IconFileText className="h-4 w-4" />
-                Gerar relatório ({selectedIds.size})
-              </button>
-              <button
-                type="button"
-                onClick={cancelSelection}
-                className="app-btn-secondary"
-              >
-                <IconX className="h-4 w-4" />
-                Cancelar
-              </button>
+            <label htmlFor="finished-search" className="sr-only">
+              Buscar no histórico
+            </label>
+            <div className="relative">
+              <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="finished-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por dia, horário, dirigente ou território…"
+                className="pl-9"
+                autoComplete="off"
+              />
             </div>
+            {!loading && rows.length > 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {query.trim()
+                  ? `${filtered.length} de ${rows.length} registro(s)`
+                  : `${rows.length} registro(s)`}
+              </p>
+            ) : null}
           </div>
-        </div>
-      )}
 
-      {loading ? <Spinner label="Carregando…" className="text-apple-secondary" /> : null}
-      {error ? (
-        <p className="rounded-[12px] bg-apple-red/10 px-3 py-2 text-[13px] text-apple-red">{error}</p>
-      ) : null}
-
-      {!loading && !error && filtered.length === 0 ? (
-        <div className="app-empty">
-          <IconCheckCircle className="mx-auto mb-3 h-8 w-8 text-apple-green/70" />
-          <p className="text-[15px] font-medium text-apple-ink">
-            {rows.length === 0 ? 'Nenhum território finalizado ainda' : 'Nenhum resultado'}
-          </p>
-          <p className="mt-1 text-[13px] text-apple-tertiary">
-            {rows.length === 0
-              ? 'Quando todas as casas de um território forem marcadas, o registro aparece aqui.'
-              : `Nada encontrado para “${query.trim()}”.`}
-          </p>
-        </div>
-      ) : null}
-
-      {!loading && filtered.length > 0 ? (
-        /* overflow-visible: tooltips da coluna Ações precisam sobressair do card */
-        <div className="rounded-[20px] border border-apple-line bg-apple-surface shadow-soft">
-          <table className="w-full table-fixed text-left">
-            <thead>
-              <tr className="bg-apple-fill first:rounded-t-[20px]">
-                <th
-                  className={`${thClass} ${selectMode ? 'w-[16%]' : 'w-[9%]'} first:rounded-tl-[19px]`}
-                >
-                  Dia
-                </th>
-                <th className={`${thClass} w-[8%]`}>Horário</th>
-                <th className={`${thClass} w-[11%]`}>Dirigente</th>
-                <th className={`${thClass} w-[26%]`}>Território</th>
-                <th className={`${thClass} w-[12%]`}>Registro</th>
-                <th className={`${thClass} w-[13%] ${isAdmin ? '' : 'rounded-tr-[19px]'}`}>
-                  Fim
-                </th>
-                {isAdmin ? (
-                  <th className={`${thClass} w-[8%] rounded-tr-[19px] text-right`}>Ações</th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id} className="transition hover:bg-apple-fill">
-                  <td className={`${tdClass} font-medium tabular-nums text-apple-ink`}>
-                    <span className="flex min-w-0 items-center gap-2">
-                      {selectMode ? (
-                        <button
-                          type="button"
-                          onClick={() => toggleSelect(Number(row.id))}
-                          aria-label={`Incluir no relatório: ${formatDateBr(row.field_date)} — ${row.territory_name}`}
-                          className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
-                            selectedIds.has(Number(row.id))
-                              ? 'border-transparent bg-apple-blue text-white'
-                              : 'border-apple-line text-transparent hover:border-apple-blue'
-                          }`}
-                        >
-                          <IconCheck className="h-3.5 w-3.5" />
-                        </button>
-                      ) : null}
-                      <span>{formatDateBr(row.field_date)}</span>
-                    </span>
-                  </td>
-                  <td className={`${tdClass} text-apple-secondary`}>
-                    {row.field_time?.trim() ? (
-                      <span className="inline-flex max-w-full truncate rounded-full bg-apple-fill px-2 py-0.5 text-[12px] font-semibold text-apple-ink">
-                        {row.field_time}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td
-                    className={`${tdClass} relative z-10 text-apple-ink`}
-                    {...(row.leader_name?.trim()
-                      ? { 'data-tooltip': row.leader_name.trim(), 'data-tooltip-multiline': '' }
-                      : {})}
+          {!selectMode ? (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Gere um relatório A4 com as finalizações — escolha as linhas no checklist.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={startSelection}
+                disabled={filtered.length === 0}
+              >
+                <IconFileText />
+                Gerar relatório
+              </Button>
+            </div>
+          ) : (
+            <Card className="mb-5">
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-4">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{selectedIds.size}</span> de{' '}
+                  {filtered.length} selecionado(s) — marque as linhas que entram no relatório.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" onClick={toggleSelectAll}>
+                    <IconCheck />
+                    {filtered.every((r) => selectedIds.has(Number(r.id)))
+                      ? 'Limpar seleção'
+                      : 'Selecionar todos'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={generateReport}
+                    disabled={selectedIds.size === 0}
                   >
-                    {row.leader_name?.trim() ? (
-                      <span className="block truncate">{row.leader_name.trim()}</span>
-                    ) : (
-                      <span className="text-apple-tertiary">—</span>
-                    )}
-                  </td>
-                  <td className={tdClass}>
-                    <div className="flex min-w-0 items-center gap-2">
-                      {row.territory_id ? (
-                        <Link
-                          to={`/territories/${row.territory_id}`}
-                          data-tooltip={tooltipText(
-                            `Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
-                          )}
-                          data-tooltip-side="bottom"
-                          aria-label={`Abrir território ${row.territory_name}`}
-                          className="relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:border-transparent hover:bg-apple-blue hover:text-white"
-                        >
-                          <IconMap className="h-3.5 w-3.5" />
-                        </Link>
-                      ) : (
-                        <span
-                          data-tooltip={tooltipText(
-                            `${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
-                          )}
-                          data-tooltip-side="bottom"
-                          className="relative z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-tertiary"
-                        >
-                          <IconMap className="h-3.5 w-3.5" />
+                    <IconFileText />
+                    Gerar relatório ({selectedIds.size})
+                  </Button>
+                  <Button type="button" variant="outline" onClick={cancelSelection}>
+                    <IconX />
+                    Cancelar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {loading ? <Spinner label="Carregando…" className="text-muted-foreground" /> : null}
+          {error ? (
+            <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+
+          {!loading && !error && filtered.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center py-10 text-center">
+                <IconCheckCircle className="mb-3 size-8 text-emerald-500" />
+                <p className="text-sm font-medium">
+                  {rows.length === 0 ? 'Nenhum território finalizado ainda' : 'Nenhum resultado'}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {rows.length === 0
+                    ? 'Quando todas as casas de um território forem marcadas, o registro aparece aqui.'
+                    : `Nada encontrado para “${query.trim()}”.`}
+                </p>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {!loading && filtered.length > 0 ? (
+            <div className="overflow-hidden rounded-xl border bg-card">
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className={`${thClass} ${selectMode ? 'w-[16%]' : 'w-[9%]'}`}>
+                      Dia
+                    </TableHead>
+                    <TableHead className={`${thClass} w-[8%]`}>Horário</TableHead>
+                    <TableHead className={`${thClass} w-[11%]`}>Dirigente</TableHead>
+                    <TableHead className={`${thClass} w-[26%]`}>Território</TableHead>
+                    <TableHead className={`${thClass} w-[12%]`}>Registro</TableHead>
+                    <TableHead className={`${thClass} w-[13%]`}>Fim</TableHead>
+                    {isAdmin ? (
+                      <TableHead className={`${thClass} w-[8%] text-right`}>Ações</TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="py-3 font-medium tabular-nums">
+                        <span className="flex min-w-0 items-center gap-2">
+                          {selectMode ? (
+                            <Checkbox
+                              checked={selectedIds.has(Number(row.id))}
+                              onCheckedChange={() => toggleSelect(Number(row.id))}
+                              aria-label={`Incluir no relatório: ${formatDateBr(row.field_date)} — ${row.territory_name}`}
+                            />
+                          ) : null}
+                          <span>{formatDateBr(row.field_date)}</span>
                         </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-apple-ink">{row.territory_name}</p>
-                        {row.territory_number ? (
-                          <p className="truncate text-[12px] text-apple-tertiary">N.º {row.territory_number}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </td>
-                  <td className={`${tdClass} truncate text-apple-ink`}>
-                    {row.finished_by_name?.trim() ? (
-                      <span className="font-medium">{row.finished_by_name}</span>
-                    ) : (
-                      <span className="text-apple-tertiary">—</span>
-                    )}
-                  </td>
-                  <td className={`${tdClass} truncate tabular-nums text-[13px] text-apple-secondary`}>
-                    {formatTimeBr(row.finished_at)}
-                  </td>
-                  {isAdmin ? (
-                    <td className={`${tdClass} text-right`}>
-                      <button
-                        type="button"
-                        disabled={deletingId === row.id}
-                        onClick={() => void removeHistoryRow(row)}
-                        data-tooltip="Remover do histórico"
-                        data-tooltip-side="left"
-                        aria-label="Remover do histórico"
-                        className="relative z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-apple-red/25 bg-apple-surface text-apple-red transition hover:bg-apple-red/10 disabled:opacity-50"
+                      </TableCell>
+                      <TableCell className="py-3 text-muted-foreground">
+                        {row.field_time?.trim() ? (
+                          <span className="inline-flex max-w-full truncate rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+                            {row.field_time}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                      <TableCell
+                        className="relative z-10 py-3"
+                        {...(row.leader_name?.trim()
+                          ? { 'data-tooltip': row.leader_name.trim(), 'data-tooltip-multiline': '' }
+                          : {})}
                       >
-                        <IconTrash className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+                        {row.leader_name?.trim() ? (
+                          <span className="block truncate">{row.leader_name.trim()}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          {row.territory_id ? (
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="icon"
+                              className="relative z-10"
+                              data-tooltip={tooltipText(
+                                `Abrir ${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                              )}
+                              data-tooltip-side="bottom"
+                              aria-label={`Abrir território ${row.territory_name}`}
+                            >
+                              <Link to={`/territories/${row.territory_id}`}>
+                                <IconMap />
+                              </Link>
+                            </Button>
+                          ) : (
+                            <span
+                              className="relative z-10 inline-flex size-8 shrink-0 items-center justify-center rounded-full border bg-muted/50 text-muted-foreground"
+                              data-tooltip={tooltipText(
+                                `${row.territory_name}${row.territory_number ? ` N.º ${row.territory_number}` : ''}`,
+                              )}
+                              data-tooltip-side="bottom"
+                            >
+                              <IconMap className="size-3.5" />
+                            </span>
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{row.territory_name}</p>
+                            {row.territory_number ? (
+                              <p className="truncate text-xs text-muted-foreground">
+                                N.º {row.territory_number}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 truncate">
+                        {row.finished_by_name?.trim() ? (
+                          <span className="font-medium">{row.finished_by_name}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3 truncate text-xs tabular-nums text-muted-foreground">
+                        {formatTimeBr(row.finished_at)}
+                      </TableCell>
+                      {isAdmin ? (
+                        <TableCell className="py-3 text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled={deletingId === row.id}
+                            onClick={() => void removeHistoryRow(row)}
+                            data-tooltip="Remover do histórico"
+                            data-tooltip-side="left"
+                            aria-label="Remover do histórico"
+                            className="relative z-20 border-destructive/30 text-destructive hover:bg-destructive/10"
+                          >
+                            <IconTrash />
+                          </Button>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : null}
         </>
       )}
     </main>

@@ -832,3 +832,31 @@ select {
     @apply font-sans;
   }
 }
+
+/* Scrollbar fina e discreta nas tabelas (usa os tokens do tema) */
+[data-slot='table-container'] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+[data-slot='table-container']::-webkit-scrollbar {
+  width: 8px;
+  height: 6px;
+}
+
+[data-slot='table-container']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-slot='table-container']::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: var(--border);
+}
+
+[data-slot='table-container']::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+[data-slot='table-container']::-webkit-scrollbar-corner {
+  background: transparent;
+}
