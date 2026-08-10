@@ -4,6 +4,7 @@ import {
   IconCheckCircle,
   IconChevronRight,
   IconPencil,
+  IconRefresh,
   IconSave,
   IconStar,
   IconUnlink,
@@ -197,8 +198,14 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col items-start gap-3 pt-4">
             <p className="text-sm text-destructive">{error}</p>
-            <Button type="button" variant="outline" onClick={() => window.location.reload()}>
-              Recarregar
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => window.location.reload()}
+              data-tooltip="Recarregar"
+            >
+              <IconRefresh />
             </Button>
           </CardContent>
         </Card>
@@ -469,14 +476,14 @@ export default function DashboardPage() {
                           {can('territory:set_daily') ? (
                             <Button
                               type="button"
+                              size="icon"
                               disabled={finishing || unlinking}
                               onClick={(e) => openFinishModal(e, Number(cardDaily.id))}
-                              data-tooltip="Finaliza campo"
+                              data-tooltip="Finalizar território do dia"
                               aria-label="Finalizar território do dia"
                               className="bg-emerald-600 text-white hover:bg-emerald-700"
                             >
                               <IconCheckCircle />
-                              <span className="hidden sm:inline">Finalizar</span>
                             </Button>
                           ) : null}
                           {can('territory:set_daily') ? (
@@ -520,15 +527,17 @@ export default function DashboardPage() {
                         {can('territory:set_daily') ? (
                           <Button
                             type="button"
+                            size="icon"
                             onClick={() =>
                               setDailyModal({
                                 kind: 'for-leader',
                                 assignmentId: Number(leader.id),
                               })
                             }
+                            data-tooltip="Marcar território do dia"
+                            aria-label="Marcar território do dia"
                           >
                             <IconStar />
-                            Marcar território do dia
                           </Button>
                         ) : null}
                       </div>
@@ -558,14 +567,14 @@ export default function DashboardPage() {
                     {can('territory:set_daily') ? (
                       <Button
                         type="button"
+                        size="icon"
                         disabled={finishing || unlinking}
                         onClick={(e) => openFinishModal(e, Number(d.id))}
-                        data-tooltip="Finaliza campo"
+                        data-tooltip="Finalizar território do dia"
                         aria-label="Finalizar território do dia"
                         className="bg-emerald-600 text-white hover:bg-emerald-700"
                       >
                         <IconCheckCircle />
-                        <span className="hidden sm:inline">Finalizar</span>
                       </Button>
                     ) : null}
                     {can('territory:set_daily') ? (
@@ -721,19 +730,22 @@ export default function DashboardPage() {
               <Button
                 type="button"
                 variant="outline"
+                size="icon"
                 onClick={closeFinishModal}
                 disabled={finishing}
+                data-tooltip="Cancelar"
               >
-                Cancelar
+                <IconX />
               </Button>
               <Button
                 type="button"
+                size="icon"
                 onClick={() => void confirmFinishDaily()}
                 disabled={finishing}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
+                data-tooltip="Finalizar"
               >
                 <IconCheckCircle />
-                {finishing ? 'Finalizando…' : 'Finalizar'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -528,9 +528,14 @@ export default function FieldLeadersPage() {
               />
             </div>
             <div className="flex items-end">
-              <Button type="submit" disabled={adding} className="h-8 w-full" aria-label="Adicionar">
+              <Button
+                type="submit"
+                size="icon"
+                disabled={adding}
+                aria-label="Adicionar"
+                data-tooltip="Adicionar"
+              >
                 <IconPlus />
-                Adicionar
               </Button>
             </div>
           </form>

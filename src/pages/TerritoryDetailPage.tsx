@@ -605,8 +605,10 @@ export default function TerritoryDetailPage() {
                 </p>
               </div>
               {can('block:manage') ? (
-                <Button asChild variant="ghost" className="text-sm">
-                  <Link to={`/territories/${id}/edit#nao-em-casa`}>Gerenciar</Link>
+                <Button asChild size="icon" variant="ghost" data-tooltip="Gerenciar">
+                  <Link to={`/territories/${id}/edit#nao-em-casa`}>
+                    <IconPencil />
+                  </Link>
                 </Button>
               ) : null}
             </div>

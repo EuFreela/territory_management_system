@@ -1,6 +1,6 @@
 ﻿import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { IconArrowLeft } from '@/components/Map/mapIcons';
+import { IconArrowLeft, IconSave } from '@/components/Map/mapIcons';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/button';
@@ -134,8 +134,13 @@ export default function NewTerritoryPage() {
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={submitting || loadingMap}>
-                  {submitting ? 'Salvando…' : 'Salvar território e área'}
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={submitting || loadingMap}
+                  data-tooltip="Salvar território e área"
+                >
+                  <IconSave />
                 </Button>
               </div>
             </form>

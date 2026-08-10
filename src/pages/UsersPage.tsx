@@ -4,9 +4,11 @@ import {
   IconHelp,
   IconPencil,
   IconPlus,
+  IconSave,
   IconSearch,
   IconTrash,
   IconUsers,
+  IconX,
 } from '@/components/Map/mapIcons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -289,9 +291,13 @@ export default function UsersPage() {
               </select>
             </div>
             <div className="flex justify-end sm:col-span-2">
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={saving}
+                data-tooltip="Criar usuário"
+              >
                 <IconPlus />
-                Criar usuário
               </Button>
             </div>
           </form>
@@ -459,11 +465,22 @@ export default function UsersPage() {
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeEdit}>
-                Cancelar
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={closeEdit}
+                data-tooltip="Cancelar"
+              >
+                <IconX />
               </Button>
-              <Button type="submit" disabled={editSaving}>
-                {editSaving ? 'Salvando…' : 'Salvar alterações'}
+              <Button
+                type="submit"
+                size="icon"
+                disabled={editSaving}
+                data-tooltip="Salvar alterações"
+              >
+                <IconSave />
               </Button>
             </DialogFooter>
           </form>
