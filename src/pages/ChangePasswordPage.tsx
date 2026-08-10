@@ -2,6 +2,16 @@ import { FormEvent, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { IconEye, IconEyeOff, IconKey } from '@/components/Map/mapIcons';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import PasswordField from '@/components/ui/PasswordField';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -27,10 +37,6 @@ function classifyError(msg: string): keyof FieldErrors | null {
   return null;
 }
 
-function inputClass(hasError: boolean) {
-  return `app-input ${hasError ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25' : ''}`;
-}
-
 /** Input de senha com cadeado à esquerda e visibilidade controlada pelo olho único externo. */
 function PasswordInput({
   id,
@@ -53,19 +59,23 @@ function PasswordInput({
 }) {
   return (
     <div className="relative">
-      <IconKey className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-apple-tertiary" />
-      <input
+      <IconKey className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+      <Input
         id={id}
         type={show ? 'text' : 'password'}
         autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${inputClass(Boolean(hasError))} pl-10`}
+        className={`pl-9 ${hasError ? 'border-destructive/60 ring-2 ring-destructive/25' : ''}`}
         required={required}
         disabled={disabled}
       />
     </div>
   );
+}
+
+function FieldErrorText({ children }: { children: string }) {
+  return <p className="mt-1.5 text-xs font-medium text-destructive">{children}</p>;
 }
 
 export default function ChangePasswordPage() {
@@ -124,106 +134,104 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-apple-bg px-5">
-      <div className="w-full max-w-md rounded-apple-xl border border-apple-line bg-apple-surface p-8 shadow-card">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <h1 className="text-[22px] font-semibold tracking-tightish text-apple-ink">
-            Alterar senha
-          </h1>
-          <button
-            type="button"
-            onClick={() => setShowPasswords((s) => !s)}
-            aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
-            aria-pressed={showPasswords}
-            data-tooltip={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-apple-line bg-apple-fill text-apple-ink transition hover:bg-apple-line active:scale-95"
-          >
-            {showPasswords ? <IconEyeOff className="h-[18px] w-[18px]" /> : <IconEye className="h-[18px] w-[18px]" />}
-          </button>
-        </div>
-        <p className="mb-6 text-[14px] leading-relaxed text-apple-secondary">
-          Informe a senha atual e escolha uma nova senha forte (o medidor abaixo indica a força).
-        </p>
+    <main className="flex min-h-svh items-center justify-center bg-background px-5">
+      <div className="w-full max-w-md">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <div className="grid gap-1">
+              <CardTitle>Alterar senha</CardTitle>
+              <CardDescription>
+                Informe a senha atual e escolha uma nova senha forte (o medidor abaixo indica a
+                força).
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowPasswords((s) => !s)}
+              aria-label={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+              aria-pressed={showPasswords}
+              data-tooltip={showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+              data-tooltip-side="bottom"
+            >
+              {showPasswords ? <IconEyeOff /> : <IconEye />}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={onSubmit}
+              onInvalidCapture={onInvalidPtBr}
+              onInput={onInputClearValidity}
+              className="grid gap-4"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="current">Senha atual</Label>
+                <PasswordInput
+                  id="current"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(v) => {
+                    setCurrentPassword(v);
+                    clearFieldError('current');
+                  }}
+                  required
+                  disabled={submitting}
+                  hasError={Boolean(fieldErrors.current)}
+                  show={showPasswords}
+                />
+                {fieldErrors.current ? (
+                  <FieldErrorText>{fieldErrors.current}</FieldErrorText>
+                ) : null}
+              </div>
 
-        <form
-          onSubmit={onSubmit}
-          onInvalidCapture={onInvalidPtBr}
-          onInput={onInputClearValidity}
-          className="space-y-4"
-        >
-          <div>
-            <label htmlFor="current" className="app-label">
-              Senha atual
-            </label>
-            <PasswordInput
-              id="current"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(v) => {
-                setCurrentPassword(v);
-                clearFieldError('current');
-              }}
-              required
-              disabled={submitting}
-              hasError={Boolean(fieldErrors.current)}
-              show={showPasswords}
-            />
-            {fieldErrors.current ? (
-              <p className="mt-1.5 text-[12px] font-medium text-apple-red">{fieldErrors.current}</p>
-            ) : null}
-          </div>
+              <PasswordField
+                label="Nova senha"
+                value={newPassword}
+                onChange={(v) => {
+                  setNewPassword(v);
+                  clearFieldError('new');
+                }}
+                required
+                autoComplete="new-password"
+                disabled={submitting}
+                error={fieldErrors.new}
+                show={showPasswords}
+                showToggle={false}
+              />
 
-          <div>
-            <PasswordField
-              label="Nova senha"
-              value={newPassword}
-              onChange={(v) => {
-                setNewPassword(v);
-                clearFieldError('new');
-              }}
-              required
-              autoComplete="new-password"
-              disabled={submitting}
-              error={fieldErrors.new}
-              show={showPasswords}
-              showToggle={false}
-            />
-          </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="confirm">Confirmar nova senha</Label>
+                <PasswordInput
+                  id="confirm"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(v) => {
+                    setConfirmPassword(v);
+                    clearFieldError('confirm');
+                  }}
+                  required
+                  disabled={submitting}
+                  hasError={Boolean(fieldErrors.confirm)}
+                  show={showPasswords}
+                />
+                {fieldErrors.confirm ? (
+                  <FieldErrorText>{fieldErrors.confirm}</FieldErrorText>
+                ) : null}
+              </div>
 
-          <div>
-            <label htmlFor="confirm" className="app-label">
-              Confirmar nova senha
-            </label>
-            <PasswordInput
-              id="confirm"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(v) => {
-                setConfirmPassword(v);
-                clearFieldError('confirm');
-              }}
-              required
-              disabled={submitting}
-              hasError={Boolean(fieldErrors.confirm)}
-              show={showPasswords}
-            />
-            {fieldErrors.confirm ? (
-              <p className="mt-1.5 text-[12px] font-medium text-apple-red">
-                {fieldErrors.confirm}
-              </p>
-            ) : null}
-          </div>
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting ? 'Salvando…' : 'Salvar nova senha'}
+              </Button>
+            </form>
 
-          <button type="submit" disabled={submitting} className="app-btn-primary w-full">
-            {submitting ? 'Salvando…' : 'Salvar nova senha'}
-          </button>
-        </form>
-
-        <p className="mt-5 text-center text-[13px] text-apple-secondary">
-          <Link to="/perfil" className="app-link">
-            Voltar à minha conta
-          </Link>
-        </p>
+            <p className="mt-5 text-center text-xs text-muted-foreground">
+              <Link to="/perfil" className="font-medium text-foreground underline underline-offset-4">
+                Voltar à minha conta
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

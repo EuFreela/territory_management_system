@@ -1,7 +1,26 @@
 ﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { IconHelp, IconPencil, IconPlus, IconSearch, IconTrash, IconUsers } from '@/components/Map/mapIcons';
+import {
+  IconHelp,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconUsers,
+} from '@/components/Map/mapIcons';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import PasswordField from '@/components/ui/PasswordField';
 import RolesModal from '@/components/ui/RolesModal';
 import { Spinner } from '@/components/ui/Spinner';
@@ -26,6 +45,9 @@ type ManagedUser = {
   role: { id: number; slug: string; name: string } | null;
   created_at?: string;
 };
+
+const SELECT_CLASS =
+  'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
 
 export default function UsersPage() {
   const { user: me, refresh: refreshAuth } = useAuth();
@@ -132,16 +154,6 @@ export default function UsersPage() {
     setEditPassword('');
   }
 
-  useEffect(() => {
-    if (!editing) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeEdit();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing]);
-
   async function onSubmitEdit(e: FormEvent) {
     e.preventDefault();
     if (!editing) return;
@@ -195,47 +207,45 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="app-page max-w-4xl space-y-6">
-      <div className="space-y-6">
-        <div>
-          <p className="app-section-title">Administração</p>
-          <div className="mt-1 flex items-center gap-2">
-            <IconUsers className="h-6 w-6 text-apple-ink" />
-            <h1 className="app-title">Usuários e papéis</h1>
-          </div>
-          <p className="app-subtitle">
-            Controle de acesso baseado em papéis (RBAC). O administrador tem todos os escopos; demais
-            papéis recebem permissões delegadas.
-          </p>
+    <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mb-8">
+        <p className="text-sm font-medium text-muted-foreground">Administração</p>
+        <div className="mt-1 flex items-center gap-2">
+          <IconUsers className="h-6 w-6" />
+          <h1 className="text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+            Usuários e papéis
+          </h1>
         </div>
+        <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+          Controle de acesso baseado em papéis (RBAC). O administrador tem todos os escopos; demais
+          papéis recebem permissões delegadas.
+        </p>
+      </div>
 
-        <section className="app-card-pad">
-          <h2 className="mb-4 text-[17px] font-semibold tracking-tightish text-apple-ink">
-            Novo usuário
-          </h2>
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight">Novo usuário</h2>
           <form
             onSubmit={onCreate}
             onInvalidCapture={onInvalidPtBr}
             onInput={onInputClearValidity}
             className="grid gap-3 sm:grid-cols-2"
           >
-            <div>
-              <label className="app-label">Nome</label>
-              <input
+            <div className="grid gap-1.5">
+              <Label>Nome</Label>
+              <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="app-input"
                 required
                 minLength={2}
               />
             </div>
-            <div>
-              <label className="app-label">Email</label>
-              <input
+            <div className="grid gap-1.5">
+              <Label>Email</Label>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="app-input"
                 required
               />
             </div>
@@ -250,24 +260,25 @@ export default function UsersPage() {
             </div>
             <div className="min-w-0">
               <div className="mb-1.5 flex min-h-6 items-center justify-between gap-2">
-                <label htmlFor="new-role" className="app-label mb-0">
+                <Label htmlFor="new-role" className="mb-0 text-sm font-medium text-foreground">
                   Papel
-                </label>
-                <button
+                </Label>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setShowRoles(true)}
                   aria-label="Ver papéis e permissões"
                   data-tooltip="Ver papéis e permissões"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
                 >
-                  <IconHelp className="h-[18px] w-[18px]" />
-                </button>
+                  <IconHelp />
+                </Button>
               </div>
               <select
                 id="new-role"
                 value={roleId}
                 onChange={(e) => setRoleId(Number(e.target.value))}
-                className="app-input"
+                className={SELECT_CLASS}
                 required
               >
                 {roles.map((r) => (
@@ -277,221 +288,187 @@ export default function UsersPage() {
                 ))}
               </select>
             </div>
-            <div className="sm:col-span-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={saving}
-                data-tooltip="Criar usuário"
-                data-tooltip-side="bottom"
-                aria-label="Criar usuário"
-                className="app-icon-btn-ink disabled:opacity-60"
-              >
-                <IconPlus className="h-4 w-4" />
-              </button>
+            <div className="flex justify-end sm:col-span-2">
+              <Button type="submit" disabled={saving}>
+                <IconPlus />
+                Criar usuário
+              </Button>
             </div>
           </form>
-        </section>
+        </CardContent>
+      </Card>
 
-        <section className="app-card-pad">
-          <h2 className="mb-3 text-[17px] font-semibold tracking-tightish text-apple-ink">Usuários</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <h2 className="mb-3 text-lg font-semibold tracking-tight">Usuários</h2>
 
           <div className="relative mb-4">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-apple-tertiary">
-              <IconSearch className="h-[18px] w-[18px]" />
-            </span>
-            <input
+            <IconSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
               id="users-search"
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome, email ou papel…"
-              className="app-input pl-10"
+              className="pl-9"
               autoComplete="off"
             />
           </div>
 
           {loading ? (
-            <Spinner label="Carregando…" className="text-apple-secondary" />
+            <Spinner label="Carregando…" className="text-muted-foreground" />
           ) : users.length === 0 ? (
-            <p className="text-apple-secondary">Nenhum usuário.</p>
+            <p className="text-sm text-muted-foreground">Nenhum usuário.</p>
           ) : filteredUsers.length === 0 ? (
-            <div className="app-empty text-apple-secondary">
+            <p className="py-6 text-center text-sm text-muted-foreground">
               Nenhum usuário encontrado para “{search.trim()}”.
-            </div>
+            </p>
           ) : (
             <>
-              <p className="mb-2 text-xs text-apple-tertiary">
+              <p className="mb-2 text-xs text-muted-foreground">
                 {filteredUsers.length} de {users.length} usuário(s)
               </p>
-              <ul className="divide-y divide-apple-line">
+              <ul className="divide-y divide-border">
                 {filteredUsers.map((u) => (
                   <li
                     key={u.id}
                     className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                   >
                     <div>
-                      <p className="font-semibold text-apple-ink">
+                      <p className="font-semibold">
                         {u.name}
                         {me?.id === u.id ? (
-                          <span className="ml-2 text-xs font-medium text-apple-blue">(você)</span>
+                          <span className="ml-2 text-xs font-medium text-primary">(você)</span>
                         ) : null}
                       </p>
-                      <p className="text-sm text-apple-secondary">{u.email}</p>
+                      <p className="text-sm text-muted-foreground">{u.email}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
+                      <Badge variant="outline" className="hidden sm:inline-flex">
+                        {u.role?.name ?? 'sem papel'}
+                      </Badge>
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="icon"
                         data-tooltip="Editar"
                         aria-label="Editar"
                         onClick={() => openEdit(u)}
-                        className="app-icon-btn-ink"
                       >
-                        <IconPencil className="h-4 w-4" />
-                      </button>
-                      <button
+                        <IconPencil />
+                      </Button>
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="icon"
                         data-tooltip="Excluir"
                         aria-label="Excluir"
                         disabled={me?.id === u.id}
                         onClick={() => onDelete(u)}
-                        className="app-icon-btn text-apple-red disabled:opacity-40"
+                        className="text-destructive hover:text-destructive"
                       >
-                        <IconTrash className="h-4 w-4" />
-                      </button>
+                        <IconTrash />
+                      </Button>
                     </div>
                   </li>
                 ))}
               </ul>
             </>
           )}
-        </section>
-      </div>
+        </CardContent>
+      </Card>
 
-      {editing
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[10050] flex items-center justify-center p-4"
-              role="presentation"
-            >
-              <button
-                type="button"
-                aria-label="Fechar"
-                className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] transition"
-                onClick={closeEdit}
+      <Dialog open={editing != null} onOpenChange={(open) => (open ? null : closeEdit())}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize os dados de <span className="font-medium text-foreground">{editing?.name}</span>
+              . Deixe a senha em branco para manter a atual.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={onSubmitEdit}
+            onInvalidCapture={onInvalidPtBr}
+            onInput={onInputClearValidity}
+            className="grid gap-4"
+          >
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+                minLength={2}
+                maxLength={150}
               />
+            </div>
 
-              <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="edit-user-modal-title"
-                className="relative z-10 w-full max-w-md overflow-hidden rounded-apple-xl border border-apple-line bg-apple-surface shadow-float"
-              >
-                <div className="h-1 w-full bg-apple-blue" />
+            <div className="grid gap-1.5">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                required
+              />
+            </div>
 
-                <div className="px-6 pb-6 pt-5">
-                  <h2
-                    id="edit-user-modal-title"
-                    className="text-[17px] font-semibold tracking-tightish text-apple-ink"
-                  >
-                    Editar usuário
-                  </h2>
-                  <p className="mb-5 mt-1 text-[13px] text-apple-secondary">
-                    Atualize os dados de <span className="font-medium text-apple-ink">{editing.name}</span>.
-                    Deixe a senha em branco para manter a atual.
-                  </p>
-
-                  <form
-                    onSubmit={onSubmitEdit}
-                    onInvalidCapture={onInvalidPtBr}
-                    onInput={onInputClearValidity}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <label htmlFor="edit-name" className="app-label">
-                        Nome
-                      </label>
-                      <input
-                        id="edit-name"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="app-input"
-                        required
-                        minLength={2}
-                        maxLength={150}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="edit-email" className="app-label">
-                        Email
-                      </label>
-                      <input
-                        id="edit-email"
-                        type="email"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
-                        className="app-input"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <div className="mb-1.5 flex min-h-6 items-center justify-between gap-2">
-                        <label htmlFor="edit-role" className="app-label mb-0">
-                          Papel
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setShowRoles(true)}
-                          aria-label="Ver papéis e permissões"
-                          data-tooltip="Ver papéis e permissões"
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-blue active:scale-95"
-                        >
-                          <IconHelp className="h-[18px] w-[18px]" />
-                        </button>
-                      </div>
-                      <select
-                        id="edit-role"
-                        value={editRoleId}
-                        onChange={(e) => setEditRoleId(Number(e.target.value))}
-                        className="app-input"
-                        required
-                        disabled={me?.id === editing.id && editing.role?.slug === 'admin'}
-                      >
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name} ({r.slug})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <PasswordField
-                        label="Nova senha"
-                        value={editPassword}
-                        onChange={setEditPassword}
-                        optional
-                        autoComplete="new-password"
-                        placeholder="••••••••••"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap justify-end gap-2 pt-1">
-                      <button type="button" onClick={closeEdit} className="app-btn-secondary">
-                        Cancelar
-                      </button>
-                      <button type="submit" disabled={editSaving} className="app-btn-primary disabled:opacity-60">
-                        {editSaving ? 'Salvando…' : 'Salvar alterações'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
+            <div className="grid gap-1.5">
+              <div className="mb-0 flex min-h-6 items-center justify-between gap-2">
+                <Label htmlFor="edit-role" className="mb-0 text-sm font-medium text-foreground">
+                  Papel
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setShowRoles(true)}
+                  aria-label="Ver papéis e permissões"
+                  data-tooltip="Ver papéis e permissões"
+                >
+                  <IconHelp />
+                </Button>
               </div>
-            </div>,
-            document.body,
-          )
-        : null}
+              <select
+                id="edit-role"
+                value={editRoleId}
+                onChange={(e) => setEditRoleId(Number(e.target.value))}
+                className={SELECT_CLASS}
+                required
+                disabled={me?.id === editing?.id && editing?.role?.slug === 'admin'}
+              >
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <PasswordField
+              label="Nova senha"
+              value={editPassword}
+              onChange={setEditPassword}
+              optional
+              autoComplete="new-password"
+              placeholder="••••••••••"
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={closeEdit}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={editSaving}>
+                {editSaving ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {showRoles ? <RolesModal roles={roles} onClose={() => setShowRoles(false)} /> : null}
     </main>
