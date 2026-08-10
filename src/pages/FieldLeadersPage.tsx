@@ -599,7 +599,7 @@ export default function FieldLeadersPage() {
                             key={row.id}
                             className={`border-b border-apple-line last:border-0 transition ${
                               isToday
-                                ? 'bg-sky-50 ring-2 ring-inset ring-sky-400 dark:bg-sky-500/15 dark:ring-sky-500'
+                                ? 'bg-sky-50 inset-ring-2 inset-ring-sky-400 dark:bg-sky-500/15 dark:inset-ring-sky-500'
                                 : isPast
                                   ? 'bg-apple-fill text-apple-tertiary opacity-60'
                                   : ''
@@ -755,7 +755,7 @@ export default function FieldLeadersPage() {
                           key={row.id}
                           className={`border-b border-apple-line last:border-0 ${
                             isToday
-                              ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-400 dark:bg-emerald-500/15 dark:ring-emerald-500'
+                              ? 'bg-emerald-50 inset-ring-2 inset-ring-emerald-400 dark:bg-emerald-500/15 dark:inset-ring-emerald-500'
                               : ''
                           }`}
                         >

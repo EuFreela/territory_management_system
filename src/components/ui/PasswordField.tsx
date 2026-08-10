@@ -118,7 +118,7 @@ export default function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={`app-input pl-10 pr-11 ${
-            error ? 'border-apple-red/60 ring-2 ring-inset ring-apple-red/25' : ''
+            error ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25' : ''
           }`}
           required={required}
           disabled={disabled}
@@ -202,7 +202,7 @@ export default function PasswordField({
                       className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
                         ok
                           ? 'bg-apple-green/25 text-[rgb(22,128,52)] dark:bg-apple-green/15 dark:text-apple-green'
-                          : 'bg-apple-surface text-apple-tertiary ring-1 ring-inset ring-apple-line'
+                          : 'bg-apple-surface text-apple-tertiary inset-ring-1 inset-ring-apple-line'
                       }`}
                       aria-hidden
                     >

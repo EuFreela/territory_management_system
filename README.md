@@ -33,7 +33,7 @@ Interface no estilo Apple (tokens, menu responsivo, tooltips, dark mode).
 
 | Camada | Tecnologia |
 |--------|------------|
-| Frontend | Vite 7, React 19, React Router 7, Tailwind CSS 3 |
+| Frontend | Vite 7, React 19, React Router 7, Tailwind CSS 4, shadcn/ui |
 | API | Express 5, TypeScript (`tsx`) |
 | Banco | MySQL (`mysql2`) |
 | Auth | JWT (`jose`) + cookie httpOnly |
