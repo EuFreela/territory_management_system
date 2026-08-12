@@ -191,11 +191,10 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  size="icon"
-                  className="mx-auto"
-                  data-tooltip="Entrar"
+                  className="w-full"
                 >
                   <IconLogIn />
+                  {submitting ? 'Entrando…' : 'Entrar'}
                 </Button>
               </form>
 
@@ -208,7 +207,6 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
                 disabled={startingGoogle}
                 onClick={() => {
                   if (!googleEnabled) {
@@ -218,10 +216,10 @@ export default function LoginPage() {
                   setStartingGoogle(true);
                   window.location.href = '/api/auth/google';
                 }}
-                className="mx-auto"
-                data-tooltip="Continuar com Google"
+                className="w-full"
               >
                 <FcGoogle className="h-4 w-4" />
+                {startingGoogle ? 'Entrando…' : 'Entrar com Google'}
               </Button>
             </CardContent>
           </Card>

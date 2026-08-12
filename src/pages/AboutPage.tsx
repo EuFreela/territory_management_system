@@ -40,6 +40,17 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Padronização, botões e tooltips (v0.0.10.6)',
+    items: [
+      'Tooltip em camada própria (portal) — as dicas aparecem sempre acima de mapas, tabelas e modais',
+      'Erros de preenchimento padronizados abaixo de cada campo em todos os formulários (usuários, perfil, senha, territórios e dirigentes)',
+      'Botões de ação com texto + ícone: Entrar, Entrar com Google, Finalizar, Vincular, Criar Usuário e Salvar',
+      'Tela cheia do mapa acompanha o tema escuro — mensagens legíveis no dark mode',
+      'Tags com cores por papel (admin, editor, campo, visualizador) e por dirigente (Fixo/Designado), com pontinho decorativo',
+      'Botão da lupa da busca de endereço alinhado ao campo (sem o formato redondo)',
+    ],
+  },
+  {
     title: 'Páginas restantes migradas para shadcn/ui (v0.0.10.5)',
     items: [
       'Dirigentes: escala com cards, formulário por data com dicas de horário e destaque de “hoje” no cabeçalho inteiro',

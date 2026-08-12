@@ -10,7 +10,6 @@ import {
   IconUsers,
   IconX,
 } from '@/components/Map/mapIcons';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -21,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PasswordField from '@/components/ui/PasswordField';
@@ -29,7 +29,11 @@ import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { confirmToast } from '@/lib/confirm-toast';
-import { onInputClearValidity, onInvalidPtBr } from '@/lib/form-validation-pt';
+
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
+
+type CreateErrors = { name?: string; email?: string; password?: string; role?: string };
+type EditErrors = { name?: string; email?: string; role?: string };
 
 type Role = {
   id: number;
@@ -51,6 +55,15 @@ type ManagedUser = {
 const SELECT_CLASS =
   'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
 
+const ROLE_BADGE: Record<string, string> = {
+  admin: 'border-primary/25 bg-primary/10 text-primary dark:border-primary/35',
+  editor: 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:border-violet-500/35 dark:text-violet-300',
+  field: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/35 dark:text-emerald-300',
+  viewer: 'border-border bg-muted text-muted-foreground',
+};
+
+const ROLE_BADGE_FALLBACK = 'border-border bg-muted text-muted-foreground';
+
 export default function UsersPage() {
   const { user: me, refresh: refreshAuth } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -62,6 +75,7 @@ export default function UsersPage() {
   const [password, setPassword] = useState('');
   const [roleId, setRoleId] = useState<number | ''>('');
   const [saving, setSaving] = useState(false);
+  const [createErrors, setCreateErrors] = useState<CreateErrors>({});
 
   const [editing, setEditing] = useState<ManagedUser | null>(null);
   const [editName, setEditName] = useState('');
@@ -69,6 +83,7 @@ export default function UsersPage() {
   const [editRoleId, setEditRoleId] = useState<number | ''>('');
   const [editPassword, setEditPassword] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [editErrors, setEditErrors] = useState<EditErrors>({});
 
   const [showRoles, setShowRoles] = useState(false);
   const [search, setSearch] = useState('');
@@ -116,10 +131,26 @@ export default function UsersPage() {
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
-    if (roleId === '') {
-      toast.error('Selecione um papel.');
-      return;
+    const errors: CreateErrors = {};
+    if (name.trim() === '') {
+      errors.name = 'Preencha este campo.';
+    } else if (name.trim().length < 2) {
+      errors.name = 'Use pelo menos 2 caracteres.';
     }
+    if (email.trim() === '') {
+      errors.email = 'Preencha este campo.';
+    } else if (!EMAIL_RE.test(email.trim())) {
+      errors.email = 'Informe um e-mail válido.';
+    }
+    if (password === '') {
+      errors.password = 'Preencha este campo.';
+    }
+    if (roleId === '') {
+      errors.role = 'Selecione um papel.';
+    }
+    setCreateErrors(errors);
+    if (errors.name || errors.email || errors.password || errors.role) return;
+
     setSaving(true);
     try {
       await api('/api/users', {
@@ -134,6 +165,7 @@ export default function UsersPage() {
       setName('');
       setEmail('');
       setPassword('');
+      setCreateErrors({});
       await load();
       toast.success('Usuário criado com sucesso.');
     } catch (err) {
@@ -149,20 +181,37 @@ export default function UsersPage() {
     setEditEmail(u.email);
     setEditRoleId(u.role_id ?? '');
     setEditPassword('');
+    setEditErrors({});
   }
 
   function closeEdit() {
     setEditing(null);
     setEditPassword('');
+    setEditErrors({});
   }
 
   async function onSubmitEdit(e: FormEvent) {
     e.preventDefault();
     if (!editing) return;
-    if (editRoleId === '') {
-      toast.error('Selecione um papel.');
-      return;
+
+    const errors: EditErrors = {};
+    if (editName.trim() === '') {
+      errors.name = 'Preencha este campo.';
+    } else if (editName.trim().length < 2) {
+      errors.name = 'Use pelo menos 2 caracteres.';
+    } else if (editName.trim().length > 150) {
+      errors.name = 'Use no máximo 150 caracteres.';
     }
+    if (editEmail.trim() === '') {
+      errors.email = 'Preencha este campo.';
+    } else if (!EMAIL_RE.test(editEmail.trim())) {
+      errors.email = 'Informe um e-mail válido.';
+    }
+    if (editRoleId === '') {
+      errors.role = 'Selecione um papel.';
+    }
+    setEditErrors(errors);
+    if (errors.name || errors.email || errors.role) return;
 
     setEditSaving(true);
     try {
@@ -229,35 +278,54 @@ export default function UsersPage() {
           <h2 className="mb-4 text-lg font-semibold tracking-tight">Novo usuário</h2>
           <form
             onSubmit={onCreate}
-            onInvalidCapture={onInvalidPtBr}
-            onInput={onInputClearValidity}
+            noValidate
             className="grid gap-3 sm:grid-cols-2"
           >
             <div className="grid gap-1.5">
-              <Label>Nome</Label>
+              <Label htmlFor="new-name">Nome</Label>
               <Input
+                id="new-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={2}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (createErrors.name) {
+                    setCreateErrors((prev) => ({ ...prev, name: undefined }));
+                  }
+                }}
+                aria-invalid={Boolean(createErrors.name)}
+                aria-describedby={createErrors.name ? 'new-name-error' : undefined}
               />
+              {createErrors.name ? <FieldError id="new-name-error">{createErrors.name}</FieldError> : null}
             </div>
             <div className="grid gap-1.5">
-              <Label>Email</Label>
+              <Label htmlFor="new-email">Email</Label>
               <Input
+                id="new-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (createErrors.email) {
+                    setCreateErrors((prev) => ({ ...prev, email: undefined }));
+                  }
+                }}
+                aria-invalid={Boolean(createErrors.email)}
+                aria-describedby={createErrors.email ? 'new-email-error' : undefined}
               />
+              {createErrors.email ? <FieldError id="new-email-error">{createErrors.email}</FieldError> : null}
             </div>
             <div className="min-w-0">
               <PasswordField
                 label="Senha"
                 value={password}
-                onChange={setPassword}
-                required
+                onChange={(v) => {
+                  setPassword(v);
+                  if (createErrors.password) {
+                    setCreateErrors((prev) => ({ ...prev, password: undefined }));
+                  }
+                }}
                 autoComplete="new-password"
+                error={createErrors.password}
               />
             </div>
             <div className="min-w-0">
@@ -279,9 +347,15 @@ export default function UsersPage() {
               <select
                 id="new-role"
                 value={roleId}
-                onChange={(e) => setRoleId(Number(e.target.value))}
+                onChange={(e) => {
+                  setRoleId(Number(e.target.value));
+                  if (createErrors.role) {
+                    setCreateErrors((prev) => ({ ...prev, role: undefined }));
+                  }
+                }}
                 className={SELECT_CLASS}
-                required
+                aria-invalid={Boolean(createErrors.role)}
+                aria-describedby={createErrors.role ? 'new-role-error' : undefined}
               >
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -289,15 +363,16 @@ export default function UsersPage() {
                   </option>
                 ))}
               </select>
+              {createErrors.role ? <FieldError id="new-role-error">{createErrors.role}</FieldError> : null}
             </div>
             <div className="flex justify-end sm:col-span-2">
               <Button
                 type="submit"
-                size="icon"
                 disabled={saving}
                 data-tooltip="Criar usuário"
               >
                 <IconPlus />
+                {saving ? 'Criando…' : 'Criar Usuário'}
               </Button>
             </div>
           </form>
@@ -350,9 +425,14 @@ export default function UsersPage() {
                       <p className="text-sm text-muted-foreground">{u.email}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="hidden sm:inline-flex">
+                      <span
+                        className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium sm:inline-flex ${
+                          ROLE_BADGE[u.role?.slug ?? ''] ?? ROLE_BADGE_FALLBACK
+                        }`}
+                      >
+                        <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                         {u.role?.name ?? 'sem papel'}
-                      </Badge>
+                      </span>
                       <Button
                         type="button"
                         variant="outline"
@@ -396,8 +476,7 @@ export default function UsersPage() {
 
           <form
             onSubmit={onSubmitEdit}
-            onInvalidCapture={onInvalidPtBr}
-            onInput={onInputClearValidity}
+            noValidate
             className="grid gap-4"
           >
             <div className="grid gap-1.5">
@@ -405,11 +484,16 @@ export default function UsersPage() {
               <Input
                 id="edit-name"
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                required
-                minLength={2}
-                maxLength={150}
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  if (editErrors.name) {
+                    setEditErrors((prev) => ({ ...prev, name: undefined }));
+                  }
+                }}
+                aria-invalid={Boolean(editErrors.name)}
+                aria-describedby={editErrors.name ? 'edit-name-error' : undefined}
               />
+              {editErrors.name ? <FieldError id="edit-name-error">{editErrors.name}</FieldError> : null}
             </div>
 
             <div className="grid gap-1.5">
@@ -418,9 +502,16 @@ export default function UsersPage() {
                 id="edit-email"
                 type="email"
                 value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                required
+                onChange={(e) => {
+                  setEditEmail(e.target.value);
+                  if (editErrors.email) {
+                    setEditErrors((prev) => ({ ...prev, email: undefined }));
+                  }
+                }}
+                aria-invalid={Boolean(editErrors.email)}
+                aria-describedby={editErrors.email ? 'edit-email-error' : undefined}
               />
+              {editErrors.email ? <FieldError id="edit-email-error">{editErrors.email}</FieldError> : null}
             </div>
 
             <div className="grid gap-1.5">
@@ -442,10 +533,16 @@ export default function UsersPage() {
               <select
                 id="edit-role"
                 value={editRoleId}
-                onChange={(e) => setEditRoleId(Number(e.target.value))}
+                onChange={(e) => {
+                  setEditRoleId(Number(e.target.value));
+                  if (editErrors.role) {
+                    setEditErrors((prev) => ({ ...prev, role: undefined }));
+                  }
+                }}
                 className={SELECT_CLASS}
-                required
                 disabled={me?.id === editing?.id && editing?.role?.slug === 'admin'}
+                aria-invalid={Boolean(editErrors.role)}
+                aria-describedby={editErrors.role ? 'edit-role-error' : undefined}
               >
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -453,6 +550,7 @@ export default function UsersPage() {
                   </option>
                 ))}
               </select>
+              {editErrors.role ? <FieldError id="edit-role-error">{editErrors.role}</FieldError> : null}
             </div>
 
             <PasswordField
@@ -476,11 +574,11 @@ export default function UsersPage() {
               </Button>
               <Button
                 type="submit"
-                size="icon"
                 disabled={editSaving}
                 data-tooltip="Salvar alterações"
               >
                 <IconSave />
+                {editSaving ? 'Salvando…' : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>

@@ -1760,7 +1760,7 @@ export default function TerritoryMap({
     <div
       className={
         isFullscreen
-          ? 'fixed inset-0 z-[9000] flex flex-col gap-3 bg-slate-100 p-3 sm:p-4'
+          ? 'fixed inset-0 z-[9000] flex flex-col gap-3 bg-slate-100 p-3 dark:bg-slate-900 sm:p-4'
           : fillHeight
             ? 'flex h-full min-h-0 flex-col gap-3'
             : 'space-y-3'
@@ -2032,7 +2032,7 @@ export default function TerritoryMap({
             aria-label="Buscar endereço"
             disabled={addressSearching}
             onClick={() => void searchAddress()}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-l border-apple-line bg-apple-blue text-white hover:bg-apple-blue-hover disabled:opacity-60"
+            className="inline-flex h-10 w-11 shrink-0 items-center justify-center border-l border-apple-line bg-apple-blue text-white transition hover:bg-apple-blue-hover disabled:opacity-60"
           >
             <IconSearch className="h-4 w-4" />
           </button>

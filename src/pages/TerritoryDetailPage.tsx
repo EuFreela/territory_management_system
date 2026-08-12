@@ -25,7 +25,6 @@ import TerritoryMap, {
 } from '@/components/Map/TerritoryMap';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
@@ -380,10 +379,11 @@ export default function TerritoryDetailPage() {
                     </p>
                   </div>
                   {territory.is_daily ? (
-                    <Badge className="mt-3 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/35 dark:text-emerald-300">
+                      <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                       Território do dia
                       {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
-                    </Badge>
+                    </span>
                   ) : null}
                 </div>
 

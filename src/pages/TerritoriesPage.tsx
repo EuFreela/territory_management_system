@@ -9,7 +9,6 @@ import {
   IconStar,
   IconUnlink,
 } from '@/components/Map/mapIcons';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -230,10 +229,11 @@ export default function TerritoriesPage() {
                       {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
                     </p>
                     {territory.is_daily ? (
-                      <Badge className="mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300">
+                      <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/35 dark:text-emerald-300">
+                        <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                         Território do dia
                         {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
-                      </Badge>
+                      </span>
                     ) : null}
                   </div>
 

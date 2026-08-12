@@ -443,18 +443,26 @@ export default function DashboardPage() {
                         <IconStar className="size-4 text-primary" />
                         {leaderLabel}
                       </p>
-                      <Badge variant={leader.is_fixed ? 'secondary' : 'outline'}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                          leader.is_fixed
+                            ? 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:border-sky-500/35 dark:text-sky-300'
+                            : 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:border-amber-500/35 dark:text-amber-300'
+                        }`}
+                      >
+                        <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                         {leader.is_fixed ? 'Fixo' : 'Designado'}
-                      </Badge>
+                      </span>
                     </div>
 
                     {cardDaily ? (
                       <div className="flex flex-wrap items-center gap-4">
                         <Link to={`/territories/${cardDaily.id}`} className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <Badge className="bg-blue-600/10 text-blue-700 hover:bg-blue-600/15 dark:bg-blue-500/15 dark:text-blue-300">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-600/10 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:border-blue-500/35 dark:text-blue-300">
+                              <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                               Do dia
-                            </Badge>
+                            </span>
                             <span className="text-base font-semibold tracking-tight">
                               {cardDaily.name}
                             </span>
@@ -476,7 +484,6 @@ export default function DashboardPage() {
                           {can('territory:set_daily') ? (
                             <Button
                               type="button"
-                              size="icon"
                               disabled={finishing || unlinking}
                               onClick={(e) => openFinishModal(e, Number(cardDaily.id))}
                               data-tooltip="Finalizar território do dia"
@@ -484,6 +491,7 @@ export default function DashboardPage() {
                               className="bg-emerald-600 text-white hover:bg-emerald-700"
                             >
                               <IconCheckCircle />
+                              Finalizar
                             </Button>
                           ) : null}
                           {can('territory:set_daily') ? (
@@ -567,7 +575,6 @@ export default function DashboardPage() {
                     {can('territory:set_daily') ? (
                       <Button
                         type="button"
-                        size="icon"
                         disabled={finishing || unlinking}
                         onClick={(e) => openFinishModal(e, Number(d.id))}
                         data-tooltip="Finalizar território do dia"
@@ -575,6 +582,7 @@ export default function DashboardPage() {
                         className="bg-emerald-600 text-white hover:bg-emerald-700"
                       >
                         <IconCheckCircle />
+                        Finalizar
                       </Button>
                     ) : null}
                     {can('territory:set_daily') ? (
@@ -582,7 +590,6 @@ export default function DashboardPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          size="icon"
                           onClick={() =>
                             setDailyModal({ kind: 'for-territory', territoryId: Number(d.id) })
                           }
@@ -590,6 +597,7 @@ export default function DashboardPage() {
                           aria-label="Vincular a um dirigente"
                         >
                           <IconStar />
+                          Vincular
                         </Button>
                         <Button
                           type="button"
@@ -739,13 +747,13 @@ export default function DashboardPage() {
               </Button>
               <Button
                 type="button"
-                size="icon"
                 onClick={() => void confirmFinishDaily()}
                 disabled={finishing}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
                 data-tooltip="Finalizar"
               >
                 <IconCheckCircle />
+                {finishing ? 'Finalizando…' : 'Finalizar'}
               </Button>
             </DialogFooter>
           </DialogContent>
