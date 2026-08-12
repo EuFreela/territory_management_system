@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Permissões por papel (v0.0.12)',
+    items: [
+      'Novo escopo block:check: marcar os números já visitados no não em casa',
+      'Papel Campo agora só lê territórios e marca os números no checklist — não edita não em casa, não marca território do dia e não acessa a escala de dirigentes',
+      'Página Dirigentes restrita a quem gerencia (block:manage) — editor e admin',
+      'Mudar o nome do dirigente (home e escala) só com block:manage',
+    ],
+  },
+  {
     title: 'Gráficos das métricas dos Finalizados (v0.0.11)',
     items: [
       'Nova aba Métricas com gráficos interativos de todo o histórico de finalizações',

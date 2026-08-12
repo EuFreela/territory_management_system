@@ -261,7 +261,7 @@ export default function TerritoryDetailPage() {
 
   async function toggleHouse(block: Block, house: string) {
     if (!id) return;
-    if (!can('block:manage')) return;
+    if (!can('block:check')) return;
     const currentlyDone = isHouseDone(block, house);
     const done = !currentlyDone;
 
@@ -728,13 +728,13 @@ export default function TerritoryDetailPage() {
                                     <button
                                       key={`${block.id}:${house}`}
                                       type="button"
-                                      disabled={busy || !can('block:manage')}
+                                      disabled={busy || !can('block:check')}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         void toggleHouse(block, house);
                                       }}
                                       data-tooltip={tooltipText(
-                                        !can('block:manage')
+                                        !can('block:check')
                                           ? 'Sem permissão para alterar'
                                           : doneHouse
                                             ? 'Desmarcar (pede confirmação)'

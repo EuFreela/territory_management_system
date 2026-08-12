@@ -763,7 +763,7 @@ router.put(
 router.patch(
   '/:id/blocks/:blockId/houses',
   requireAuth,
-  requirePermission('block:manage'),
+  requirePermission('block:check'),
   async (req, res) => {
     const id = paramId(req.params.id);
     const blockId = paramId(req.params.blockId);

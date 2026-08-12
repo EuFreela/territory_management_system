@@ -10,6 +10,7 @@ export const SCOPES = [
   'territory:delete',
   'territory:set_daily',
   'block:manage',
+  'block:check',
   'user:manage',
 ] as const;
 
@@ -33,8 +34,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Scope[]> = {
     'territory:update',
     'territory:set_daily',
     'block:manage',
+    'block:check',
   ],
-  [ROLE_FIELD]: ['territory:read', 'territory:set_daily', 'block:manage'],
+  [ROLE_FIELD]: ['territory:read', 'block:check'],
   [ROLE_VIEWER]: ['territory:read'],
 };
 

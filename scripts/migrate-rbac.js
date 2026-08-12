@@ -12,6 +12,7 @@ const SCOPES = [
   'territory:delete',
   'territory:set_daily',
   'block:manage',
+  'block:check',
   'user:manage',
 ];
 
@@ -32,13 +33,14 @@ const ROLES = [
       'territory:update',
       'territory:set_daily',
       'block:manage',
+      'block:check',
     ],
   },
   {
     slug: 'field',
     name: 'Campo',
-    description: 'Consulta territórios, marca território do dia e checklist de casas',
-    permissions: ['territory:read', 'territory:set_daily', 'block:manage'],
+    description: 'Consulta territórios e marca os números visitados no não em casa',
+    permissions: ['territory:read', 'block:check'],
   },
   {
     slug: 'viewer',
