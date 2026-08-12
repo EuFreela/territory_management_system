@@ -119,13 +119,9 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex justify-end pt-1">
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={saving}
-                  data-tooltip="Salvar nome"
-                >
+                <Button type="submit" disabled={saving}>
                   <IconSave />
+                  {saving ? 'Salvando…' : 'Salvar'}
                 </Button>
               </div>
             </form>
@@ -139,9 +135,10 @@ export default function ProfilePage() {
               Use uma senha forte: mínimo 10 caracteres, com maiúscula, minúscula, número e
               caractere especial.
             </p>
-            <Button asChild size="icon" data-tooltip="Alterar senha">
+            <Button asChild>
               <Link to="/change-password">
                 <IconKey className="size-4" />
+                Trocar Senha
               </Link>
             </Button>
           </CardContent>
