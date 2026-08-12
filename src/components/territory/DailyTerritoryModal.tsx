@@ -329,9 +329,10 @@ export default function DailyTerritoryModal({
               }
               data-tooltip={saving ? 'Vinculando…' : 'Vincular ao dia'}
               aria-label="Vincular ao dia"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apple-blue px-0 text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-apple-blue px-4 text-white shadow-soft transition hover:bg-apple-blue-hover disabled:opacity-50"
             >
               <IconCheckCircle className="h-4 w-4" />
+              {saving ? 'Vinculando…' : 'Vincular'}
             </button>
           </div>
         </div>

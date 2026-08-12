@@ -8,6 +8,7 @@ import {
 } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -220,6 +221,7 @@ export default function FieldLeadersPage() {
   const [newTime, setNewTime] = useState<string>(defaultTimeForWeekday(WEEKDAYS_ALL[0]));
   const [newName, setNewName] = useState('');
   const [adding, setAdding] = useState(false);
+  const [addErrors, setAddErrors] = useState<{ date?: string; name?: string }>({});
 
   async function load() {
     setLoading(true);
@@ -380,14 +382,12 @@ export default function FieldLeadersPage() {
 
   async function addDated(event: FormEvent) {
     event.preventDefault();
-    if (!newDate || !newName.trim()) {
-      setError('Informe data e nome do designado.');
-      return;
-    }
-    if (!newTime.trim()) {
-      setError('Informe o horário (ex.: Manhã, Noite, 19:00).');
-      return;
-    }
+    const errors: { date?: string; name?: string } = {};
+    if (!newDate) errors.date = 'Preencha este campo.';
+    if (!newName.trim()) errors.name = 'Preencha este campo.';
+    setAddErrors(errors);
+    if (errors.date || errors.name) return;
+
     setAdding(true);
     setError('');
     try {
@@ -406,6 +406,7 @@ export default function FieldLeadersPage() {
       setNewName('');
       setNewWeekday(WEEKDAYS_ALL[0]);
       setNewTime(defaultTimeForWeekday(WEEKDAYS_ALL[0]));
+      setAddErrors({});
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao adicionar.');
@@ -416,6 +417,7 @@ export default function FieldLeadersPage() {
 
   function onDateChange(value: string) {
     setNewDate(value);
+    if (addErrors.date) setAddErrors((prev) => ({ ...prev, date: undefined }));
     if (!value) return;
     const weekday = weekdayLabelFromIsoDate(value);
     setNewWeekday(weekday);
@@ -474,7 +476,7 @@ export default function FieldLeadersPage() {
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Adicionar designação (por data)
           </h2>
-          <form onSubmit={addDated} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <form onSubmit={addDated} noValidate className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="grid gap-1.5">
               <Label htmlFor="new-assignment-date">Data</Label>
               <Input
@@ -482,8 +484,12 @@ export default function FieldLeadersPage() {
                 type="date"
                 value={newDate}
                 onChange={(e) => onDateChange(e.target.value)}
-                required
+                aria-invalid={Boolean(addErrors.date)}
+                aria-describedby={addErrors.date ? 'new-assignment-date-error' : undefined}
               />
+              {addErrors.date ? (
+                <FieldError id="new-assignment-date-error">{addErrors.date}</FieldError>
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="new-assignment-weekday">Dia da semana</Label>
@@ -492,7 +498,6 @@ export default function FieldLeadersPage() {
                 value={newWeekday}
                 onChange={(e) => onWeekdayChange(e.target.value)}
                 className={SELECT_CLASS}
-                required
               >
                 {WEEKDAYS_ALL.map((w) => (
                   <option key={w} value={w}>
@@ -508,7 +513,6 @@ export default function FieldLeadersPage() {
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
                 className={SELECT_CLASS}
-                required
               >
                 {TIME_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -522,10 +526,17 @@ export default function FieldLeadersPage() {
               <Input
                 id="new-assignment-name"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => {
+                  setNewName(e.target.value);
+                  if (addErrors.name) setAddErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder="Nome do dirigente"
-                required
+                aria-invalid={Boolean(addErrors.name)}
+                aria-describedby={addErrors.name ? 'new-assignment-name-error' : undefined}
               />
+              {addErrors.name ? (
+                <FieldError id="new-assignment-name-error">{addErrors.name}</FieldError>
+              ) : null}
             </div>
             <div className="flex items-end">
               <Button

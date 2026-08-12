@@ -45,6 +45,7 @@ export default function EditTerritoryPage() {
   /** null = novo registro; number = editando esse block (uma rua) */
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [localidadeError, setLocalidadeError] = useState('');
   const [blockError, setBlockError] = useState('');
   const [blockNameError, setBlockNameError] = useState('');
   const [streetRowErrors, setStreetRowErrors] = useState<
@@ -132,6 +133,14 @@ export default function EditTerritoryPage() {
   async function saveTerritory(event: FormEvent) {
     event.preventDefault();
     if (!id) return;
+
+    setError('');
+    setLocalidadeError('');
+
+    if (localidade.trim() === '') {
+      setLocalidadeError('Preencha este campo.');
+      return;
+    }
 
     if (!geojson || !hasValidMapArea(geojson)) {
       setError('Desenhe ao menos uma área no mapa (lápis → pontos → ✓) antes de salvar.');
@@ -411,17 +420,24 @@ export default function EditTerritoryPage() {
               <strong className="font-semibold text-foreground">não em casa</strong>.
             </p>
 
-            <form id="territory-form" onSubmit={saveTerritory} className="mt-6 space-y-5">
+            <form id="territory-form" onSubmit={saveTerritory} noValidate className="mt-6 space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-1.5">
                   <Label htmlFor="localidade-input">Localidade</Label>
                   <Input
                     id="localidade-input"
                     value={localidade}
-                    onChange={(event) => setLocalidade(event.target.value)}
+                    onChange={(event) => {
+                      setLocalidade(event.target.value);
+                      if (localidadeError) setLocalidadeError('');
+                    }}
                     placeholder="Ex: Mundo Novo"
-                    required
+                    aria-invalid={Boolean(localidadeError)}
+                    aria-describedby={localidadeError ? 'localidade-input-error' : undefined}
                   />
+                  {localidadeError ? (
+                    <FieldError id="localidade-input-error">{localidadeError}</FieldError>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-1.5">

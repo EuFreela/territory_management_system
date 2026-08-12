@@ -4,16 +4,17 @@ import { toast } from 'sonner';
 import { IconKey, IconSave } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { onInputClearValidity, onInvalidPtBr } from '@/lib/form-validation-pt';
 
 export default function ProfilePage() {
   const { user, refresh } = useAuth();
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   useEffect(() => {
     if (user?.name != null) setName(user.name);
@@ -22,10 +23,19 @@ export default function ProfilePage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
-    if (trimmed.length < 2) {
-      toast.error('Informe um nome com pelo menos 2 caracteres.');
+    if (trimmed === '') {
+      setNameError('Preencha este campo.');
       return;
     }
+    if (trimmed.length < 2) {
+      setNameError('Use pelo menos 2 caracteres.');
+      return;
+    }
+    if (trimmed.length > 150) {
+      setNameError('Use no máximo 150 caracteres.');
+      return;
+    }
+    setNameError('');
 
     setSaving(true);
     try {
@@ -60,23 +70,22 @@ export default function ProfilePage() {
               O nome aparece para os demais usuários no mapa (GPS) e nas listas do sistema.
             </p>
 
-            <form
-              onSubmit={onSubmit}
-              onInvalidCapture={onInvalidPtBr}
-              onInput={onInputClearValidity}
-              className="space-y-4"
-            >
+            <form onSubmit={onSubmit} noValidate className="space-y-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="profile-name">Nome</Label>
                 <Input
                   id="profile-name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  minLength={2}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (nameError) setNameError('');
+                  }}
                   maxLength={150}
                   autoComplete="name"
+                  aria-invalid={Boolean(nameError)}
+                  aria-describedby={nameError ? 'profile-name-error' : undefined}
                 />
+                {nameError ? <FieldError id="profile-name-error">{nameError}</FieldError> : null}
               </div>
 
               <div className="grid gap-1.5">

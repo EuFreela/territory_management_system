@@ -7,6 +7,7 @@ import {
   IconKey,
   IconRefresh,
 } from '@/components/Map/mapIcons';
+import FieldError from '@/components/ui/FieldError';
 import { PASSWORD_REQUIREMENTS, generateStrongPassword, isStrongPassword } from '@/lib/password';
 
 type PasswordFieldProps = {
@@ -147,11 +148,7 @@ export default function PasswordField({
         ) : null}
       </div>
 
-      {error ? (
-        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium text-apple-red">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       {touched ? (
         <div id={helpId} className="mt-2.5 space-y-2.5">

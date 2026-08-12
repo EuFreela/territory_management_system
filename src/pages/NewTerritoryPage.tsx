@@ -5,6 +5,7 @@ import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
@@ -17,6 +18,7 @@ export default function NewTerritoryPage() {
   const [geojson, setGeojson] = useState<string | null>(null);
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [error, setError] = useState('');
+  const [localidadeError, setLocalidadeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loadingMap, setLoadingMap] = useState(true);
 
@@ -30,6 +32,12 @@ export default function NewTerritoryPage() {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
+    setLocalidadeError('');
+
+    if (localidade.trim() === '') {
+      setLocalidadeError('Preencha este campo.');
+      return;
+    }
 
     if (!geojson || !hasValidMapArea(geojson)) {
       setError('Desenhe ao menos uma área no mapa (lápis → pontos → ✓) antes de salvar.');
@@ -77,18 +85,25 @@ export default function NewTerritoryPage() {
 
         <Card className="mt-6">
           <CardContent className="pt-6">
-            <form onSubmit={onSubmit} className="space-y-5">
+            <form onSubmit={onSubmit} noValidate className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-1.5">
                   <Label htmlFor="localidade">Localidade</Label>
                   <Input
                     id="localidade"
                     value={localidade}
-                    onChange={(event) => setLocalidade(event.target.value)}
+                    onChange={(event) => {
+                      setLocalidade(event.target.value);
+                      if (localidadeError) setLocalidadeError('');
+                    }}
                     placeholder="Ex: Mundo Novo"
-                    required
                     disabled={submitting}
+                    aria-invalid={Boolean(localidadeError)}
+                    aria-describedby={localidadeError ? 'localidade-error' : undefined}
                   />
+                  {localidadeError ? (
+                    <FieldError id="localidade-error">{localidadeError}</FieldError>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-1.5">

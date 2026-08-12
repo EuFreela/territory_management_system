@@ -10,12 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PasswordField from '@/components/ui/PasswordField';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { onInputClearValidity, onInvalidPtBr } from '@/lib/form-validation-pt';
 
 type FieldErrors = {
   current?: string;
@@ -40,19 +40,19 @@ function classifyError(msg: string): keyof FieldErrors | null {
 /** Input de senha com cadeado à esquerda e visibilidade controlada pelo olho único externo. */
 function PasswordInput({
   id,
+  errorId,
   autoComplete,
   value,
   onChange,
-  required,
   disabled,
   hasError,
   show,
 }: {
   id: string;
+  errorId?: string;
   autoComplete: string;
   value: string;
   onChange: (value: string) => void;
-  required?: boolean;
   disabled?: boolean;
   hasError?: boolean;
   show: boolean;
@@ -67,15 +67,12 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`pl-9 ${hasError ? 'border-destructive/60 ring-2 ring-destructive/25' : ''}`}
-        required={required}
         disabled={disabled}
+        aria-invalid={hasError}
+        aria-describedby={hasError ? errorId : undefined}
       />
     </div>
   );
-}
-
-function FieldErrorText({ children }: { children: string }) {
-  return <p className="mt-1.5 text-xs font-medium text-destructive">{children}</p>;
 }
 
 export default function ChangePasswordPage() {
@@ -105,9 +102,17 @@ export default function ChangePasswordPage() {
     event.preventDefault();
     setFieldErrors({});
 
+    const errors: FieldErrors = {};
+    if (currentPassword === '') errors.current = 'Preencha este campo.';
+    if (newPassword === '') errors.new = 'Preencha este campo.';
+    if (confirmPassword === '') errors.confirm = 'Preencha este campo.';
+    if (Object.values(errors).some(Boolean)) {
+      setFieldErrors(errors);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       const msg = 'A confirmação não confere com a nova senha.';
-      toast.error(msg);
       setFieldErrors({ confirm: msg });
       return;
     }
@@ -159,29 +164,24 @@ export default function ChangePasswordPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={onSubmit}
-              onInvalidCapture={onInvalidPtBr}
-              onInput={onInputClearValidity}
-              className="grid gap-4"
-            >
+            <form onSubmit={onSubmit} noValidate className="grid gap-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="current">Senha atual</Label>
                 <PasswordInput
                   id="current"
+                  errorId="current-error"
                   autoComplete="current-password"
                   value={currentPassword}
                   onChange={(v) => {
                     setCurrentPassword(v);
                     clearFieldError('current');
                   }}
-                  required
                   disabled={submitting}
                   hasError={Boolean(fieldErrors.current)}
                   show={showPasswords}
                 />
                 {fieldErrors.current ? (
-                  <FieldErrorText>{fieldErrors.current}</FieldErrorText>
+                  <FieldError id="current-error">{fieldErrors.current}</FieldError>
                 ) : null}
               </div>
 
@@ -192,7 +192,6 @@ export default function ChangePasswordPage() {
                   setNewPassword(v);
                   clearFieldError('new');
                 }}
-                required
                 autoComplete="new-password"
                 disabled={submitting}
                 error={fieldErrors.new}
@@ -204,19 +203,19 @@ export default function ChangePasswordPage() {
                 <Label htmlFor="confirm">Confirmar nova senha</Label>
                 <PasswordInput
                   id="confirm"
+                  errorId="confirm-error"
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(v) => {
                     setConfirmPassword(v);
                     clearFieldError('confirm');
                   }}
-                  required
                   disabled={submitting}
                   hasError={Boolean(fieldErrors.confirm)}
                   show={showPasswords}
                 />
                 {fieldErrors.confirm ? (
-                  <FieldErrorText>{fieldErrors.confirm}</FieldErrorText>
+                  <FieldError id="confirm-error">{fieldErrors.confirm}</FieldError>
                 ) : null}
               </div>
 
