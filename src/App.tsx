@@ -37,7 +37,14 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/dirigentes" element={<FieldLeadersPage />} />
+          <Route
+            path="/dirigentes"
+            element={
+              <RequirePermission scope="block:manage">
+                <FieldLeadersPage />
+              </RequirePermission>
+            }
+          />
           <Route path="/territories" element={<TerritoriesPage />} />
           <Route
             path="/territories/finalizados"

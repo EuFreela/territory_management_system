@@ -119,6 +119,7 @@ CROSS JOIN (
   SELECT 'territory:delete' UNION ALL
   SELECT 'territory:set_daily' UNION ALL
   SELECT 'block:manage' UNION ALL
+  SELECT 'block:check' UNION ALL
   SELECT 'user:manage'
 ) p
 WHERE r.slug = 'admin';
@@ -130,7 +131,8 @@ CROSS JOIN (
   SELECT 'territory:read' UNION ALL
   SELECT 'territory:update' UNION ALL
   SELECT 'territory:set_daily' UNION ALL
-  SELECT 'block:manage'
+  SELECT 'block:manage' UNION ALL
+  SELECT 'block:check'
 ) p
 WHERE r.slug = 'editor';
 
@@ -138,8 +140,7 @@ INSERT IGNORE INTO role_permissions (role_id, permission)
 SELECT r.id, p.permission FROM roles r
 CROSS JOIN (
   SELECT 'territory:read' AS permission UNION ALL
-  SELECT 'territory:set_daily' UNION ALL
-  SELECT 'block:manage'
+  SELECT 'block:check'
 ) p
 WHERE r.slug = 'field';
 

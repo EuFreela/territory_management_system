@@ -6,6 +6,7 @@ export const SCOPES = [
   'territory:delete',
   'territory:set_daily',
   'block:manage',
+  'block:check',
   'user:manage',
 ] as const;
 

@@ -266,12 +266,14 @@ export default function DashboardPage() {
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className={sectionTitle}>Dirigente do serviço de campo</h2>
-          <Link
-            to="/dirigentes"
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            Ver escala
-          </Link>
+          {can('block:manage') ? (
+            <Link
+              to="/dirigentes"
+              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver escala
+            </Link>
+          ) : null}
         </div>
 
         <Card>
@@ -328,15 +330,17 @@ export default function DashboardPage() {
                           <p className="text-base font-semibold tracking-tight">
                             {row.assignee_name}
                           </p>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => startEditLeader(row)}
-                            aria-label="Editar dirigente"
-                          >
-                            <IconPencil />
-                          </Button>
+                          {can('block:manage') ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => startEditLeader(row)}
+                              aria-label="Editar dirigente"
+                            >
+                              <IconPencil />
+                            </Button>
+                          ) : null}
                         </div>
                       )}
                     </div>
@@ -386,15 +390,17 @@ export default function DashboardPage() {
                           <p className="text-base font-semibold tracking-tight">
                             {row.assignee_name}
                           </p>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => startEditLeader(row)}
-                            aria-label="Editar dirigente"
-                          >
-                            <IconPencil />
-                          </Button>
+                          {can('block:manage') ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => startEditLeader(row)}
+                              aria-label="Editar dirigente"
+                            >
+                              <IconPencil />
+                            </Button>
+                          ) : null}
                         </div>
                       )}
                     </div>

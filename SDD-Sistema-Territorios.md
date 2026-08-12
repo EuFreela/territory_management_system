@@ -189,7 +189,8 @@ Usuários autenticados (responsáveis / irmãos) com papéis distintos (admin, e
 | `territory:update` | Editar território/mapa |
 | `territory:delete` | Excluir território |
 | `territory:set_daily` | Marcar/desvincular território do dia |
-| `block:manage` | CRUD de não em casa / checklist |
+| `block:manage` | CRUD de não em casa / escala de dirigentes |
+| `block:check` | Marcar números visitados no checklist do não em casa |
 | `user:manage` | Gestão de usuários e papéis |
 
 Admin (`slug = admin` ou `isAdmin`) tem **todos** os escopos implicitamente.
@@ -199,8 +200,8 @@ Admin (`slug = admin` ou `isAdmin`) tem **todos** os escopos implicitamente.
 | Slug | Nome | Permissões |
 |------|------|------------|
 | `admin` | Administrador | Todos os escopos |
-| `editor` | Editor | create, read, update, set_daily, block:manage |
-| `field` | Campo | read, set_daily, block:manage |
+| `editor` | Editor | create, read, update, set_daily, block:manage, block:check |
+| `field` | Campo | read, block:check |
 | `viewer` | Visualizador | read |
 
 ### 4.3 Enforcement
@@ -320,7 +321,8 @@ Base: `/api` (proxy Vite em dev; mesma origem em prod).
 | DELETE | `/:id/daily` | `territory:set_daily` | Desvincula |
 | POST | `/:id/finish` | (fluxo dia) | Finaliza → history + unsets daily |
 | GET/POST | `/:id/blocks` | read / `block:manage` | Lista / cria |
-| PUT/PATCH/DELETE | blocks… | `block:manage` | Atualiza / checklist / remove |
+| PATCH | `/:id/blocks/:blockId/houses` | `block:check` | Marca/desmarca número no checklist |
+| PUT/DELETE | blocks… | `block:manage` | Atualiza / remove |
 | POST | bulk delete blocks | `block:manage` | Exclusão em massa |
 
 *(Rotas exatas de blocks: ver `server/routes/territories.ts`.)*

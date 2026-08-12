@@ -36,8 +36,8 @@ function weekdayLabelPt(day: number) {
   return labels[day] ?? '';
 }
 
-/** Lista completa (tabela de designações) */
-router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
+/** Lista completa (tabela de designações) — restrita a quem gerencia a escala */
+router.get('/', requireAuth, requirePermission('block:manage'), async (_req, res) => {
   const [rows] = await pool.execute(
     `SELECT * FROM field_assignments
      ORDER BY is_fixed ASC,

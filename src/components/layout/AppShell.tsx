@@ -228,10 +228,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </>
               ) : null}
 
-              <NavLink to="/dirigentes" className={navClass}>
-                <IconUsers className="h-3.5 w-3.5 opacity-80" />
-                Dirigentes
-              </NavLink>
+              {can('block:manage') ? (
+                <NavLink to="/dirigentes" className={navClass}>
+                  <IconUsers className="h-3.5 w-3.5 opacity-80" />
+                  Dirigentes
+                </NavLink>
+              ) : null}
               {can('user:manage') ? (
                 <NavLink to="/usuarios" className={navClass}>
                   <IconUsers className="h-3.5 w-3.5 opacity-80" />
@@ -357,10 +359,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               ) : null}
 
-              <NavLink to="/dirigentes" className={mobileNavClass}>
-                <IconUsers className="h-4 w-4 opacity-70" />
-                Dirigentes
-              </NavLink>
+              {can('block:manage') ? (
+                <NavLink to="/dirigentes" className={mobileNavClass}>
+                  <IconUsers className="h-4 w-4 opacity-70" />
+                  Dirigentes
+                </NavLink>
+              ) : null}
 
               {can('user:manage') ? (
                 <NavLink to="/usuarios" className={mobileNavClass}>
