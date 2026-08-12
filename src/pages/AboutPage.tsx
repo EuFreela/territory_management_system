@@ -40,6 +40,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Ajuste fino dos campos (v0.0.10.7)',
+    items: [
+      'Campo de senha com a mesma altura dos demais inputs (alinhado ao padrão shadcn)',
+      'Rótulos de senha e papel alinhados — inputs nivelados na tela de usuários',
+    ],
+  },
+  {
     title: 'Padronização, botões e tooltips (v0.0.10.6)',
     items: [
       'Tooltip em camada própria (portal) — as dicas aparecem sempre acima de mapas, tabelas e modais',

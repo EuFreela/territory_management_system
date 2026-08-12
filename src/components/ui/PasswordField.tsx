@@ -105,22 +105,25 @@ export default function PasswordField({
 
   return (
     <div>
-      {/* min-h-6 alinha com labels que têm botão de ajuda (ex.: Papel na UsersPage) */}
-      <label htmlFor={inputId} className="app-label mb-1.5 flex min-h-6 items-center">
+      {/* min-h-7 alinha com a linha "Papel" (botão de ajuda icon-sm = 28px) na UsersPage */}
+      <label htmlFor={inputId} className="app-label mb-1.5 flex min-h-7 items-center">
         {label}
         {optional ? <span className="font-normal text-apple-tertiary"> (opcional)</span> : null}
       </label>
 
       <div className="relative">
-        <IconKey className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-apple-tertiary" />
+        <IconKey className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
         <input
           id={inputId}
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`app-input pl-10 pr-11 ${
-            error ? 'border-apple-red/60 inset-ring-2 inset-ring-apple-red/25' : ''
+          className={`h-8 w-full min-w-0 rounded-lg border bg-transparent pl-10 pr-11 text-base transition-colors outline-none placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm ${
+            error
+              ? 'border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40'
+              : 'border-input focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
           }`}
+          aria-invalid={Boolean(error)}
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}
@@ -137,7 +140,7 @@ export default function PasswordField({
             data-tooltip={visible ? 'Ocultar senha' : 'Mostrar senha'}
             data-tooltip-side="left"
             disabled={disabled}
-            className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-apple-tertiary transition hover:bg-apple-fill hover:text-apple-ink active:scale-95 disabled:opacity-40"
+            className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-40"
           >
             {visible ? (
               <IconEyeOff className="h-[18px] w-[18px]" />
