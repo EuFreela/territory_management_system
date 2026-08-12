@@ -7,9 +7,11 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { DotGridBackground } from '@/components/ui/dot-grid-background';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -96,13 +98,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-svh flex-col bg-background">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+    <main className="relative flex min-h-svh flex-col overflow-hidden bg-black">
+      <DotGridBackground />
+
+      <header className="relative z-10 flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-black/40 px-4 backdrop-blur-xl sm:px-6">
         <p
-          className="text-[12px] font-semibold tracking-tight text-muted-foreground"
+          className="text-[12px] font-semibold tracking-tight text-white/60"
           title="Versão do sistema"
         >
-          <span className="text-foreground">CAMPO</span>{' '}
+          <span className="text-white">CAMPO</span>{' '}
           <span className="tabular-nums">{APP_VERSION}</span>
         </p>
         <Button
@@ -111,123 +115,127 @@ export default function LoginPage() {
           size="icon"
           onClick={toggleTheme}
           data-tooltip={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          data-tooltip-side="bottom"
           aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          className="text-white/80 hover:bg-white/10 hover:text-white"
         >
           {theme === 'dark' ? <IconSun /> : <IconMoon />}
         </Button>
       </header>
 
-      <div className="flex flex-1 items-center justify-center px-5 py-10 sm:py-14">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-8 text-center">
+      <div className="relative z-10 flex flex-1 items-center justify-center px-5 py-10 sm:py-14">
+        <Card className="w-full max-w-[400px] border-white/10 bg-card shadow-2xl shadow-black/50">
+          <CardHeader className="justify-items-center text-center">
             <img
               src="/logo.webp"
               alt="CAMPO"
               width={72}
               height={72}
-              className="mx-auto mb-5 h-[72px] w-[72px] rounded-[18px] object-cover ring-1 ring-border"
+              className="mb-1 h-[72px] w-[72px] rounded-[18px] object-cover ring-1 ring-border"
             />
-            <h1 className="text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">CAMPO</h1>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+            <CardTitle className="text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+              CAMPO
+            </CardTitle>
+            <CardDescription className="text-[15px] leading-relaxed">
               Congregação Alpinópolis
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
 
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle>Acesse sua conta</CardTitle>
-              <CardDescription>Entre com seu e-mail e senha</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <form onSubmit={onSubmit} noValidate className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="text"
-                    inputMode="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      if (fieldErrors.email) {
-                        setFieldErrors((prev) => ({ ...prev, email: undefined }));
-                      }
-                    }}
-                    placeholder="seuemail@exemplo.com"
-                    autoComplete="username"
-                    required
-                    disabled={submitting}
-                    aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-                  />
-                  {fieldErrors.email ? (
-                    <FieldError id="email-error">{fieldErrors.email}</FieldError>
-                  ) : null}
-                </div>
+          <CardContent className="grid gap-4">
+            <div className="text-center">
+              <p className="text-sm font-medium text-foreground">Acesse sua conta</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Entre com seu e-mail e senha
+              </p>
+            </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value);
-                      if (fieldErrors.password) {
-                        setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                      }
-                    }}
-                    autoComplete="current-password"
-                    required
-                    disabled={submitting}
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-                  />
-                  {fieldErrors.password ? (
-                    <FieldError id="password-error">{fieldErrors.password}</FieldError>
-                  ) : null}
-                </div>
-
-                <Button
-                  type="submit"
+            <form onSubmit={onSubmit} noValidate className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="text"
+                  inputMode="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (fieldErrors.email) {
+                      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                    }
+                  }}
+                  placeholder="seuemail@exemplo.com"
+                  autoComplete="username"
+                  required
                   disabled={submitting}
-                  className="w-full"
-                >
-                  <IconLogIn />
-                  {submitting ? 'Entrando…' : 'Entrar'}
-                </Button>
-              </form>
-
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">ou</span>
-                <Separator className="flex-1" />
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                />
+                {fieldErrors.email ? (
+                  <FieldError id="email-error">{fieldErrors.email}</FieldError>
+                ) : null}
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                disabled={startingGoogle}
-                onClick={() => {
-                  if (!googleEnabled) {
-                    toast.error('Login com Google não configurado no servidor.');
-                    return;
-                  }
-                  setStartingGoogle(true);
-                  window.location.href = '/api/auth/google';
-                }}
-                className="w-full"
-              >
-                <FcGoogle className="h-4 w-4" />
-                {startingGoogle ? 'Entrando…' : 'Entrar com Google'}
-              </Button>
-            </CardContent>
-          </Card>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                  autoComplete="current-password"
+                  required
+                  disabled={submitting}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                />
+                {fieldErrors.password ? (
+                  <FieldError id="password-error">{fieldErrors.password}</FieldError>
+                ) : null}
+              </div>
 
-          <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-            Acesso restrito. Contas são criadas pelo administrador ou na primeira entrada com Google.
-          </p>
-        </div>
+              <Button type="submit" disabled={submitting} className="w-full">
+                <IconLogIn />
+                {submitting ? 'Entrando…' : 'Entrar'}
+              </Button>
+            </form>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">ou</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={startingGoogle}
+              onClick={() => {
+                if (!googleEnabled) {
+                  toast.error('Login com Google não configurado no servidor.');
+                  return;
+                }
+                setStartingGoogle(true);
+                window.location.href = '/api/auth/google';
+              }}
+              className="w-full"
+            >
+              <FcGoogle className="h-4 w-4" />
+              {startingGoogle ? 'Entrando…' : 'Entrar com Google'}
+            </Button>
+          </CardContent>
+
+          <CardFooter className="justify-center border-t-0 bg-transparent">
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              Acesso restrito. Contas são criadas pelo administrador ou na primeira entrada com
+              Google.
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </main>
   );

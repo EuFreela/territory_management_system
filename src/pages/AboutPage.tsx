@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Novo visual do login (v0.0.13)',
+    items: [
+      'Fundo animado de pontos 3D (WebGL) com vinheta no centro',
+      'Cartão de login em vidro escuro com sombra profunda sobre fundo preto',
+      'Cabeçalho e botão de tema ajustados ao novo visual (tema claro/escuro preservado)',
+    ],
+  },
+  {
     title: 'Permissões por papel (v0.0.12)',
     items: [
       'Novo escopo block:check: marcar os números já visitados no não em casa',
