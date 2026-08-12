@@ -40,6 +40,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Botões de conta com texto (v0.0.10.8)',
+    items: [
+      'Em "Minha conta", o botão Salvar passou a exibir o texto "Salvar" (e "Salvando…" durante o envio)',
+      'O botão de troca de senha agora mostra "Trocar Senha"',
+    ],
+  },
+  {
     title: 'Ajuste fino dos campos (v0.0.10.7)',
     items: [
       'Campo de senha com a mesma altura dos demais inputs (alinhado ao padrão shadcn)',
