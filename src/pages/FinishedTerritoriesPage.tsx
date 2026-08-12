@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
+import FinishedMetrics from '@/components/finished/FinishedMetrics';
 import { api } from '@/lib/api';
 import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
@@ -255,12 +256,7 @@ export default function FinishedTerritoriesPage() {
                 Gráficos com base no histórico de finalizações ({rows.length} registro(s)).
               </p>
             </div>
-            <Card>
-              <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                Em breve: gráficos das finalizações.
-              </CardContent>
-            </Card>
-          </section>
+            <FinishedMetrics rows={rows} />          </section>
         ) : (
         <>
           <div className="mb-5">

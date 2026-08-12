@@ -40,6 +40,19 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Gráficos das métricas dos Finalizados (v0.0.11)',
+    items: [
+      'Nova aba Métricas com gráficos interativos de todo o histórico de finalizações',
+      'Line Chart com as métricas diárias em linhas independentes (finalizações, pessoas, quadras, ruas e casas)',
+      'Area Chart interativo de pessoas por dia com filtro de período (7d, 30d, 90d)',
+      'Bar Chart empilhado do não em casa por dia (quadras, ruas e casas)',
+      'Pie Chart da participação de cada dirigente nas finalizações',
+      'Radar Chart comparando os top dirigentes nas principais métricas',
+      'Radial Chart com o progresso das casas não em casa já visitadas',
+      'Cartões de resumo: finalizações, pessoas alcançadas, não em casa e dias com registro',
+    ],
+  },
+  {
     title: 'Botões de conta com texto (v0.0.10.8)',
     items: [
       'Em "Minha conta", o botão Salvar passou a exibir o texto "Salvar" (e "Salvando…" durante o envio)',
