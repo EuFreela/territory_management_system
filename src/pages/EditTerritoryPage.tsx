@@ -1,12 +1,23 @@
 ﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { IconArrowLeft, IconPlus, IconSave, IconTrash, IconX } from '@/components/Map/mapIcons';
+import {
+  IconArrowLeft,
+  IconColumns,
+  IconImage,
+  IconMap,
+  IconPlus,
+  IconRows,
+  IconSave,
+  IconTrash,
+  IconX,
+} from '@/components/Map/mapIcons';
 import TerritoryMap, {
   areaMatchesBlock,
   hasValidMapArea,
   parseGeoJsonToAreas,
   resolveAreaByKey,
 } from '@/components/Map/TerritoryMap';
+import TerritoryImageLeafletMap from '@/components/Map/TerritoryImageLeafletMap';
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import FieldError from '@/components/ui/FieldError';
@@ -18,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
 type StreetRow = { key: string; streetName: string; houseNumbers: string; description: string };
@@ -57,6 +69,10 @@ export default function EditTerritoryPage() {
   /** Destaque mapa ↔ card de não em casa */
   const [mapSelectedKey, setMapSelectedKey] = useState<string | null>(null);
   const [mapFocusToken, setMapFocusToken] = useState(0);
+  /** Comparação dos dois mapas lado a lado (interativo + imagem do cartão) */
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitOrientation, setSplitOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [splitResizeToken, setSplitResizeToken] = useState(0);
   /** IDs selecionados para exclusão em massa */
   const [bulkSelectedIds, setBulkSelectedIds] = useState<number[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -385,6 +401,43 @@ export default function EditTerritoryPage() {
     });
   }
 
+  function openSplit() {
+    setSplitOpen(true);
+  }
+
+  /** Objeto mínimo para associar a imagem do cartão (usa number/id) */
+  const territoryForImage: Territory = {
+    id: Number(id),
+    user_id: 0,
+    name: localidade,
+    number,
+    is_daily: 0,
+  };
+
+  function closeSplit() {
+    setSplitOpen(false);
+  }
+
+  function rotateSplit() {
+    setSplitOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'));
+    setSplitResizeToken((t) => t + 1);
+  }
+
+  // Esc fecha a comparação em paralelo; trava o scroll do body enquanto aberta
+  useEffect(() => {
+    if (!splitOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeSplit();
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [splitOpen]);
+
   if (loading) {
     return (
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
@@ -396,7 +449,8 @@ export default function EditTerritoryPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+    <>
+      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="space-y-6">
         {/* 1. Localidade + mapa */}
         <Card>
@@ -458,39 +512,75 @@ export default function EditTerritoryPage() {
               ) : null}
 
               <div id="territorio-mapa-edit" className="scroll-mt-6">
-                <Label className="text-sm font-medium text-foreground">
-                  Área do território no mapa
-                </Label>
-                <p className="mb-2 text-[13px] leading-relaxed text-muted-foreground">
-                  Clique no card de não em casa ou na área do mapa para destacar a quadra (sem rolar
-                  a página).
-                </p>
-                <TerritoryMap
-                  value={geojson}
-                  onChange={setGeojson}
-                  centerLat={mapConfig?.lat ?? null}
-                  centerLng={mapConfig?.lng ?? null}
-                  cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
-                  editable
-                  selectedKey={mapSelectedKey}
-                  focusToken={mapFocusToken}
-                  onAreaSelect={onMapAreaSelect}
-                  onClearSelection={() => {
-                    setMapSelectedKey(null);
-                    setMapFocusToken(0);
-                  }}
-                  finishedKeys={blocksByQuadra
-                    .filter(([, streetBlocks]) =>
-                      streetBlocks.every((b) => {
-                        const total = b.house_numbers.length;
-                        const done = (b.completed_houses ?? []).filter((h) =>
-                          b.house_numbers.includes(h),
-                        ).length;
-                        return total > 0 && done >= total;
-                      }),
-                    )
-                    .map(([quadraName]) => quadraName)}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">
+                      Área do território no mapa
+                    </Label>
+                    <p className="mb-0 mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+                      Clique no card de não em casa ou na área do mapa para destacar a quadra (sem
+                      rolar a página).
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
+                    <button
+                      type="button"
+                      onClick={() => setSplitOpen(false)}
+                      className={cn(
+                        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors',
+                        !splitOpen
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      aria-pressed={!splitOpen}
+                    >
+                      <IconMap className="size-4" />
+                      Mapa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSplitOpen(true)}
+                      className={cn(
+                        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors',
+                        splitOpen
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      aria-pressed={splitOpen}
+                    >
+                      <IconImage className="size-4" />
+                      Mapa + Imagem
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <TerritoryMap
+                    value={geojson}
+                    onChange={setGeojson}
+                    centerLat={mapConfig?.lat ?? null}
+                    centerLng={mapConfig?.lng ?? null}
+                    cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                    editable
+                    selectedKey={mapSelectedKey}
+                    focusToken={mapFocusToken}
+                    onAreaSelect={onMapAreaSelect}
+                    onClearSelection={() => {
+                      setMapSelectedKey(null);
+                      setMapFocusToken(0);
+                    }}
+                    finishedKeys={blocksByQuadra
+                      .filter(([, streetBlocks]) =>
+                        streetBlocks.every((b) => {
+                          const total = b.house_numbers.length;
+                          const done = (b.completed_houses ?? []).filter((h) =>
+                            b.house_numbers.includes(h),
+                          ).length;
+                          return total > 0 && done >= total;
+                        }),
+                      )
+                      .map(([quadraName]) => quadraName)}
+                  />
+                </div>
               </div>
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -980,5 +1070,120 @@ export default function EditTerritoryPage() {
         </Card>
       </div>
     </main>
+
+    {/* Modal de comparação Mapa & Imagem — tela cheia, dois quadros em paralelo */}
+    {splitOpen ? (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mapa e Imagem lado a lado"
+        className="fixed inset-0 z-[9000] flex flex-col bg-slate-100 dark:bg-black"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-3 py-2 shadow-sm sm:px-4">
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <span className="flex items-center">
+              <IconMap className="size-4" />
+              <IconImage className="-ml-1 size-4" />
+            </span>
+            Mapa &amp; Imagem
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="max-w-[240px] truncate text-xs font-medium text-muted-foreground">
+              {number ? `Terr. N.º ${number}` : 'Sem Terr. N.º definido'}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={rotateSplit}
+              data-tooltip={
+                splitOrientation === 'horizontal'
+                  ? 'Empilhar na vertical'
+                  : 'Colocar lado a lado (horizontal)'
+              }
+              data-tooltip-side="bottom"
+              aria-label="Girar orientação"
+              aria-pressed={splitOrientation === 'vertical'}
+            >
+              {splitOrientation === 'horizontal' ? (
+                <IconRows className="size-5" />
+              ) : (
+                <IconColumns className="size-5" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={closeSplit}
+              data-tooltip="Fechar (Esc)"
+              data-tooltip-side="bottom"
+              data-tooltip-align="end"
+              aria-label="Fechar"
+            >
+              <IconX className="size-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 gap-2 p-2 sm:gap-3 sm:p-3',
+            splitOrientation === 'horizontal' ? 'flex-col sm:flex-row' : 'flex-col',
+          )}
+        >
+          {/* Quadro: mapa principal (editável) */}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <TerritoryMap
+              value={geojson}
+              onChange={setGeojson}
+              centerLat={mapConfig?.lat ?? null}
+              centerLng={mapConfig?.lng ?? null}
+              cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+              editable
+              hideSearch
+              hideAreaCount
+              fillHeight
+              resizeToken={splitResizeToken}
+              selectedKey={mapSelectedKey}
+              focusToken={mapFocusToken}
+              onAreaSelect={onMapAreaSelect}
+              onClearSelection={() => {
+                setMapSelectedKey(null);
+                setMapFocusToken(0);
+              }}
+              finishedKeys={blocksByQuadra
+                .filter(([, streetBlocks]) =>
+                  streetBlocks.every((b) => {
+                    const total = b.house_numbers.length;
+                    const done = (b.completed_houses ?? []).filter((h) =>
+                      b.house_numbers.includes(h),
+                    ).length;
+                    return total > 0 && done >= total;
+                  }),
+                )
+                .map(([quadraName]) => quadraName)}
+            />
+          </div>
+
+          {/* Quadro: imagem do cartão */}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {hasTerritoryStaticMapCandidate(territoryForImage) ? (
+              <TerritoryImageLeafletMap
+                territory={territoryForImage}
+                resizeToken={splitResizeToken}
+                fillHeight
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 text-center text-sm text-muted-foreground">
+                Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão para
+                associar a imagem (ex.: N.º 28 → <code className="mx-1 text-xs">t28.webp</code>).
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }
