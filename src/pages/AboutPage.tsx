@@ -40,6 +40,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Mapa & Imagem em paralelo na edição (v0.0.14)',
+    items: [
+      'Na edição do território, seletor Mapa | Mapa + Imagem mostra os dois mapas lado a lado em tela cheia',
+      'Dá para girar a orientação (lado a lado ou empilhado), fechar com Esc e continuar desenhando as quadras enquanto compara com a imagem do cartão',
+    ],
+  },
+  {
     title: 'Novo visual do login (v0.0.13)',
     items: [
       'Fundo animado de pontos 3D (WebGL) com vinheta no centro',
