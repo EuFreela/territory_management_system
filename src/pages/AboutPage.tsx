@@ -40,6 +40,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Correção no nome da área em dark mode (v0.0.14.1)',
+    items: [
+      'Na edição do território, o campo "Nome / texto da área no mapa" ficava com letra branca sobre fundo branco no modo escuro',
+      'O painel de nomeação das áreas agora usa as cores do tema — texto legível no claro e no escuro',
+    ],
+  },
+  {
     title: 'Mapa & Imagem em paralelo na edição (v0.0.14)',
     items: [
       'Na edição do território, seletor Mapa | Mapa + Imagem mostra os dois mapas lado a lado em tela cheia',

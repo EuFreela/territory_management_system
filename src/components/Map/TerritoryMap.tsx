@@ -1915,11 +1915,11 @@ export default function TerritoryMap({
       {/* Nome da área — acima do mapa para não precisar rolar “através” do zoom */}
       {editable && areas.length > 0 ? (
         <div
-          className={`rounded-xl border border-slate-200 bg-white p-3 ${
+          className={`rounded-xl border border-apple-line bg-apple-surface p-3 ${
             isFullscreen ? 'max-h-40 shrink-0 overflow-y-auto shadow-sm' : ''
           }`}
         >
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-800">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-apple-ink">
             <IconTag className="h-4 w-4 text-sky-600" />
             Nome / texto da área no mapa
           </div>
@@ -1954,7 +1954,7 @@ export default function TerritoryMap({
                 onChange={(e) => updateSelectedLabel(e.target.value)}
                 onBlur={() => commitSelectedLabel()}
                 placeholder="Ex: 1, Quadra A, Norte…"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-apple-line bg-apple-surface px-3 py-2 text-sm text-apple-ink placeholder:text-apple-tertiary"
                 autoComplete="off"
                 title="Se o nome já existir em outra área, será ajustado para ficar único (ex.: 4 → 4 (2))"
               />
@@ -1969,7 +1969,7 @@ export default function TerritoryMap({
               </button>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-apple-secondary">
               Selecione uma área (chip ou clique no mapa) para nomear.
             </p>
           )}
