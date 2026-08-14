@@ -541,12 +541,12 @@ export default function FieldLeadersPage() {
             <div className="flex items-end">
               <Button
                 type="submit"
-                size="icon"
                 disabled={adding}
                 aria-label="Adicionar"
                 data-tooltip="Adicionar"
               >
                 <IconPlus />
+                Adicionar
               </Button>
             </div>
           </form>
@@ -647,13 +647,13 @@ export default function FieldLeadersPage() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  size="icon"
                                   disabled={savingId === row.id}
                                   onClick={() => void saveName(row.id)}
-                                  data-tooltip="Salvar"
-                                  aria-label="Salvar"
+                                  data-tooltip="Salvar dirigencia"
+                                  aria-label="Salvar dirigencia"
                                 >
                                   <IconSave />
+                                  Salvar dirigencia
                                 </Button>
                                 <Button
                                   type="button"
@@ -799,13 +799,13 @@ export default function FieldLeadersPage() {
                               <Button
                                 type="button"
                                 variant="outline"
-                                size="icon"
                                 disabled={savingId === row.id}
                                 onClick={() => void saveName(row.id)}
-                                data-tooltip="Salvar"
-                                aria-label="Salvar"
+                                data-tooltip="Salvar dirigencia"
+                                aria-label="Salvar dirigencia"
                               >
                                 <IconSave />
+                                Salvar dirigencia
                               </Button>
                               <Button
                                 type="button"
