@@ -38,6 +38,8 @@ CREATE TABLE territories (
   map_lng DECIMAL(10,7) NULL,                -- longitude resolvida a partir do CEP
   is_daily TINYINT(1) DEFAULT 0,
   daily_assignment_id INT NULL,              -- território do dia vinculado a um dirigente (field_assignments.id)
+  is_reviewed TINYINT(1) NOT NULL DEFAULT 0,  -- revisado e aprovado
+  reviewed_at DATETIME NULL,                 -- quando foi marcado como revisado/aprovado
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

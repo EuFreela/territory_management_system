@@ -517,6 +517,52 @@ router.delete(
   },
 );
 
+/** Marca o território como revisado e aprovado */
+router.post(
+  '/:id/review',
+  requireAuth,
+  requirePermission('territory:update'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+
+    const [result] = await pool.execute(
+      'UPDATE territories SET is_reviewed = 1, reviewed_at = NOW() WHERE id = ?',
+      [id],
+    );
+
+    const updateResult = result as { affectedRows?: number };
+    if (!updateResult.affectedRows) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
+    res.json({ message: 'Território marcado como revisado e aprovado.' });
+  },
+);
+
+/** Remove a marcação de revisado/aprovado */
+router.delete(
+  '/:id/review',
+  requireAuth,
+  requirePermission('territory:update'),
+  async (req, res) => {
+    const id = paramId(req.params.id);
+
+    const [result] = await pool.execute(
+      'UPDATE territories SET is_reviewed = 0, reviewed_at = NULL WHERE id = ?',
+      [id],
+    );
+
+    const updateResult = result as { affectedRows?: number };
+    if (!updateResult.affectedRows) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
+    res.json({ message: 'Marcação de revisão removida.' });
+  },
+);
+
 /**
  * Finaliza o território do dia:
  * - grava no histórico (dia, horário, dirigente, pessoas no campo)

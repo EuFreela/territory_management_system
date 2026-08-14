@@ -12,6 +12,10 @@ export type Territory = {
   daily_assignment_id?: number | null;
   /** Nome do dirigente vinculado (join no servidor) */
   daily_leader_name?: string | null;
+  /** Revisado e aprovado */
+  is_reviewed?: number | boolean;
+  /** Quando foi marcado como revisado/aprovado */
+  reviewed_at?: string | null;
   created_at?: string;
   updated_at?: string;
   blocks?: Block[];
