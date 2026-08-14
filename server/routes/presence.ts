@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import {
   listGpsPresence,
+  listSessionPresence,
   removeGpsPresence,
+  removeSessionPresence,
   upsertGpsPresence,
+  upsertSessionPresence,
 } from '../lib/presence.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 
@@ -68,6 +71,47 @@ router.delete('/gps', requireAuth, (req, res) => {
   const user = (req as AuthedRequest).user;
   removeGpsPresence(user.id);
   res.json({ ok: true });
+});
+
+/** Heartbeat de sessão (app aberto → online no chat). Body: { clientId } */
+router.put('/session', requireAuth, (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const clientId = (req.body as { clientId?: unknown })?.clientId;
+  const entry = upsertSessionPresence({
+    userId: user.id,
+    name: user.name,
+    clientId,
+  });
+  res.json({
+    ok: true,
+    user: {
+      userId: entry.userId,
+      name: entry.name,
+      updatedAt: entry.updatedAt,
+      sessions: entry.sessions,
+    },
+  });
+});
+
+/** Sai do online (fecha aba / logout). Body opcional: { clientId } */
+router.delete('/session', requireAuth, (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const clientId =
+    (req.body as { clientId?: unknown } | undefined)?.clientId ??
+    (typeof req.query.clientId === 'string' ? req.query.clientId : undefined);
+  removeSessionPresence(user.id, clientId);
+  res.json({ ok: true });
+});
+
+/** Lista quem está online (agregado por conta, com contagem de abas). */
+router.get('/online', requireAuth, (_req, res) => {
+  const users = listSessionPresence().map((u) => ({
+    userId: u.userId,
+    name: u.name,
+    updatedAt: u.updatedAt,
+    sessions: u.sessions,
+  }));
+  res.json({ users });
 });
 
 export default router;

@@ -11,6 +11,7 @@ import { requireAuth } from './middleware/requireAuth.js';
 import authRoutes from './routes/auth.js';
 import fieldAssignmentRoutes from './routes/field-assignments.js';
 import googleAuthRoutes, { googleLoginEnabled } from './routes/google-auth.js';
+import chatRoutes from './routes/chat.js';
 import presenceRoutes from './routes/presence.js';
 import territoryRoutes from './routes/territories.js';
 import userRoutes from './routes/users.js';
@@ -74,6 +75,7 @@ app.use('/api/territories', territoryRoutes);
 app.use('/api/field-assignments', fieldAssignmentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/presence', presenceRoutes);
+app.use('/api/chat', chatRoutes);
 
 if (isProd) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));

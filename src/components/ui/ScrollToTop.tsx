@@ -55,7 +55,7 @@ export default function ScrollToTop() {
       data-tooltip-side="left"
       aria-label="Voltar ao topo"
       tabIndex={visible ? 0 : -1}
-      className={`fixed bottom-5 right-5 z-[9999] inline-flex h-11 w-11 items-center justify-center rounded-full border border-apple-line bg-apple-surface/90 text-apple-ink shadow-float backdrop-blur-md transition-all duration-200 hover:bg-apple-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue/35 active:scale-95 sm:bottom-6 sm:right-6 ${
+      className={`fixed bottom-[4.75rem] right-4 z-[99] inline-flex h-11 w-11 items-center justify-center rounded-full border border-apple-line bg-apple-surface/90 text-apple-ink shadow-float backdrop-blur-md transition-all duration-200 hover:bg-apple-fill focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue/35 active:scale-95 sm:bottom-[5.25rem] sm:right-5 ${
         visible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0'

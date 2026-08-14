@@ -39,7 +39,9 @@ import {
   Save,
   Scan,
   Search,
+  Send,
   Shrink,
+  Smile,
   Star,
   Sun,
   Tag,
@@ -75,6 +77,8 @@ export const IconKey = icon(Key);
 export const IconStar = icon(Star);
 export const IconUnlink = icon(Unlink);
 export const IconSearch = icon(Search);
+export const IconSend = icon(Send);
+export const IconSmile = icon(Smile);
 export const IconLocate = icon(LocateFixed);
 export const IconArrowLeft = icon(ArrowLeft);
 export const IconArrowUp = icon(ArrowUp);
