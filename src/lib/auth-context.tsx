@@ -37,6 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
+    // Sai do online do chat só nesta aba (best-effort) antes de encerrar a sessão
+    try {
+      const { getChatClientId } = await import('./chat-session');
+      const clientId = getChatClientId();
+      await api('/api/presence/session', {
+        method: 'DELETE',
+        body: JSON.stringify({ clientId }),
+      });
+    } catch {
+      /* ignore */
+    }
     await api('/api/auth/logout', { method: 'POST' });
     setUser(null);
   }, []);

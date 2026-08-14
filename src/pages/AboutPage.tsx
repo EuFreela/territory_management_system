@@ -40,6 +40,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Chat entre usuários online (v0.0.16)',
+    items: [
+      'Ícone flutuante no canto inferior direito em todas as páginas: chat recolhido que expande em painel compacto',
+      'Mensagens em grupo para quem está online (só em memória, sem gravar no banco)',
+      'Lista “Online agora”, avisos de entrou/saiu e contagem de abas da mesma conta (ex.: admin (você)[3])',
+      'Emoticons no compositor, botão enviar só com ícone; seta “voltar ao topo” reposicionada acima do chat',
+      'Na página Dirigentes: botões “Adicionar” e “Salvar dirigencia” com texto',
+    ],
+  },
+  {
     title: 'Revisão de territórios e polimento de conta (v0.0.15)',
     items: [
       'Na lista de territórios, botão para confirmar se o cartão foi revisado e aprovado — com badge e opção de remover a marcação',

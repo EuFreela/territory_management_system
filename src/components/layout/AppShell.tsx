@@ -14,6 +14,7 @@ import {
   IconUsers,
   IconX,
 } from '@/components/Map/mapIcons';
+import FloatingChat from '@/components/chat/FloatingChat';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 
@@ -409,6 +410,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <div className="pb-16">{children}</div>
+
+      {/* Chat flutuante: disponível em todas as páginas autenticadas com shell */}
+      <FloatingChat />
     </div>
   );
 }
