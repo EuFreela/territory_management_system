@@ -1058,12 +1058,12 @@ export default function EditTerritoryPage() {
               <Button
                 type="submit"
                 form="territory-form"
-                size="icon"
                 disabled={saving}
                 aria-busy={saving}
                 data-tooltip="Salvar localidade e área"
               >
                 <IconSave />
+                Salvar
               </Button>
             </div>
           </CardContent>

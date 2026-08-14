@@ -1,2 +1,2 @@
 /** Versão do CAMPO (Sobre, login e docs no app) */
-export const APP_VERSION = 'v0.0.14.1';
+export const APP_VERSION = 'v0.0.15';

@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { IconKey, IconSave } from '@/components/Map/mapIcons';
+import { IconArrowLeft, IconKey, IconSave } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import FieldError from '@/components/ui/FieldError';
@@ -118,7 +118,18 @@ export default function ProfilePage() {
                 </p>
               </div>
 
-              <div className="flex justify-end pt-1">
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  data-tooltip="Voltar"
+                  aria-label="Voltar"
+                >
+                  <Link to="/dashboard">
+                    <IconArrowLeft />
+                  </Link>
+                </Button>
                 <Button type="submit" disabled={saving}>
                   <IconSave />
                   {saving ? 'Salvando…' : 'Salvar'}

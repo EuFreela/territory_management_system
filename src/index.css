@@ -540,24 +540,33 @@ select {
     }
   }
 
-  /* Toaster de confirmação (toasterId: 'confirm') — alerta centralizado na tela,
-     com o mesmo fundo escurecido/desfocado dos modais do app */
+  /* Toaster de confirmação (toasterId: 'confirm') — overlay fullscreen com
+     fundo escurecido/desfocado (como os modais). Desktop: centro-top.
+     Mobile: centro vertical (meio da tela). */
   .app-confirm-toaster {
     left: 0 !important;
     right: 0 !important;
     top: 0 !important;
     bottom: 0 !important;
     transform: none !important;
-    width: auto !important;
-    height: auto !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     overflow-y: auto;
     background: rgb(15 23 42 / 0.5);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
+  }
+
+  @media (max-width: 767px) {
+    .app-confirm-toaster {
+      align-items: center;
+      padding: 1rem;
+    }
   }
 
   /* Cartão estilo alert (iOS): vidro Apple, texto centralizado, botões empilhados */

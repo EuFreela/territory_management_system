@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Revisão de territórios e polimento de conta (v0.0.15)',
+    items: [
+      'Na lista de territórios, botão para confirmar se o cartão foi revisado e aprovado — com badge e opção de remover a marcação',
+      'Confirmações de exclusão no mobile passam a aparecer no centro da tela (no desktop seguem no centro-topo)',
+      'Perfil e alterar senha: botão de voltar com ícone ao lado de Salvar; textos dos botões de salvar padronizados',
+    ],
+  },
+  {
     title: 'Correção no nome da área em dark mode (v0.0.14.1)',
     items: [
       'Na edição do território, o campo "Nome / texto da área no mapa" ficava com letra branca sobre fundo branco no modo escuro',

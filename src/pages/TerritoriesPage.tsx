@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import {
   IconArrowUp,
+  IconCheckCircle,
   IconEye,
   IconPencil,
   IconPlus,
@@ -116,6 +117,45 @@ export default function TerritoriesPage() {
     });
   }
 
+  function toggleReviewed(territory: Territory) {
+    const isReviewed = Boolean(territory.is_reviewed);
+    if (isReviewed) {
+      confirmToast({
+        title: 'Remover revisão?',
+        description:
+          'Este território deixará de constar como revisado e aprovado. Você poderá marcar de novo quando quiser.',
+        confirmLabel: 'Remover',
+        tone: 'danger',
+        onConfirm: async () => {
+          try {
+            await api(`/api/territories/${territory.id}/review`, { method: 'DELETE' });
+            toast.success('Marcação de revisão removida.');
+            await load();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Erro ao remover revisão.');
+          }
+        },
+      });
+      return;
+    }
+
+    confirmToast({
+      title: 'Revisado e aprovado?',
+      description:
+        'Confirma que este território foi revisado e está aprovado para uso.',
+      confirmLabel: 'Aprovar',
+      onConfirm: async () => {
+        try {
+          await api(`/api/territories/${territory.id}/review`, { method: 'POST' });
+          toast.success('Território marcado como revisado e aprovado.');
+          await load();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao marcar revisão.');
+        }
+      },
+    });
+  }
+
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div>
@@ -203,6 +243,7 @@ export default function TerritoriesPage() {
         <div className="space-y-3">
           {filtered.map((territory) => {
             const hasArea = Boolean(territory.geojson && territory.geojson.length > 10);
+            const isReviewed = Boolean(territory.is_reviewed);
             return (
               <Card key={territory.id}>
                 <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-4">
@@ -228,16 +269,50 @@ export default function TerritoriesPage() {
                     >
                       {hasArea ? 'Área definida no mapa' : 'Sem área no mapa'}
                     </p>
-                    {territory.is_daily ? (
-                      <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/35 dark:text-emerald-300">
-                        <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
-                        Território do dia
-                        {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
-                      </span>
-                    ) : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {territory.is_daily ? (
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/35 dark:text-emerald-300">
+                          <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+                          Território do dia
+                          {territory.daily_leader_name ? ` · ${territory.daily_leader_name}` : ''}
+                        </span>
+                      ) : null}
+                      {isReviewed ? (
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-sky-500/25 bg-sky-500/10 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:border-sky-500/35 dark:text-sky-300">
+                          <IconCheckCircle className="size-3.5" />
+                          Revisado e aprovado
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    {can('territory:update') ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => toggleReviewed(territory)}
+                        data-tooltip={
+                          isReviewed
+                            ? 'Remover revisão'
+                            : 'Marcar como revisado e aprovado'
+                        }
+                        aria-label={
+                          isReviewed
+                            ? 'Remover revisão'
+                            : 'Marcar como revisado e aprovado'
+                        }
+                        aria-pressed={isReviewed}
+                        className={
+                          isReviewed
+                            ? 'text-sky-600 dark:text-sky-400'
+                            : 'text-muted-foreground'
+                        }
+                      >
+                        <IconCheckCircle />
+                      </Button>
+                    ) : null}
                     {can('territory:set_daily') ? (
                       <Button
                         type="button"
