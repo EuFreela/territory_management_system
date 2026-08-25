@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   IconCheckCircle,
   IconChevronDown,
+  IconHelp,
   IconInfo,
   IconLogOut,
   IconMap,
@@ -325,10 +326,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 ) : null}
               </HeaderDropdown>
 
-              <NavLink to="/configuracao" className={navClass}>
-                <IconSettings className="h-3.5 w-3.5 opacity-80" />
-                Configuração
-              </NavLink>
+              <a href="/docs/tutorial.html" className={navClass({ isActive: false })}>
+                <IconHelp className="h-3.5 w-3.5 opacity-80" />
+                Tutorial
+              </a>
               <NavLink to="/sobre" className={navClass}>
                 <IconInfo className="h-3.5 w-3.5 opacity-80" />
                 Sobre
@@ -509,10 +510,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 ) : null}
               </div>
 
-              <NavLink to="/configuracao" className={mobileNavClass}>
-                <IconSettings className="h-4 w-4 opacity-70" />
-                Configuração
-              </NavLink>
+              <a href="/docs/tutorial.html" className={mobileNavClass({ isActive: false })}>
+                <IconHelp className="h-4 w-4 opacity-70" />
+                Tutorial
+              </a>
 
               <NavLink to="/sobre" className={mobileNavClass}>
                 <IconInfo className="h-4 w-4 opacity-70" />
