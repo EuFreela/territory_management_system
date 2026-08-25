@@ -311,7 +311,7 @@ router.post('/', requireAuth, requirePermission('territory:create'), async (req,
     return;
   }
 
-  const { name, number, geojson, is_daily } = parsed.data;
+  const { name, number, image_url, geojson, is_daily } = parsed.data;
 
   if (!isValidTerritoryGeoJson(geojson)) {
     res.status(400).json({
@@ -338,20 +338,43 @@ router.post('/', requireAuth, requirePermission('territory:create'), async (req,
     );
   }
 
-  const [result] = await pool.execute(
-    `INSERT INTO territories (user_id, name, number, cep, geojson, map_lat, map_lng, is_daily)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      user.id,
-      name.trim(),
-      number ?? null,
-      location.cep,
-      geojson,
-      location.lat,
-      location.lng,
-      is_daily ? 1 : 0,
-    ],
-  );
+  const insertValues = [
+    user.id,
+    name.trim(),
+    number ?? null,
+    image_url ?? null,
+    location.cep,
+    geojson,
+    location.lat,
+    location.lng,
+    is_daily ? 1 : 0,
+  ];
+
+  let result;
+  try {
+    [result] = await pool.execute(
+      `INSERT INTO territories (user_id, name, number, image_url, cep, geojson, map_lat, map_lng, is_daily)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      insertValues,
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/image_url|Unknown column/i.test(msg)) throw err;
+    [result] = await pool.execute(
+      `INSERT INTO territories (user_id, name, number, cep, geojson, map_lat, map_lng, is_daily)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user.id,
+        name.trim(),
+        number ?? null,
+        location.cep,
+        geojson,
+        location.lat,
+        location.lng,
+        is_daily ? 1 : 0,
+      ],
+    );
+  }
 
   const insertResult = result as { insertId: number };
   res.status(201).json({
@@ -398,7 +421,7 @@ router.put('/:id', requireAuth, requirePermission('territory:update'), async (re
     return;
   }
 
-  const { name, number, geojson } = parsed.data;
+  const { name, number, image_url, geojson } = parsed.data;
 
   if (!isValidTerritoryGeoJson(geojson)) {
     res.status(400).json({
@@ -407,12 +430,33 @@ router.put('/:id', requireAuth, requirePermission('territory:update'), async (re
     return;
   }
 
-  await pool.execute(
-    `UPDATE territories
-     SET name = ?, number = ?, geojson = ?
-     WHERE id = ?`,
-    [name.trim(), number ?? null, geojson, id],
-  );
+  const setImage = image_url !== undefined;
+  try {
+    if (setImage) {
+      await pool.execute(
+        `UPDATE territories
+         SET name = ?, number = ?, image_url = ?, geojson = ?
+         WHERE id = ?`,
+        [name.trim(), number ?? null, image_url ?? null, geojson, id],
+      );
+    } else {
+      await pool.execute(
+        `UPDATE territories
+         SET name = ?, number = ?, geojson = ?
+         WHERE id = ?`,
+        [name.trim(), number ?? null, geojson, id],
+      );
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/image_url|Unknown column/i.test(msg)) throw err;
+    await pool.execute(
+      `UPDATE territories
+       SET name = ?, number = ?, geojson = ?
+       WHERE id = ?`,
+      [name.trim(), number ?? null, geojson, id],
+    );
+  }
 
   res.json({
     message: 'Território atualizado com sucesso.',

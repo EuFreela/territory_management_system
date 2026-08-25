@@ -1,4 +1,5 @@
 ﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   IconHelp,
@@ -66,6 +67,7 @@ const ROLE_BADGE_FALLBACK = 'border-border bg-muted text-muted-foreground';
 
 export default function UsersPage() {
   const { user: me, refresh: refreshAuth } = useAuth();
+  const location = useLocation();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,15 @@ export default function UsersPage() {
 
   const [showRoles, setShowRoles] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (location.hash !== '#novo-usuario') return;
+    const t = window.setTimeout(() => {
+      document.getElementById('novo-usuario')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('new-name')?.focus({ preventScroll: true });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [location.hash]);
 
   const filteredUsers = useMemo(() => {
     const q = search
@@ -273,7 +284,7 @@ export default function UsersPage() {
         </p>
       </div>
 
-      <Card className="mb-6">
+      <Card id="novo-usuario" className="mb-6 scroll-mt-6">
         <CardContent className="pt-6">
           <h2 className="mb-4 text-lg font-semibold tracking-tight">Novo usuário</h2>
           <form

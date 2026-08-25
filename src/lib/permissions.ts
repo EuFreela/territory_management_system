@@ -33,6 +33,8 @@ export type AuthUserWithRbac = {
   active_cep?: string | null;
   /** CEP efetivo da região de trabalho */
   working_cep?: string;
+  /** Nome da congregação vinculado ao CEP */
+  congregation_name?: string | null;
 };
 
 export function can(user: AuthUserWithRbac | null | undefined, scope: Scope): boolean {

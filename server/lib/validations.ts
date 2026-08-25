@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeImageUrl } from './image-url.js';
 import { validateStrongPassword } from './password.js';
 
 const strongPassword = z.string().superRefine((value, ctx) => {
@@ -24,6 +25,23 @@ export const territorySchema = z.object({
   name: z.string().min(2, 'Localidade é obrigatória').max(120),
   // UI: "Terr. N.º" (ex: 31)
   number: z.string().max(50).nullable().optional(),
+  // Link http(s) da imagem do cartão — sanitizado (vazio = sem imagem)
+  image_url: z
+    .string()
+    .nullable()
+    .optional()
+    .superRefine((value, ctx) => {
+      if (value === undefined) return;
+      const result = sanitizeImageUrl(value);
+      if (!result.ok) {
+        ctx.addIssue({ code: 'custom', message: result.error });
+      }
+    })
+    .transform((value) => {
+      if (value === undefined) return undefined;
+      const result = sanitizeImageUrl(value);
+      return result.ok ? result.url : null;
+    }),
   // Polígono da área do território (obrigatório ao salvar)
   geojson: z.string().min(10, 'Desenhe a área do território no mapa (mínimo 3 pontos).'),
   is_daily: z.boolean().optional(),

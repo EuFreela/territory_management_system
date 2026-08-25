@@ -82,6 +82,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       theme_preference: 'light' as const,
       active_cep: null,
       working_cep: '',
+      congregation_name: null,
     };
 
     res.json({

@@ -3,6 +3,8 @@ export type Territory = {
   user_id: number;
   name: string;
   number?: string | null;
+  /** Link http(s) da imagem do cartão (não é arquivo local) */
+  image_url?: string | null;
   cep?: string | null;
   geojson?: string | null;
   map_lat?: number | string | null;

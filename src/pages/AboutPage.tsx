@@ -16,7 +16,7 @@ const features = [
   {
     icon: IconMap,
     title: 'Territórios e mapa',
-    text: 'Cadastre cartões com localidade e número, desenhe áreas no mapa (Google Maps no Leaflet), confira a imagem do cartão, use sua localização GPS e a rota mais curta até a quadra mais próxima.',
+    text: 'Cadastre cartões com localidade e número, desenhe áreas no mapa (Google Maps no Leaflet), cole o link da imagem do cartão, use sua localização GPS e a rota mais curta até a quadra mais próxima.',
   },
   {
     icon: IconCheckCircle,
@@ -39,6 +39,22 @@ type TabId = 'sistema' | 'atualizacoes';
 
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
+  {
+    title: 'Nome da congregação no CEP (v0.0.19)',
+    items: [
+      'Na Configuração, campo para nomear o CEP com o nome da congregação',
+      'O nome aparece no menu, no início e nas listas daquela região',
+    ],
+  },
+  {
+    title: 'Imagem do cartão por link (v0.0.18)',
+    items: [
+      'Na criação e na edição, a aba/campo Imagem recebe o link da foto do cartão — o arquivo não fica no servidor',
+      'O mapa deixa de buscar imagens locais em /territories/, o que evita deixar o site lento com dezenas de arquivos',
+      'O link é sanitizado (só http/https, sem javascript/data, sem endereços internos) e pode ser editado depois',
+      'Links do Google Drive e Dropbox são convertidos automaticamente para visualização',
+    ],
+  },
   {
     title: 'Mostrar senha no login (v0.0.17.1)',
     items: [

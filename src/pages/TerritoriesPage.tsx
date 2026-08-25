@@ -167,7 +167,11 @@ export default function TerritoriesPage() {
             </h1>
             <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
               Localidade, Terr. N.º
-              {user?.working_cep ? ` · região ${user.working_cep}` : ''}
+              {user?.congregation_name
+                ? ` · ${user.congregation_name}`
+                : user?.working_cep
+                  ? ` · região ${user.working_cep}`
+                  : ''}
             </p>
           </div>
 

@@ -7,6 +7,12 @@ import { fileURLToPath } from 'node:url';
 import { formatCep, onlyDigits, searchAddressNominatim } from './lib/cep.js';
 import { getUserFromRequest } from './lib/auth.js';
 import pool from './lib/db.js';
+import {
+  getCongregationName,
+  listCongregationNames,
+  sanitizeCongregationName,
+  upsertCongregationName,
+} from './lib/cep-region.js';
 import { getDefaultCep, getMapConfig, resolveWorkingCep } from './lib/map-config.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { requireAuth, type AuthedRequest } from './middleware/requireAuth.js';
@@ -35,7 +41,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-async function listKnownRegions(): Promise<Array<{ cep: string; territory_count: number }>> {
+async function listKnownRegions(): Promise<
+  Array<{ cep: string; territory_count: number; congregation_name: string | null }>
+> {
   try {
     const [rows] = await pool.execute(
       `SELECT cep FROM territories WHERE cep IS NOT NULL AND TRIM(cep) <> ''`,
@@ -47,8 +55,13 @@ async function listKnownRegions(): Promise<Array<{ cep: string; territory_count:
       const formatted = formatCep(digits);
       counts.set(formatted, (counts.get(formatted) ?? 0) + 1);
     }
+    const names = await listCongregationNames();
     return [...counts.entries()]
-      .map(([cep, territory_count]) => ({ cep, territory_count }))
+      .map(([cep, territory_count]) => ({
+        cep,
+        territory_count,
+        congregation_name: names.get(cep) ?? null,
+      }))
       .sort((a, b) => b.territory_count - a.territory_count || a.cep.localeCompare(b.cep));
   } catch {
     return [];
@@ -77,11 +90,13 @@ app.get('/api/config/cep', requireAuth, async (req, res) => {
     const defaultCep = getDefaultCep();
     const location = await getMapConfig(working);
     const regions = await listKnownRegions();
+    const congregation_name = await getCongregationName(working);
     res.json({
       cep: working,
       active_cep: stored,
       is_default: onlyDigits(working) === onlyDigits(defaultCep) && !stored,
       default_cep: defaultCep,
+      congregation_name,
       location,
       regions,
     });
@@ -115,10 +130,11 @@ app.post('/api/config/cep/preview', requireAuth, cepLimiter, async (req, res) =>
   }
 });
 
-/** Define o CEP da região de trabalho deste usuário. Body: { cep } ou { cep: null } para o padrão. */
+/** Define o CEP da região de trabalho deste usuário. Body: { cep, congregation_name? }. */
 app.put('/api/config/cep', requireAuth, cepLimiter, async (req, res) => {
   const user = (req as AuthedRequest).user;
-  const raw = (req.body as { cep?: unknown })?.cep;
+  const body = req.body as { cep?: unknown; congregation_name?: unknown };
+  const raw = body?.cep;
 
   try {
     let stored: string | null = null;
@@ -136,6 +152,17 @@ app.put('/api/config/cep', requireAuth, cepLimiter, async (req, res) => {
       working = location.cep;
     }
 
+    const nameProvided = Object.prototype.hasOwnProperty.call(body ?? {}, 'congregation_name');
+    let congregationName: string | null | undefined;
+    if (nameProvided) {
+      const parsedName = sanitizeCongregationName(body.congregation_name);
+      if (!parsedName.ok) {
+        res.status(400).json({ error: parsedName.error });
+        return;
+      }
+      congregationName = parsedName.name;
+    }
+
     try {
       await pool.execute('UPDATE users SET active_cep = ? WHERE id = ?', [stored, user.id]);
     } catch (err) {
@@ -149,24 +176,35 @@ app.put('/api/config/cep', requireAuth, cepLimiter, async (req, res) => {
       throw err;
     }
 
+    if (nameProvided) {
+      await upsertCongregationName(working, congregationName ?? null);
+    }
+
     const location = await getMapConfig(working);
     const defaultCep = getDefaultCep();
     const regions = await listKnownRegions();
+    const congregation_name = await getCongregationName(working);
+    const named = congregation_name ? ` (${congregation_name})` : '';
     res.json({
       cep: working,
       active_cep: stored,
       is_default: stored == null,
       default_cep: defaultCep,
+      congregation_name,
       location,
       regions,
       message:
         stored == null
-          ? `Região definida pelo CEP padrão (${working}).`
-          : `Região de trabalho atualizada para ${working}.`,
+          ? `Região definida pelo CEP padrão (${working})${named}.`
+          : `Região de trabalho atualizada para ${working}${named}.`,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro ao salvar CEP.';
-    const status = /inválido|não encontrado|sem coordenadas/i.test(message) ? 400 : 500;
+    const status = /inválido|não encontrado|sem coordenadas|não migrado/i.test(message)
+      ? /não migrado/i.test(message)
+        ? 503
+        : 400
+      : 500;
     res.status(status).json({ error: message });
   }
 });
