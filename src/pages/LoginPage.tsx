@@ -138,7 +138,7 @@ export default function LoginPage() {
               CAMPO
             </CardTitle>
             <CardDescription className="text-[15px] leading-relaxed">
-              Congregação Alpinópolis
+              Unidos por Jeová
             </CardDescription>
           </CardHeader>
 
