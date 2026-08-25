@@ -40,6 +40,12 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Mostrar senha no login (v0.0.17.1)',
+    items: [
+      'No campo de senha da tela de login, ícone de olho para mostrar ou ocultar o que foi digitado',
+    ],
+  },
+  {
     title: 'Região de trabalho por CEP (v0.0.17)',
     items: [
       'Página Configuração para informar o CEP da congregação; o .env guarda só o CEP padrão',

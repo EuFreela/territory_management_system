@@ -15,7 +15,7 @@ import { DotGridBackground } from '@/components/ui/dot-grid-background';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
+import { IconEye, IconEyeOff, IconLogIn, IconMoon, IconSun } from '@/components/Map/mapIcons';
 import FieldError from '@/components/ui/FieldError';
 import { api } from '@/lib/api';
 import { useAuth, type AuthUser } from '@/lib/auth-context';
@@ -30,6 +30,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(false);
@@ -177,22 +178,41 @@ export default function LoginPage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    if (fieldErrors.password) {
-                      setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                    }
-                  }}
-                  autoComplete="current-password"
-                  required
-                  disabled={submitting}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      if (fieldErrors.password) {
+                        setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                      }
+                    }}
+                    autoComplete="current-password"
+                    required
+                    disabled={submitting}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                    className="pr-11"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    data-tooltip={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    data-tooltip-side="left"
+                    disabled={submitting}
+                    className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-40"
+                  >
+                    {showPassword ? (
+                      <IconEyeOff className="h-[18px] w-[18px]" />
+                    ) : (
+                      <IconEye className="h-[18px] w-[18px]" />
+                    )}
+                  </button>
+                </div>
                 {fieldErrors.password ? (
                   <FieldError id="password-error">{fieldErrors.password}</FieldError>
                 ) : null}
