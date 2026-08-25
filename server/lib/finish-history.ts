@@ -1,4 +1,6 @@
 import pool from './db.js';
+import { formatCep } from './cep.js';
+import { sqlCepDigitsEq } from './map-config.js';
 import { todayIsoInAppTz, weekdayForDateStr } from './timezone.js';
 
 function parseHouseNumbers(value: unknown): string[] {
@@ -56,24 +58,30 @@ export type RecordFinishOptions = {
    * Obrigatório quando há mais de um dirigente no dia.
    */
   assignmentId?: number | null;
+  /** Dígitos do CEP da região — filtra dirigentes e grava no histórico */
+  cepDigits?: string | null;
 };
 
-/** Lista dirigentes de hoje (datados + fixos), ordenados. */
-export async function listTodayLeaders(): Promise<TodayLeaderOption[]> {
+/** Lista dirigentes de hoje (datados + fixos), ordenados. Filtra pela região (CEP) quando informado. */
+export async function listTodayLeaders(cepDigits?: string | null): Promise<TodayLeaderOption[]> {
   const fieldDate = todayIsoInAppTz();
   const weekday = weekdayForDateStr(fieldDate);
+  const digits = cepDigits && /^\d{8}$/.test(cepDigits) ? cepDigits : null;
+  const cepClause = digits ? `AND ${sqlCepDigitsEq('cep')}` : '';
+  const datedParams = digits ? [fieldDate, digits] : [fieldDate];
+  const fixedParams = digits ? [weekday, digits] : [weekday];
 
   const [dated] = await pool.execute(
     `SELECT id, assignee_name, fixed_time FROM field_assignments
-     WHERE is_fixed = 0 AND service_date = ?
+     WHERE is_fixed = 0 AND service_date = ? ${cepClause}
      ORDER BY sort_order ASC, id ASC`,
-    [fieldDate],
+    datedParams,
   );
   const [fixed] = await pool.execute(
     `SELECT id, assignee_name, fixed_time FROM field_assignments
-     WHERE is_fixed = 1 AND fixed_weekday = ?
+     WHERE is_fixed = 1 AND fixed_weekday = ? ${cepClause}
      ORDER BY sort_order ASC, id ASC`,
-    [weekday],
+    fixedParams,
   );
 
   const mapRow = (
@@ -112,11 +120,16 @@ export async function recordTerritoryFinished(
   options: RecordFinishOptions = {},
 ): Promise<boolean> {
   const [tRows] = await pool.execute(
-    'SELECT id, name, number FROM territories WHERE id = ? LIMIT 1',
+    'SELECT id, name, number, cep FROM territories WHERE id = ? LIMIT 1',
     [territoryId],
   );
-  const territory = (tRows as Array<{ id: number; name: string; number: string | null }>)[0];
+  const territory = (
+    tRows as Array<{ id: number; name: string; number: string | null; cep?: string | null }>
+  )[0];
   if (!territory) return false;
+
+  const territoryCep = territory.cep ? formatCep(territory.cep) : null;
+  const regionDigits = options.cepDigits || (territoryCep ? territoryCep.replace(/\D/g, '') : null);
 
   const fieldDate = todayIsoInAppTz();
   const peopleCount =
@@ -153,7 +166,7 @@ export async function recordTerritoryFinished(
     return acc + houses.filter((n) => !completed.has(n)).length;
   }, 0);
 
-  const leaders = await listTodayLeaders();
+  const leaders = await listTodayLeaders(regionDigits);
   let leaderName: string | null = null;
   let fieldTime: string | null = null;
 
@@ -174,14 +187,15 @@ export async function recordTerritoryFinished(
   try {
     await pool.execute(
       `INSERT INTO territory_finish_history
-        (territory_id, territory_name, territory_number, field_date, field_time, leader_name,
+        (territory_id, territory_name, territory_number, cep, field_date, field_time, leader_name,
          people_count, quadras_count, ruas_count, casas_count, restam_casas,
          finished_by_user_id, finished_by_name)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         territory.id,
         territory.name,
         territory.number ?? null,
+        territoryCep,
         fieldDate,
         fieldTime,
         leaderName,
@@ -202,7 +216,7 @@ export async function recordTerritoryFinished(
       console.warn('[finish-history] tabela ausente — rode npm run migrate:finish-history');
       return false;
     }
-    if (/people_count|finished_by|Unknown column/i.test(msg)) {
+    if (/people_count|finished_by|Unknown column|cep/i.test(msg)) {
       console.warn('[finish-history] colunas novas ausentes — rode migrate:finish-history');
       return false;
     }

@@ -57,6 +57,10 @@ export type RbacUser = {
   isAdmin: boolean;
   /** Preferência de aparência salva no usuário */
   theme_preference: ThemePreference;
+  /** CEP gravado no usuário (null = usa o padrão do .env) */
+  active_cep: string | null;
+  /** CEP efetivo da região de trabalho (gravado ou padrão) */
+  working_cep: string;
 };
 
 export function normalizeThemePreference(value: unknown): ThemePreference {

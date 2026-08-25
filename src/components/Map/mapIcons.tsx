@@ -38,6 +38,7 @@ import {
   Rows2,
   Save,
   Scan,
+  Settings,
   Search,
   Send,
   Shrink,
@@ -111,3 +112,4 @@ export const IconPalette = icon(Palette);
 export const IconContrast = icon(Contrast);
 export const IconFileText = icon(FileText);
 export const IconPrinter = icon(Printer);
+export const IconSettings = icon(Settings);

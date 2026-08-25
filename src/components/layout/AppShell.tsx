@@ -9,6 +9,7 @@ import {
   IconMap,
   IconMenu,
   IconMoon,
+  IconSettings,
   IconSun,
   IconUser,
   IconUsers,
@@ -245,6 +246,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <IconUser className="h-3.5 w-3.5 opacity-80" />
                 Minha conta
               </NavLink>
+              <NavLink to="/configuracao" className={navClass}>
+                <IconSettings className="h-3.5 w-3.5 opacity-80" />
+                Configuração
+              </NavLink>
               <NavLink to="/sobre" className={navClass}>
                 <IconInfo className="h-3.5 w-3.5 opacity-80" />
                 Sobre
@@ -262,8 +267,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               >
                 {user?.name}
               </Link>
-              {user?.role?.name ? (
-                <p className="text-[11px] text-apple-tertiary">{user.role.name}</p>
+              {user?.role?.name || user?.working_cep ? (
+                <p className="text-[11px] text-apple-tertiary">
+                  {user.role?.name}
+                  {user.role?.name && user.working_cep ? ' · ' : null}
+                  {user.working_cep ? (
+                    <Link
+                      to="/configuracao"
+                      className="transition hover:text-apple-blue"
+                      data-tooltip="Região de trabalho"
+                    >
+                      {user.working_cep}
+                    </Link>
+                  ) : null}
+                </p>
               ) : null}
             </div>
 
@@ -329,6 +346,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {user?.role?.name ? (
                 <p className="text-[12px] text-apple-tertiary">{user.role.name}</p>
               ) : null}
+              {user?.working_cep ? (
+                <p className="text-[12px] text-apple-tertiary">CEP {user.working_cep}</p>
+              ) : null}
             </div>
 
             <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
@@ -377,6 +397,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <NavLink to="/perfil" className={mobileNavClass}>
                 <IconUser className="h-4 w-4 opacity-70" />
                 Minha conta
+              </NavLink>
+
+              <NavLink to="/configuracao" className={mobileNavClass}>
+                <IconSettings className="h-4 w-4 opacity-70" />
+                Configuração
               </NavLink>
 
               <NavLink to="/sobre" className={mobileNavClass}>

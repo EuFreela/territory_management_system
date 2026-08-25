@@ -33,7 +33,7 @@ function normalize(text: string) {
 type SortDir = 'asc' | 'desc';
 
 export default function TerritoriesPage() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [territories, setTerritories] = useState<Territory[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -167,6 +167,7 @@ export default function TerritoriesPage() {
             </h1>
             <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
               Localidade, Terr. N.º
+              {user?.working_cep ? ` · região ${user.working_cep}` : ''}
             </p>
           </div>
 

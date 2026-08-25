@@ -15,6 +15,8 @@ export type GpsPresence = {
   lat: number;
   lng: number;
   updatedAt: number;
+  /** Região (8 dígitos) */
+  cep: string;
 };
 
 /** Uma aba/cliente ativa */
@@ -23,6 +25,7 @@ export type ClientSession = {
   userId: number;
   name: string;
   updatedAt: number;
+  cep: string;
 };
 
 /** Usuário agregado (pode ter N sessões/abas) */
@@ -32,6 +35,7 @@ export type SessionPresence = {
   updatedAt: number;
   /** Quantas abas/clientes desta conta estão online */
   sessions: number;
+  cep: string;
 };
 
 /** Sem heartbeat por este tempo = offline no mapa */
@@ -49,14 +53,19 @@ const gpsByUserId = new Map<number, GpsPresence>();
 const sessionsByClientId = new Map<string, ClientSession>();
 const pendingLeave = new Map<
   number,
-  { name: string; timer: ReturnType<typeof setTimeout> }
+  { name: string; cep: string; timer: ReturnType<typeof setTimeout> }
 >();
+
+function normalizeCepDigits(raw: unknown): string {
+  return String(raw ?? '').replace(/\D/g, '');
+}
 
 export function upsertGpsPresence(input: {
   userId: number;
   name: string;
   lat: number;
   lng: number;
+  cep: string;
 }): GpsPresence {
   const entry: GpsPresence = {
     userId: input.userId,
@@ -64,6 +73,7 @@ export function upsertGpsPresence(input: {
     lat: input.lat,
     lng: input.lng,
     updatedAt: Date.now(),
+    cep: normalizeCepDigits(input.cep),
   };
   gpsByUserId.set(input.userId, entry);
   return entry;
@@ -73,15 +83,17 @@ export function removeGpsPresence(userId: number) {
   gpsByUserId.delete(userId);
 }
 
-/** Lista presenças GPS frescas (inclui o próprio usuário se ainda ativo). */
-export function listGpsPresence(): GpsPresence[] {
+/** Lista presenças GPS frescas da mesma região (inclui o próprio usuário se ainda ativo). */
+export function listGpsPresence(cep?: string | null): GpsPresence[] {
   const now = Date.now();
+  const digits = normalizeCepDigits(cep);
   const live: GpsPresence[] = [];
   for (const [id, entry] of gpsByUserId) {
     if (now - entry.updatedAt > GPS_STALE_MS) {
       gpsByUserId.delete(id);
       continue;
     }
+    if (digits && entry.cep !== digits) continue;
     live.push(entry);
   }
   return live;
@@ -103,16 +115,16 @@ function cancelPendingLeave(userId: number): boolean {
   return true;
 }
 
-function scheduleLeaveAnnounce(userId: number, name: string) {
+function scheduleLeaveAnnounce(userId: number, name: string, cep: string) {
   cancelPendingLeave(userId);
   const timer = setTimeout(() => {
     pendingLeave.delete(userId);
     // Só anuncia se não restou nenhuma sessão desta conta
     if (countSessionsForUser(userId) === 0) {
-      announceUserLeft(userId, name);
+      announceUserLeft(userId, name, cep);
     }
   }, LEAVE_GRACE_MS);
-  pendingLeave.set(userId, { name, timer });
+  pendingLeave.set(userId, { name, cep, timer });
 }
 
 function normalizeClientId(raw: unknown): string | null {
@@ -131,10 +143,12 @@ export function upsertSessionPresence(input: {
   userId: number;
   name: string;
   clientId?: unknown;
+  cep: string;
 }): SessionPresence {
   const name = input.name.trim() || `Usuário ${input.userId}`;
   const clientId =
     normalizeClientId(input.clientId) ?? `u${input.userId}-fallback`;
+  const cep = normalizeCepDigits(input.cep);
 
   const sessionsBefore = countSessionsForUser(input.userId);
   const cancelledLeave = cancelPendingLeave(input.userId);
@@ -144,6 +158,7 @@ export function upsertSessionPresence(input: {
     userId: input.userId,
     name,
     updatedAt: Date.now(),
+    cep,
   };
   sessionsByClientId.set(clientId, entry);
 
@@ -151,7 +166,7 @@ export function upsertSessionPresence(input: {
 
   // Anuncia "entrou" só quando a conta passa de 0 → 1 sessão (não em cada aba extra)
   if (sessionsBefore === 0 && sessionsAfter >= 1 && !cancelledLeave) {
-    announceUserJoined(input.userId, name);
+    announceUserJoined(input.userId, name, cep);
   }
 
   return {
@@ -159,6 +174,7 @@ export function upsertSessionPresence(input: {
     name,
     updatedAt: entry.updatedAt,
     sessions: sessionsAfter,
+    cep,
   };
 }
 
@@ -179,52 +195,57 @@ export function removeSessionPresence(
     const remaining = countSessionsForUser(userId);
     // Só agenda "saiu" quando a última aba desta conta fecha
     if (remaining === 0) {
-      scheduleLeaveAnnounce(userId, entry.name);
+      scheduleLeaveAnnounce(userId, entry.name, entry.cep);
     }
     return {
       userId,
       name: entry.name,
       updatedAt: entry.updatedAt,
       sessions: remaining,
+      cep: entry.cep,
     };
   }
 
   // Sem clientId: remove todas as sessões do usuário
   let name = `Usuário ${userId}`;
+  let lastCep = '';
   let removed = 0;
   for (const [id, s] of sessionsByClientId) {
     if (s.userId === userId) {
       name = s.name;
+      lastCep = s.cep;
       sessionsByClientId.delete(id);
       removed += 1;
     }
   }
   if (removed === 0) return null;
-  scheduleLeaveAnnounce(userId, name);
-  return { userId, name, updatedAt: Date.now(), sessions: 0 };
+  scheduleLeaveAnnounce(userId, name, lastCep);
+  return { userId, name, updatedAt: Date.now(), sessions: 0, cep: lastCep };
 }
 
 /** Agrega sessões por usuário (com contagem de abas). Expira sessões velhas. */
-export function listSessionPresence(): SessionPresence[] {
+export function listSessionPresence(cep?: string | null): SessionPresence[] {
   const now = Date.now();
-  const affectedUsers = new Map<number, string>();
+  const digits = normalizeCepDigits(cep);
+  const affectedUsers = new Map<number, { name: string; cep: string }>();
 
   for (const [clientId, entry] of sessionsByClientId) {
     if (now - entry.updatedAt > SESSION_STALE_MS) {
       sessionsByClientId.delete(clientId);
-      affectedUsers.set(entry.userId, entry.name);
+      affectedUsers.set(entry.userId, { name: entry.name, cep: entry.cep });
     }
   }
 
   // Usuários que ficaram com 0 sessões após expirar → agenda "saiu"
-  for (const [userId, name] of affectedUsers) {
+  for (const [userId, info] of affectedUsers) {
     if (countSessionsForUser(userId) === 0) {
-      scheduleLeaveAnnounce(userId, name);
+      scheduleLeaveAnnounce(userId, info.name, info.cep);
     }
   }
 
   const byUser = new Map<number, SessionPresence>();
   for (const s of sessionsByClientId.values()) {
+    if (digits && s.cep !== digits) continue;
     const cur = byUser.get(s.userId);
     if (!cur) {
       byUser.set(s.userId, {
@@ -232,12 +253,14 @@ export function listSessionPresence(): SessionPresence[] {
         name: s.name,
         updatedAt: s.updatedAt,
         sessions: 1,
+        cep: s.cep,
       });
     } else {
       cur.sessions += 1;
       if (s.updatedAt > cur.updatedAt) {
         cur.updatedAt = s.updatedAt;
         cur.name = s.name;
+        cur.cep = s.cep;
       }
     }
   }

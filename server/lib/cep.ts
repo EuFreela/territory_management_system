@@ -9,7 +9,7 @@ export type CepLocation = {
   label: string;
 };
 
-function onlyDigits(cep: string) {
+export function onlyDigits(cep: string) {
   return cep.replace(/\D/g, '');
 }
 

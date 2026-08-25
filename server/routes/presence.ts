@@ -7,6 +7,7 @@ import {
   upsertGpsPresence,
   upsertSessionPresence,
 } from '../lib/presence.js';
+import { resolveWorkingCepDigits } from '../lib/map-config.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 
 const router = Router();
@@ -25,8 +26,9 @@ function isValidCoord(lat: unknown, lng: unknown): lat is number {
 }
 
 /** Lista usuários com GPS ativo (presença recente). */
-router.get('/gps', requireAuth, (_req, res) => {
-  const users = listGpsPresence().map((u) => ({
+router.get('/gps', requireAuth, (req, res) => {
+  const cep = resolveWorkingCepDigits((req as AuthedRequest).user);
+  const users = listGpsPresence(cep).map((u) => ({
     userId: u.userId,
     name: u.name,
     lat: u.lat,
@@ -52,6 +54,7 @@ router.put('/gps', requireAuth, (req, res) => {
     name: user.name,
     lat,
     lng,
+    cep: resolveWorkingCepDigits(user),
   });
 
   res.json({
@@ -81,6 +84,7 @@ router.put('/session', requireAuth, (req, res) => {
     userId: user.id,
     name: user.name,
     clientId,
+    cep: resolveWorkingCepDigits(user),
   });
   res.json({
     ok: true,
@@ -104,8 +108,9 @@ router.delete('/session', requireAuth, (req, res) => {
 });
 
 /** Lista quem está online (agregado por conta, com contagem de abas). */
-router.get('/online', requireAuth, (_req, res) => {
-  const users = listSessionPresence().map((u) => ({
+router.get('/online', requireAuth, (req, res) => {
+  const cep = resolveWorkingCepDigits((req as AuthedRequest).user);
+  const users = listSessionPresence(cep).map((u) => ({
     userId: u.userId,
     name: u.name,
     updatedAt: u.updatedAt,

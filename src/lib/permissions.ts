@@ -29,6 +29,10 @@ export type AuthUserWithRbac = {
   isAdmin?: boolean;
   /** Preferência salva no usuário (banco) */
   theme_preference?: ThemePreference | null;
+  /** CEP gravado na conta (null = usa o padrão do .env) */
+  active_cep?: string | null;
+  /** CEP efetivo da região de trabalho */
+  working_cep?: string;
 };
 
 export function can(user: AuthUserWithRbac | null | undefined, scope: Scope): boolean {

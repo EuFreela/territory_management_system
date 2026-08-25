@@ -90,7 +90,7 @@ function normalize(text: string) {
 const thClass = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground';
 
 export default function FinishedTerritoriesPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<FinishedTerritoryHistory[]>([]);
   const [query, setQuery] = useState('');
@@ -209,6 +209,7 @@ export default function FinishedTerritoriesPage() {
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
           Histórico de finalizações — dia, horário, dirigente, pessoas e o não em casa do território
+          {user?.working_cep ? ` · região ${user.working_cep}` : ''}
         </p>
       </div>
 

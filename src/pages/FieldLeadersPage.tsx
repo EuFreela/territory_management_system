@@ -205,7 +205,7 @@ function matchesQuery(row: FieldAssignment, q: string) {
 }
 
 export default function FieldLeadersPage() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const canManage = can('block:manage');
   const [rows, setRows] = useState<FieldAssignment[]>([]);
   const [query, setQuery] = useState('');
@@ -438,6 +438,7 @@ export default function FieldLeadersPage() {
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
           Designações por data e dias fixos
+          {user?.working_cep ? ` · região ${user.working_cep}` : ''}
         </p>
       </div>
 
