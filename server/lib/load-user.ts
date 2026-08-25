@@ -1,4 +1,5 @@
 import pool from './db.js';
+import { getCongregationName } from './cep-region.js';
 import { resolveWorkingCep } from './map-config.js';
 import {
   DEFAULT_ROLE_PERMISSIONS,
@@ -135,6 +136,13 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
   }
 
   const active_cep = normalizeStoredCep(row.active_cep);
+  const working_cep = workingCepFor(active_cep);
+  let congregation_name: string | null = null;
+  try {
+    congregation_name = working_cep ? await getCongregationName(working_cep) : null;
+  } catch {
+    congregation_name = null;
+  }
 
   return {
     id: row.id,
@@ -145,6 +153,7 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
     isAdmin,
     theme_preference: normalizeThemePreference(row.theme_preference),
     active_cep,
-    working_cep: workingCepFor(active_cep),
+    working_cep,
+    congregation_name,
   };
 }

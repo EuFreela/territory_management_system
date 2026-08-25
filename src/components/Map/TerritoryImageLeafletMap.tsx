@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ImageOverlay, MapContainer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { IconCompress, IconExpand, IconFocusAreas } from '@/components/Map/mapIcons';
 import { LoadingBox } from '@/components/ui/Spinner';
 import type { Territory } from '@/lib/types';
-import { territoryStaticMapCandidates } from '@/lib/territory-map-image';
+import { territoryCardImageUrl } from '@/lib/territory-map-image';
 
 type LoadedImage = {
   url: string;
@@ -42,7 +42,7 @@ function FitImageBounds({
 
 /**
  * Imagem do cartão no Leaflet (CRS.Simple + ImageOverlay).
- * Controles iguais ao mapa: tela cheia e centralizar/enquadrar.
+ * Carrega só o link sanitizado — sem arquivos locais em /territories/.
  */
 export default function TerritoryImageLeafletMap({
   territory,
@@ -58,7 +58,7 @@ export default function TerritoryImageLeafletMap({
   heightClass?: string;
   fillHeight?: boolean;
 }) {
-  const candidates = useMemo(() => territoryStaticMapCandidates(territory), [territory]);
+  const imageUrl = territoryCardImageUrl(territory);
   const [loaded, setLoaded] = useState<LoadedImage | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -73,34 +73,28 @@ export default function TerritoryImageLeafletMap({
     setFailed(false);
     setLoading(true);
 
-    if (candidates.length === 0) {
+    if (!imageUrl) {
       setFailed(true);
       setLoading(false);
       return;
     }
 
-    (async () => {
-      for (const url of candidates) {
-        try {
-          const img = await loadImage(url);
-          if (cancelled) return;
-          setLoaded({ url, width: img.naturalWidth, height: img.naturalHeight });
-          setLoading(false);
-          return;
-        } catch {
-          /* tenta próxima extensão */
-        }
-      }
-      if (!cancelled) {
+    loadImage(imageUrl)
+      .then((img) => {
+        if (cancelled) return;
+        setLoaded({ url: imageUrl, width: img.naturalWidth, height: img.naturalHeight });
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
         setFailed(true);
         setLoading(false);
-      }
-    })();
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [candidates, territory.id, territory.number]);
+  }, [imageUrl, territory.id]);
 
   // Esc sai da tela cheia; trava scroll do body
   useEffect(() => {
@@ -140,13 +134,13 @@ export default function TerritoryImageLeafletMap({
   if (failed || !loaded) {
     return (
       <div className="flex min-h-[20rem] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-apple-line bg-apple-fill px-4 py-10 text-center">
-        <p className="text-[15px] font-medium text-apple-ink">Imagem do mapa não encontrada</p>
+        <p className="text-[15px] font-medium text-apple-ink">
+          {imageUrl ? 'Não foi possível carregar a imagem' : 'Nenhum link de imagem cadastrado'}
+        </p>
         <p className="max-w-sm text-[13px] text-apple-secondary">
-          Coloque o arquivo em{' '}
-          <code className="rounded bg-apple-surface px-1.5 py-0.5 text-[12px]">
-            public/territories/t{String(territory.number ?? '').replace(/\D/g, '') || 'N'}.webp
-          </code>{' '}
-          (ou .jpg / .png). Terr. N.º atual: {territory.number || '—'}.
+          {imageUrl
+            ? 'Confira se o link aponta para um arquivo de imagem público (jpg, png, webp) e tente de novo.'
+            : 'Cole o link da imagem do cartão na criação ou na edição do território.'}
         </p>
       </div>
     );
@@ -174,7 +168,6 @@ export default function TerritoryImageLeafletMap({
           isFullscreen || fillHeight ? 'min-h-0 flex-1' : heightClass
         }`}
       >
-        {/* Controles — mesmo padrão do TerritoryMap */}
         <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
           <button
             type="button"
@@ -224,8 +217,16 @@ export default function TerritoryImageLeafletMap({
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Falha ao carregar ${url}`));
+    img.referrerPolicy = 'no-referrer';
+    img.decoding = 'async';
+    img.onload = () => {
+      if (img.naturalWidth < 1 || img.naturalHeight < 1) {
+        reject(new Error('Imagem inválida.'));
+        return;
+      }
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
     img.src = url;
   });
 }

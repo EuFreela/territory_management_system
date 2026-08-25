@@ -252,8 +252,13 @@ export default function DashboardPage() {
         <p className="text-sm font-medium text-muted-foreground">Visão geral</p>
         <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">Início</h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-          Território do dia, dirigentes e o que ainda falta
-          {user?.working_cep ? ` na região ${user.working_cep}` : ''}.
+          {`Território do dia, dirigentes e o que ainda falta${
+            user?.congregation_name
+              ? ` em ${user.congregation_name}`
+              : user?.working_cep
+                ? ` na região ${user.working_cep}`
+                : ''
+          }.`}
         </p>
       </header>
 

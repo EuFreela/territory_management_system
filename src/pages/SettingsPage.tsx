@@ -16,6 +16,7 @@ import type { CepLocation } from '@/lib/types';
 type RegionOption = {
   cep: string;
   territory_count: number;
+  congregation_name?: string | null;
 };
 
 type CepConfig = {
@@ -23,6 +24,7 @@ type CepConfig = {
   active_cep: string | null;
   is_default: boolean;
   default_cep: string;
+  congregation_name?: string | null;
   location: CepLocation;
   regions: RegionOption[];
   message?: string;
@@ -35,8 +37,10 @@ export default function SettingsPage() {
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState('');
   const [cepError, setCepError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [config, setConfig] = useState<CepConfig | null>(null);
   const [cep, setCep] = useState('');
+  const [congregationName, setCongregationName] = useState('');
   const [preview, setPreview] = useState<CepLocation | null>(null);
 
   async function load() {
@@ -45,6 +49,7 @@ export default function SettingsPage() {
       const data = await api<CepConfig>('/api/config/cep');
       setConfig(data);
       setCep(data.cep);
+      setCongregationName(data.congregation_name ?? '');
       setPreview(data.location);
       setError('');
     } catch (err) {
@@ -80,39 +85,86 @@ export default function SettingsPage() {
     }
   }
 
-  async function saveCep(nextCep: string | null, locationHint?: CepLocation | null) {
+  function applyConfig(data: CepConfig) {
+    setConfig(data);
+    setCep(data.cep);
+    setCongregationName(data.congregation_name ?? '');
+    setPreview(data.location);
+  }
+
+  async function persistRegion(options: {
+    nextCep: string | null;
+    congregationName?: string | null;
+    includeName: boolean;
+  }) {
+    setSaving(true);
+    setCepError('');
+    setNameError('');
+    try {
+      const body: { cep: string | null; congregation_name?: string | null } = {
+        cep: options.nextCep,
+      };
+      if (options.includeName) {
+        body.congregation_name = options.congregationName ?? null;
+      }
+      const data = await api<CepConfig>('/api/config/cep', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      applyConfig(data);
+      await refresh();
+      toast.success(data.message || 'Configuração da região atualizada.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar a região.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveCep(
+    nextCep: string | null,
+    locationHint?: CepLocation | null,
+    options?: { congregationName?: string; includeName?: boolean },
+  ) {
     const digits = nextCep ? onlyDigits(nextCep) : '';
     if (nextCep != null && digits.length !== 8) {
       setCepError('Informe um CEP com 8 dígitos.');
       return;
     }
 
+    const includeName = options?.includeName ?? false;
+    const nameRaw = options?.congregationName;
+    if (includeName && nameRaw != null) {
+      const trimmed = nameRaw.trim();
+      if (trimmed && trimmed.length < 2) {
+        setNameError('Nome da congregação deve ter pelo menos 2 caracteres.');
+        return;
+      }
+      if (trimmed.length > 120) {
+        setNameError('Nome da congregação no máximo 120 caracteres.');
+        return;
+      }
+    }
+
     const currentDigits = onlyDigits(config?.cep ?? '');
+    const sameCep = Boolean(digits && digits === currentDigits);
     const targetLabel =
       locationHint?.label ||
       (digits ? formatCep(digits) : config?.default_cep ? `padrão ${config.default_cep}` : 'padrão');
 
-    const apply = async () => {
-      setSaving(true);
-      setCepError('');
-      try {
-        const data = await api<CepConfig>('/api/config/cep', {
-          method: 'PUT',
-          body: JSON.stringify({ cep: nextCep }),
-        });
-        setConfig(data);
-        setCep(data.cep);
-        setPreview(data.location);
-        await refresh();
-        toast.success(data.message || 'Região de trabalho atualizada.');
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao salvar o CEP.');
-      } finally {
-        setSaving(false);
-      }
-    };
+    const apply = () =>
+      persistRegion({
+        nextCep,
+        congregationName: includeName ? (nameRaw ?? '').trim() || null : undefined,
+        includeName,
+      });
 
-    if (digits && digits === currentDigits) {
+    if (sameCep && includeName) {
+      await apply();
+      return;
+    }
+
+    if (sameCep && !includeName) {
       toast.success('Esta já é a região de trabalho atual.');
       return;
     }
@@ -127,7 +179,7 @@ export default function SettingsPage() {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    void saveCep(cep, preview);
+    void saveCep(cep, preview, { congregationName, includeName: true });
   }
 
   const location = preview ?? config?.location ?? null;
@@ -139,8 +191,8 @@ export default function SettingsPage() {
         Configuração
       </h1>
       <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-        Defina o CEP da região de trabalho. Novos territórios, mapas, dirigentes e o histórico
-        ficam vinculados a este CEP, para que cada congregação use o sistema na própria cidade.
+        Defina o CEP da região de trabalho e o nome da congregação. Territórios, mapas,
+        dirigentes e o histórico ficam vinculados a este CEP.
       </p>
 
       {error ? (
@@ -168,8 +220,15 @@ export default function SettingsPage() {
                       ? 'Usando o CEP padrão do sistema (.env).'
                       : 'CEP gravado na sua conta. Outros usuários da mesma congregação devem usar o mesmo CEP.'}
                   </p>
-                  {config?.location ? (
+                  {config?.congregation_name ? (
                     <p className="mt-3 text-[15px] font-medium text-foreground">
+                      {config.congregation_name}
+                    </p>
+                  ) : null}
+                  {config?.location ? (
+                    <p
+                      className={`text-[15px] ${config.congregation_name ? 'mt-0.5 text-muted-foreground' : 'mt-3 font-medium text-foreground'}`}
+                    >
                       {config.location.cep}
                       {config.location.city ? ` · ${config.location.city}` : ''}
                       {config.location.state ? `/${config.location.state}` : ''}
@@ -185,13 +244,38 @@ export default function SettingsPage() {
 
           <Card>
             <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold tracking-tight">Alterar CEP</h2>
+              <h2 className="text-lg font-semibold tracking-tight">Alterar região</h2>
               <p className="mb-4 mt-1 text-sm leading-relaxed text-muted-foreground">
-                Informe o CEP da área da congregação. O mapa e as criações passam a usar essa
-                localidade.
+                Informe o CEP da área e o nome da congregação. O mapa e as criações passam a usar
+                essa localidade.
               </p>
 
               <form onSubmit={onSubmit} noValidate className="space-y-4">
+                <div className="grid gap-1.5 sm:max-w-md">
+                  <Label htmlFor="settings-congregation">Nome da congregação</Label>
+                  <Input
+                    id="settings-congregation"
+                    value={congregationName}
+                    onChange={(event) => {
+                      setCongregationName(event.target.value);
+                      if (nameError) setNameError('');
+                    }}
+                    placeholder="Ex: Alpinópolis"
+                    maxLength={120}
+                    disabled={saving}
+                    autoComplete="organization"
+                    aria-invalid={Boolean(nameError)}
+                    aria-describedby={nameError ? 'settings-congregation-error' : undefined}
+                  />
+                  {nameError ? (
+                    <FieldError id="settings-congregation-error">{nameError}</FieldError>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Este nome identifica o CEP no sistema (a congregação desta região).
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid gap-1.5 sm:max-w-xs">
                   <Label htmlFor="settings-cep">CEP</Label>
                   <div className="flex gap-2">
@@ -286,9 +370,11 @@ export default function SettingsPage() {
                           'disabled:opacity-70',
                         ].join(' ')}
                       >
-                        {region.cep}
+                        {region.congregation_name || region.cep}
                         <span className="ml-1.5 text-[11px] opacity-70">
-                          {region.territory_count}
+                          {region.congregation_name
+                            ? `${region.cep} · ${region.territory_count}`
+                            : region.territory_count}
                         </span>
                       </button>
                     );

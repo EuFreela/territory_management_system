@@ -1,7 +1,9 @@
-﻿import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { IconArrowLeft, IconSave } from '@/components/Map/mapIcons';
+import { IconArrowLeft, IconImage, IconMap, IconSave } from '@/components/Map/mapIcons';
+import TerritoryImageLeafletMap from '@/components/Map/TerritoryImageLeafletMap';
 import TerritoryMap, { hasValidMapArea } from '@/components/Map/TerritoryMap';
+import ImageUrlField from '@/components/territory/ImageUrlField';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,18 +11,26 @@ import FieldError from '@/components/ui/FieldError';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
-import type { CepLocation } from '@/lib/types';
+import { sanitizeImageUrl } from '@/lib/image-url';
+import { cn } from '@/lib/utils';
+import type { CepLocation, Territory } from '@/lib/types';
+
+type CreateTab = 'mapa' | 'imagem';
 
 export default function NewTerritoryPage() {
   const navigate = useNavigate();
   const [localidade, setLocalidade] = useState('');
   const [number, setNumber] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrlError, setImageUrlError] = useState('');
   const [geojson, setGeojson] = useState<string | null>(null);
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [error, setError] = useState('');
   const [localidadeError, setLocalidadeError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loadingMap, setLoadingMap] = useState(true);
+  const [tab, setTab] = useState<CreateTab>('mapa');
+  const [imageResizeToken, setImageResizeToken] = useState(0);
 
   useEffect(() => {
     api<CepLocation>('/api/config/map')
@@ -29,18 +39,44 @@ export default function NewTerritoryPage() {
       .finally(() => setLoadingMap(false));
   }, []);
 
+  const sanitizedImage = sanitizeImageUrl(imageUrl);
+  const previewTerritory: Territory = {
+    id: 0,
+    user_id: 0,
+    name: localidade,
+    number,
+    image_url: sanitizedImage.ok ? sanitizedImage.url : null,
+    is_daily: 0,
+  };
+
+  function selectTab(next: CreateTab) {
+    setTab(next);
+    if (next === 'imagem') {
+      setImageResizeToken((n) => n + 1);
+    }
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setLocalidadeError('');
+    setImageUrlError('');
 
     if (localidade.trim() === '') {
       setLocalidadeError('Preencha este campo.');
       return;
     }
 
+    const imageResult = sanitizeImageUrl(imageUrl);
+    if (!imageResult.ok) {
+      setImageUrlError(imageResult.error);
+      selectTab('imagem');
+      return;
+    }
+
     if (!geojson || !hasValidMapArea(geojson)) {
       setError('Desenhe ao menos uma área no mapa (lápis → pontos → ✓) antes de salvar.');
+      selectTab('mapa');
       return;
     }
 
@@ -52,6 +88,7 @@ export default function NewTerritoryPage() {
         body: JSON.stringify({
           name: localidade,
           number: number || null,
+          image_url: imageResult.url,
           geojson,
         }),
       });
@@ -80,7 +117,8 @@ export default function NewTerritoryPage() {
           Novo território
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-          Preencha a localidade e o número, desenhe a área no mapa e salve.
+          Preencha a localidade e o número, cole o link da imagem do cartão, desenhe a área no
+          mapa e salve.
         </p>
 
         <Card className="mt-6">
@@ -121,7 +159,7 @@ export default function NewTerritoryPage() {
               <div>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <Label className="text-sm font-medium text-foreground">
-                    Área do território no mapa
+                    Área e imagem do cartão
                   </Label>
                   {mapConfig ? (
                     <span className="text-xs text-muted-foreground">
@@ -130,20 +168,81 @@ export default function NewTerritoryPage() {
                   ) : null}
                 </div>
 
-                {loadingMap ? (
-                  <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-muted/40">
-                    <Spinner label="Carregando mapa…" className="text-muted-foreground" />
-                  </div>
-                ) : (
-                  <TerritoryMap
-                    value={geojson}
-                    onChange={setGeojson}
-                    centerLat={mapConfig?.lat ?? null}
-                    centerLng={mapConfig?.lng ?? null}
-                    cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
-                    editable
+                <div
+                  className="mb-3 inline-flex w-full rounded-full bg-muted p-1 sm:w-auto"
+                  role="tablist"
+                  aria-label="Mapa ou imagem"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === 'mapa'}
+                    onClick={() => selectTab('mapa')}
+                    className={cn(
+                      'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
+                      tab === 'mapa'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <IconMap className="size-3.5 shrink-0" />
+                    Mapa
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === 'imagem'}
+                    onClick={() => selectTab('imagem')}
+                    className={cn(
+                      'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition sm:flex-none',
+                      tab === 'imagem'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <IconImage className="size-3.5 shrink-0" />
+                    Imagem
+                  </button>
+                </div>
+
+                <div hidden={tab !== 'mapa'} className={tab === 'mapa' ? '' : 'hidden'}>
+                  {loadingMap ? (
+                    <div className="flex h-64 items-center justify-center rounded-lg border border-border bg-muted/40">
+                      <Spinner label="Carregando mapa…" className="text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <TerritoryMap
+                      value={geojson}
+                      onChange={setGeojson}
+                      centerLat={mapConfig?.lat ?? null}
+                      centerLng={mapConfig?.lng ?? null}
+                      cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                      editable
+                    />
+                  )}
+                </div>
+
+                <div hidden={tab !== 'imagem'} className={tab === 'imagem' ? 'space-y-4' : 'hidden'}>
+                  <ImageUrlField
+                    value={imageUrl}
+                    onChange={(next) => {
+                      setImageUrl(next);
+                      if (imageUrlError) setImageUrlError('');
+                    }}
+                    error={imageUrlError}
+                    disabled={submitting}
                   />
-                )}
+                  {sanitizedImage.ok && sanitizedImage.url ? (
+                    <TerritoryImageLeafletMap
+                      territory={previewTerritory}
+                      resizeToken={imageResizeToken}
+                    />
+                  ) : (
+                    <div className="flex min-h-[12rem] items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 text-center text-sm text-muted-foreground">
+                      Cole um link https da imagem do cartão para ver o preview aqui.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}

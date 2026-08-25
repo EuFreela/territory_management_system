@@ -30,7 +30,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
+import { hasTerritoryCardImage } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
 import { cn } from '@/lib/utils';
 import type { Block, CepLocation, Territory } from '@/lib/types';
@@ -575,17 +575,21 @@ export default function TerritoryDetailPage() {
                     hidden={mapViewTab !== 'imagem'}
                     className={mapViewTab === 'imagem' ? '' : 'hidden'}
                   >
-                    {hasTerritoryStaticMapCandidate(territory) ? (
+                    {hasTerritoryCardImage(territory) ? (
                       <TerritoryImageLeafletMap
                         territory={territory}
                         resizeToken={imageResizeToken}
                       />
                     ) : (
                       <div className="rounded-2xl border border-dashed border-border bg-muted px-4 py-10 text-center text-sm text-muted-foreground">
-                        Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão
-                        para associar a imagem (ex.: N.º 28 →{' '}
-                        <code className="text-xs">t28.webp</code> ou{' '}
-                        <code className="text-xs">t28.jpg</code>).
+                        Nenhum link de imagem cadastrado.{' '}
+                        {can('territory:update') ? (
+                          <Link to={`/territories/${id}/edit`} className={LINK_CLASS}>
+                            Editar território
+                          </Link>
+                        ) : (
+                          'Peça a um editor para colar o link da foto do cartão.'
+                        )}
                       </div>
                     )}
                   </div>
@@ -867,7 +871,7 @@ export default function TerritoryDetailPage() {
 
             {/* Quadro: imagem do cartão */}
             <div className="min-h-0 flex-1 overflow-hidden">
-              {hasTerritoryStaticMapCandidate(territory) ? (
+              {hasTerritoryCardImage(territory) ? (
                 <TerritoryImageLeafletMap
                   territory={territory}
                   resizeToken={splitResizeToken}
@@ -875,8 +879,7 @@ export default function TerritoryDetailPage() {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 text-center text-sm text-muted-foreground">
-                  Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão para
-                  associar a imagem (ex.: N.º 28 → <code className="mx-1 text-xs">t28.webp</code>).
+                  Nenhum link de imagem cadastrado. Cole o endereço na edição do território.
                 </div>
               )}
             </div>

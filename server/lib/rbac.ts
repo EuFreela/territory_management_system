@@ -61,6 +61,8 @@ export type RbacUser = {
   active_cep: string | null;
   /** CEP efetivo da região de trabalho (gravado ou padrão) */
   working_cep: string;
+  /** Nome da congregação vinculado ao CEP de trabalho */
+  congregation_name: string | null;
 };
 
 export function normalizeThemePreference(value: unknown): ThemePreference {

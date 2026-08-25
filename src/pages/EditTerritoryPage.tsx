@@ -28,8 +28,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import ImageUrlField from '@/components/territory/ImageUrlField';
 import { api } from '@/lib/api';
-import { hasTerritoryStaticMapCandidate } from '@/lib/territory-map-image';
+import { sanitizeImageUrl } from '@/lib/image-url';
+import { hasTerritoryCardImage } from '@/lib/territory-map-image';
 import type { Block, CepLocation, Territory } from '@/lib/types';
 
 type StreetRow = { key: string; streetName: string; houseNumbers: string; description: string };
@@ -46,6 +48,8 @@ export default function EditTerritoryPage() {
   const navigate = useNavigate();
   const [localidade, setLocalidade] = useState('');
   const [number, setNumber] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrlError, setImageUrlError] = useState('');
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [geojson, setGeojson] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -84,6 +88,7 @@ export default function EditTerritoryPage() {
       .then(([territory, config]) => {
         setLocalidade(territory.name ?? '');
         setNumber(territory.number ?? '');
+        setImageUrl(territory.image_url ?? '');
         setGeojson(territory.geojson ?? null);
         setBlocks(territory.blocks ?? []);
         setMapConfig(config);
@@ -158,6 +163,12 @@ export default function EditTerritoryPage() {
       return;
     }
 
+    const imageResult = sanitizeImageUrl(imageUrl);
+    if (!imageResult.ok) {
+      setImageUrlError(imageResult.error);
+      return;
+    }
+
     if (!geojson || !hasValidMapArea(geojson)) {
       setError('Desenhe ao menos uma área no mapa (lápis → pontos → ✓) antes de salvar.');
       return;
@@ -165,6 +176,7 @@ export default function EditTerritoryPage() {
 
     setSaving(true);
     setError('');
+    setImageUrlError('');
 
     try {
       await api(`/api/territories/${id}`, {
@@ -172,6 +184,7 @@ export default function EditTerritoryPage() {
         body: JSON.stringify({
           name: localidade,
           number: number || null,
+          image_url: imageResult.url,
           geojson,
         }),
       });
@@ -405,12 +418,14 @@ export default function EditTerritoryPage() {
     setSplitOpen(true);
   }
 
-  /** Objeto mínimo para associar a imagem do cartão (usa number/id) */
+  const sanitizedEditImage = sanitizeImageUrl(imageUrl);
+  /** Objeto mínimo para a imagem do cartão (link sanitizado no componente) */
   const territoryForImage: Territory = {
     id: Number(id),
     user_id: 0,
     name: localidade,
     number,
+    image_url: sanitizedEditImage.ok ? sanitizedEditImage.url : null,
     is_daily: 0,
   };
 
@@ -504,6 +519,17 @@ export default function EditTerritoryPage() {
                   />
                 </div>
               </div>
+
+              <ImageUrlField
+                id="edit-image-url"
+                value={imageUrl}
+                onChange={(next) => {
+                  setImageUrl(next);
+                  if (imageUrlError) setImageUrlError('');
+                }}
+                error={imageUrlError}
+                disabled={saving}
+              />
 
               {mapConfig ? (
                 <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300">
@@ -1168,7 +1194,7 @@ export default function EditTerritoryPage() {
 
           {/* Quadro: imagem do cartão */}
           <div className="min-h-0 flex-1 overflow-hidden">
-            {hasTerritoryStaticMapCandidate(territoryForImage) ? (
+            {hasTerritoryCardImage(territoryForImage) ? (
               <TerritoryImageLeafletMap
                 territory={territoryForImage}
                 resizeToken={splitResizeToken}
@@ -1176,8 +1202,8 @@ export default function EditTerritoryPage() {
               />
             ) : (
               <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 text-center text-sm text-muted-foreground">
-                Defina o <strong className="text-foreground">Terr. N.º</strong> do cartão para
-                associar a imagem (ex.: N.º 28 → <code className="mx-1 text-xs">t28.webp</code>).
+                Cole o <strong className="text-foreground">link da imagem</strong> no formulário
+                para ver o cartão aqui.
               </div>
             )}
           </div>
