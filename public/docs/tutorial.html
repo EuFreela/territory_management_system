@@ -71,18 +71,48 @@
         font-weight: 500;
       }
 
+      .print-toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .print-toolbar a.to-toc-bar,
       .print-toolbar button {
         border: 0;
         border-radius: 9999px;
-        background: var(--zinc-900);
-        color: var(--white);
         padding: 0.65rem 1.25rem;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        line-height: 1;
+      }
+
+      .print-toolbar a.to-toc-bar {
+        background: var(--white);
+        color: var(--zinc-900);
+        box-shadow: inset 0 0 0 1px var(--stone-300);
+      }
+
+      .print-toolbar a.to-toc-bar:hover { background: var(--stone-100); }
+
+      .print-toolbar button {
+        background: var(--zinc-900);
+        color: var(--white);
       }
 
       .print-toolbar button:hover { background: var(--zinc-700); }
+
+      .print-toolbar a.to-toc-bar svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
 
       .sheet-stack {
         display: flex;
@@ -126,6 +156,41 @@
         letter-spacing: 0.04em;
         color: var(--zinc-500);
         border-top: 1px solid var(--stone-200);
+      }
+
+      .page-foot-left {
+        display: flex;
+        align-items: center;
+        gap: 2.2mm;
+        min-width: 0;
+      }
+
+      .page-foot a.to-toc {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 7mm;
+        height: 7mm;
+        border-radius: 9999px;
+        color: var(--zinc-700);
+        background: var(--stone-100);
+        text-decoration: none;
+        flex-shrink: 0;
+      }
+
+      .page-foot a.to-toc:hover {
+        color: var(--zinc-900);
+        background: var(--stone-200);
+      }
+
+      .page-foot a.to-toc svg {
+        width: 3.4mm;
+        height: 3.4mm;
+      }
+
+      #sumario a.to-toc {
+        visibility: hidden;
+        pointer-events: none;
       }
 
       .page-foot .page-num::before { content: 'Folha '; }
@@ -238,7 +303,7 @@
         display: flex;
         align-items: baseline;
         gap: 0;
-        padding: 3.2mm 0;
+        padding: 3mm 0;
         font-size: 10.5pt;
         color: var(--zinc-900);
       }
@@ -262,7 +327,7 @@
         color: var(--zinc-500);
         font-variant-numeric: tabular-nums;
         font-size: 9.5pt;
-        min-width: 8mm;
+        min-width: 16mm;
         text-align: right;
       }
 
@@ -325,6 +390,16 @@
         max-height: 18mm;
         object-fit: cover;
         object-position: top center;
+        background: var(--white);
+      }
+
+      figure.shot.pill img {
+        width: auto;
+        max-width: 100%;
+        height: 12mm;
+        max-height: 12mm;
+        margin-inline: auto;
+        object-fit: contain;
         background: var(--white);
       }
 
@@ -556,7 +631,15 @@
         <strong>Tutorial CAMPO · A4</strong> — cada bloco é uma folha (210×297&nbsp;mm). Use Imprimir
         para PDF ou papel.
       </p>
-      <button type="button" onclick="window.print()">Imprimir / Salvar PDF</button>
+      <div class="print-toolbar-actions">
+        <a class="to-toc-bar" href="#sumario">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+          </svg>
+          Sumário
+        </a>
+        <button type="button" onclick="window.print()">Imprimir / Salvar PDF</button>
+      </div>
     </div>
 
     <div class="sheet-stack">
@@ -573,7 +656,7 @@
             </p>
             <div class="meta">
               <span>Guia do usuário</span>
-              <span>v0.0.20</span>
+              <span>v0.0.23</span>
               <span>Agosto 2026</span>
             </div>
           </div>
@@ -593,106 +676,93 @@
               <span class="n">02</span>
             </li>
             <li>
-              <a href="#login">Login — a tela</a>
+              <a href="#login">Login</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">03</span>
+              <span class="n">03–05</span>
             </li>
             <li>
-              <a href="#login-campos">Login — cada campo</a>
+              <a href="#inicio">Início</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">04</span>
+              <span class="n">06–12</span>
             </li>
             <li>
-              <a href="#login-passos">Login — como entrar</a>
+              <a href="#territorios">Territórios</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">05</span>
+              <span class="n">13–18</span>
             </li>
             <li>
-              <a href="#inicio">Início — a tela</a>
+              <a href="#novo">Novo território</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">06</span>
+              <span class="n">19–21</span>
             </li>
             <li>
-              <a href="#inicio-menu">Início — o menu</a>
+              <a href="#cartao">O cartão</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">07</span>
+              <span class="n">22–23</span>
             </li>
             <li>
-              <a href="#inicio-dirigentes">Início — dirigentes</a>
+              <a href="#nao-em-casa">Não em casa</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">08</span>
+              <span class="n">24</span>
             </li>
             <li>
-              <a href="#inicio-dia">Início — território do dia</a>
+              <a href="#dirigentes">Dirigentes</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">09</span>
+              <span class="n">25–28</span>
             </li>
             <li>
-              <a href="#inicio-finalizar">Início — finalizar</a>
+              <a href="#usuarios">Usuários e minha conta</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">10</span>
+              <span class="n">29–31</span>
             </li>
             <li>
-              <a href="#inicio-finalizar-opcoes">Início — opções ao finalizar</a>
+              <a href="#configuracao">Configuração</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">11</span>
+              <span class="n">32–33</span>
             </li>
             <li>
-              <a href="#inicio-pendentes">Início — não finalizados</a>
+              <a href="#finalizados">Finalizados</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">12</span>
+              <span class="n">34–36</span>
             </li>
             <li>
-              <span>Territórios</span>
+              <a href="#chat">Chat</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
+              <span class="n">37–38</span>
             </li>
             <li>
-              <span>Novo território e mapa</span>
+              <a href="#editar">Editar território</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
+              <span class="n">39–40</span>
             </li>
             <li>
-              <span>Imagem do cartão</span>
+              <a href="#mapa">Mapa e GPS</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
+              <span class="n">41</span>
             </li>
             <li>
-              <span>Não em casa</span>
+              <a href="#relatorio">Relatório A4</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
-            </li>
-            <li>
-              <span>Dirigentes</span>
-              <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
-            </li>
-            <li>
-              <span>Usuários e minha conta</span>
-              <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
-            </li>
-            <li>
-              <span>Configuração</span>
-              <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
-            </li>
-            <li>
-              <span>Finalizados</span>
-              <span class="dots" aria-hidden="true"></span>
-              <span class="n soon">em breve</span>
+              <span class="n">42</span>
             </li>
           </ol>
 
           <div class="toc-kicker">
             <p>
-              Os capítulos seguintes entram neste mesmo arquivo, cada um em folhas próprias, com
-              capturas reais do sistema ao lado das instruções.
+              Cada capítulo começa na primeira folha do intervalo. As capturas são da tela real
+              do CAMPO — dá para ler aqui ou imprimir em A4.
             </p>
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial</span>
+          </span>
           <span class="page-num">02</span>
         </div>
       </article>
@@ -721,7 +791,14 @@
           </figure>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Login</span>
+          </span>
           <span class="page-num">03</span>
         </div>
       </article>
@@ -793,7 +870,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Login</span>
+          </span>
           <span class="page-num">04</span>
         </div>
       </article>
@@ -840,7 +924,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Login</span>
+          </span>
           <span class="page-num">05</span>
         </div>
       </article>
@@ -864,7 +955,14 @@
           </figure>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">06</span>
         </div>
       </article>
@@ -932,7 +1030,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">07</span>
         </div>
       </article>
@@ -988,7 +1093,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">08</span>
         </div>
       </article>
@@ -1050,7 +1162,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">09</span>
         </div>
       </article>
@@ -1073,7 +1192,14 @@
           </figure>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">10</span>
         </div>
       </article>
@@ -1125,7 +1251,14 @@
           </div>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">11</span>
         </div>
       </article>
@@ -1199,8 +1332,1419 @@
           </ol>
         </div>
         <div class="page-foot">
-          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Início</span>
+          </span>
           <span class="page-num">12</span>
+        </div>
+      </article>
+
+      <!-- 13 TERRITÓRIOS — A LISTA -->
+      <article class="page" id="territorios" aria-label="Territórios — a lista">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>A lista de cartões</h2>
+          <p>
+            No menu, <strong>Territórios → Lista de territórios</strong>. Aqui estão todos os
+            cartões da região de trabalho (o CEP da congregação). Cada linha é um território:
+            localidade, número, se já tem área no mapa e se está marcado como território do dia.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/territorios.webp"
+              alt="Lista de territórios do CAMPO: título, busca, botões de ordenar e novo, e os cartões com localidade e Terr. N.º"
+            />
+            <figcaption>Lista de territórios no computador — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">13</span>
+        </div>
+      </article>
+
+      <!-- 14 TERRITÓRIOS — O TOPO -->
+      <article class="page" id="territorios-topo" aria-label="Territórios — o topo">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>Para que serve o topo da página</h2>
+          <p>
+            O título mostra a congregação da região. À direita ficam as duas ações da lista.
+          </p>
+          <figure class="shot bar">
+            <img
+              src="tutorial/territorios-cabecalho.webp"
+              alt="Cabeçalho da lista: Cartões, Territórios, congregação, botão de ordenar e botão de novo território"
+            />
+            <figcaption>Título, congregação, ordenar por Terr. N.º e novo território.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 4mm">
+            <div class="part">
+              <strong class="label">Seta de ordenação</strong>
+              <span>
+                Alterna Terr. N.º crescente (1, 2, 3…) e decrescente. Cartões sem número ficam
+                sempre no fim. A dica no botão diz qual é a ordem atual.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Mais (novo território)</strong>
+              <span>
+                Abre a tela de cadastro: localidade, número, link da imagem e desenho da área no
+                mapa. Só aparece para quem pode criar território.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Busca</strong>
+              <span>
+                Filtra por localidade ou Terr. N.º (ignora acentos). Embaixo da caixa aparece
+                quantos cartões restaram, por exemplo “12 de 37 território(s)”.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lista vazia</strong>
+              <span>
+                “Nenhum território cadastrado” — ainda não há cartão nesta região. “Nenhum
+                território encontrado” — a busca não bateu com nenhum nome ou número.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">14</span>
+        </div>
+      </article>
+
+      <!-- 15 TERRITÓRIOS — O CARTÃO -->
+      <article class="page" id="territorios-cartao" aria-label="Territórios — o cartão">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>O que cada cartão mostra</h2>
+          <p>
+            Um cartão = um território. À esquerda, a ficha; à direita, os botões. O exemplo abaixo
+            é um território do dia, com área já desenhada no mapa.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/territorios-cartao.webp"
+              alt="Cartão da lista: localidade, Terr. N.º, área no mapa, selo Território do dia e botões de ação"
+            />
+            <figcaption>Amostra de um cartão na lista.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Localidade e Terr. N.º</strong>
+              <span>
+                Nome da área (bairro, setor) e o número do cartão de território. É o que a busca
+                procura.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Área no mapa</strong>
+              <span>
+                Verde: já existe polígono salvo. Âmbar: ainda falta desenhar a área — use Editar
+                área (lápis).
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Território do dia</strong>
+              <span>
+                Selo verde com o nome do dirigente vinculado. Só um território do dia por
+                dirigente da escala de hoje.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Revisado e aprovado</strong>
+              <span>
+                Selo azul, quando alguém com permissão confirmou que o cartão está certo para uso.
+                Não é o mesmo que finalizar o dia.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">15</span>
+        </div>
+      </article>
+
+      <!-- 16 TERRITÓRIOS — MARCAR DO DIA -->
+      <article class="page" id="territorios-dia" aria-label="Territórios — marcar do dia">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>Janela Território do dia</h2>
+          <p>
+            A estrela do cartão abre esta janela. Nada é gravado até você clicar em
+            <strong>Vincular</strong>. Cada dirigente da escala de hoje tem um território do dia;
+            vincular de novo troca o cartão anterior daquele dirigente.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/territorios-modal-dia.webp"
+              alt="Janela Território do dia — dirigente: escolha o dirigente e botões Cancelar e Vincular"
+            />
+            <figcaption>Janela ao clicar na estrela da lista — captura real.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">16</span>
+        </div>
+      </article>
+
+      <!-- 17 TERRITÓRIOS — AS AÇÕES -->
+      <article class="page" id="territorios-acoes" aria-label="Territórios — as ações">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>O que cada botão do cartão faz</h2>
+          <p>Da esquerda para a direita, quando o seu papel mostra o botão.</p>
+
+          <div class="parts" style="margin-top: 4mm">
+            <div class="part">
+              <strong class="label">Círculo com visto (revisar)</strong>
+              <span>
+                Marca o cartão como revisado e aprovado, ou remove a marcação. Pede confirmação
+                nos dois casos. Não finaliza o território do dia.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Estrela (do dia)</strong>
+              <span>
+                Abre a janela da folha anterior. Se o cartão já é do dia, a dica vira “Trocar
+                dirigente do dia”.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Elo (desvincular)</strong>
+              <span>
+                Só aparece no território do dia. Tira o destaque sem gravar no histórico — o
+                cartão volta a ser um território comum. Pede confirmação.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Olho (ver cartão)</strong>
+              <span>
+                Abre o cartão: mapa, imagem e o checklist de não em casa. Qualquer um que possa
+                ver territórios usa este botão.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lápis (editar área)</strong>
+              <span>
+                Ajusta localidade, número, link da imagem, polígonos no mapa e o cadastro de não
+                em casa.
+              </span>
+            </div>
+          </div>
+
+          <figure class="shot frame">
+            <img
+              src="tutorial/territorios-confirmar-revisao.webp"
+              alt="Aviso no centro da tela: Revisado e aprovado? com Cancelar e Aprovar"
+            />
+            <figcaption>
+              Confirmação ao marcar como revisado. Desvincular e remover revisão usam o mesmo aviso.
+            </figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">17</span>
+        </div>
+      </article>
+
+      <!-- 18 TERRITÓRIOS — NO DIA A DIA -->
+      <article class="page" id="territorios-passos" aria-label="Territórios — no dia a dia">
+        <div class="page-inner">
+          <p class="eyebrow">03 · Territórios</p>
+          <h2>Como usar a lista no dia de campo</h2>
+          <p>Siga a ordem abaixo. Quem só marca casas no cartão usa o olho; quem organiza o dia usa a estrela.</p>
+
+          <ol class="steps">
+            <li>
+              <span>Abra Territórios e, se quiser, busque pelo nome ou pelo Terr. N.º.</span>
+            </li>
+            <li>
+              <span>
+                Confira se o cartão tem <strong>área no mapa</strong>. Se estiver âmbar, alguém
+                com permissão desenha a área no lápis.
+              </span>
+            </li>
+            <li>
+              <span>
+                Para o horário de hoje, toque na <strong>estrela</strong>, escolha o dirigente e
+                Vincular. O selo Território do dia aparece no cartão e no Início.
+              </span>
+            </li>
+            <li>
+              <span>
+                Toque no <strong>olho</strong> para trabalhar o mapa e o não em casa. Ao terminar
+                o horário, finalize pelo Início — não por esta lista.
+              </span>
+            </li>
+          </ol>
+
+          <div class="callout">
+            <strong>Quem vê o quê</strong>
+            <p>
+              A lista é a mesma região do seu CEP. Criar, editar, marcar o dia e revisar dependem
+              do papel (admin, editor, campo, visualizador). Se um botão não aparece, a conta não
+              tem essa permissão.
+            </p>
+          </div>
+
+          <div class="callout">
+            <strong>Não misture com Finalizar</strong>
+            <p>
+              Desvincular só tira o destaque do dia. Finalizar (botão verde no Início) grava
+              pessoas, dirigente e data no histórico e aí sim tira o cartão do dia.
+            </p>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Territórios</span>
+          </span>
+          <span class="page-num">18</span>
+        </div>
+      </article>
+
+      <!-- 19 NOVO TERRITÓRIO — A TELA -->
+      <article class="page" id="novo" aria-label="Novo território — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">04 · Novo território</p>
+          <h2>Cadastrar um cartão</h2>
+          <p>
+            O botão <strong>+</strong> da lista abre esta tela. Preencha localidade e número, cole
+            o link da foto do cartão, desenhe ao menos uma área no mapa e salve. O arquivo da
+            imagem não fica no servidor — só o endereço.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/novo-territorio.webp"
+              alt="Tela Novo território: localidade, Terr. N.º, seletor Mapa ou Imagem e o mapa da região"
+            />
+            <figcaption>Tela Novo território — captura real. Aba Mapa selecionada.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Novo território</span>
+          </span>
+          <span class="page-num">19</span>
+        </div>
+      </article>
+
+      <!-- 20 NOVO TERRITÓRIO — OS CAMPOS -->
+      <article class="page" id="novo-campos" aria-label="Novo território — os campos">
+        <div class="page-inner">
+          <p class="eyebrow">04 · Novo território</p>
+          <h2>Para que serve cada campo</h2>
+          <p>De cima para baixo, na aba Mapa. A aba Imagem está na folha seguinte.</p>
+
+          <div class="parts" style="margin-top: 4mm">
+            <div class="part">
+              <strong class="label">Seta (voltar)</strong>
+              <span>Volta à lista sem salvar. O que estava no formulário se perde.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Localidade</strong>
+              <span>
+                Nome da área — obrigatório. Exemplo: o bairro ou o setor impresso no cartão de
+                papel.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Terr. N.º</strong>
+              <span>
+                Número do cartão. Pode ficar vazio, mas a lista ordena melhor quando todos têm
+                número.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">CEP base</strong>
+              <span>
+                Mostra a cidade da região de trabalho. O mapa abre centrado aí — não é um campo
+                para digitar nesta tela.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Mapa (desenhar a área)</strong>
+              <span>
+                Lápis → clique nos cantos da quadra → ✓ para fechar o polígono. É obrigatório ao
+                menos uma área antes de salvar. O disquete no canto grava o território.
+              </span>
+            </div>
+          </div>
+
+          <div class="callout">
+            <strong>Se o salvamento recusar</strong>
+            <p>
+              Localidade vazia, link de imagem inválido ou mapa sem polígono. O sistema aponta o
+              que falta e, se for a imagem, troca sozinho para a aba Imagem.
+            </p>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Novo território</span>
+          </span>
+          <span class="page-num">20</span>
+        </div>
+      </article>
+
+      <!-- 21 NOVO TERRITÓRIO — A IMAGEM -->
+      <article class="page" id="novo-imagem" aria-label="Novo território — a imagem">
+        <div class="page-inner">
+          <p class="eyebrow">04 · Novo território</p>
+          <h2>Link da imagem do cartão</h2>
+          <p>
+            Na aba <strong>Imagem</strong>, cole o endereço público da foto (https). O CAMPO não
+            envia o arquivo para o servidor — só guarda o link. Google Drive e Dropbox viram
+            visualização automaticamente.
+          </p>
+          <figure class="shot frame">
+            <img
+              src="tutorial/novo-territorio-imagem.webp"
+              alt="Aba Imagem do novo território: campo Link da imagem e área de preview"
+            />
+            <figcaption>Aba Imagem — o preview aparece depois de colar um link https válido.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Link da imagem</strong>
+              <span>
+                Só http ou https. Endereços javascript, data: e internos da rede são recusados.
+                Dá para editar o link depois, na tela de editar território.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Preview</strong>
+              <span>
+                Com o link certo, a foto abre com zoom e arraste, como no cartão. Sem link, a
+                caixa tracejada pede para colar um https.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Novo território</span>
+          </span>
+          <span class="page-num">21</span>
+        </div>
+      </article>
+
+      <!-- 22 O CARTÃO — A TELA -->
+      <article class="page" id="cartao" aria-label="O cartão — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">05 · O cartão</p>
+          <h2>Mapa e ficha do território</h2>
+          <p>
+            O olho da lista abre o cartão. Em cima, localidade e Terr. N.º; ao lado, estrela,
+            editar, excluir e voltar. Embaixo, o seletor <strong>Mapa</strong> ·
+            <strong>Imagem</strong> · os dois juntos. O checklist de não em casa fica na
+            sequência, na folha 24.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/cartao.webp"
+              alt="Cartão de território: localidade, Terr. N.º, abas Mapa e Imagem, mapa com áreas desenhadas"
+            />
+            <figcaption>Cartão aberto na aba Mapa — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · O cartão</span>
+          </span>
+          <span class="page-num">22</span>
+        </div>
+      </article>
+
+      <!-- 23 O CARTÃO — MAPA E IMAGEM -->
+      <article class="page" id="cartao-abas" aria-label="O cartão — mapa e imagem">
+        <div class="page-inner">
+          <p class="eyebrow">05 · O cartão</p>
+          <h2>Mapa, imagem e os dois juntos</h2>
+          <p>
+            O controle em pílula troca a vista sem recarregar o mapa. Clique numa área do mapa
+            ou num card de não em casa para destacar a mesma quadra — a página não rola sozinha.
+          </p>
+          <figure class="shot pill">
+            <img
+              src="tutorial/cartao-abas.webp"
+              alt="Seletor em pílula: Mapa, Imagem e o botão dos dois juntos"
+            />
+            <figcaption>Mapa · Imagem · o terceiro botão abre os dois em tela cheia.</figcaption>
+          </figure>
+
+          <figure class="shot frame">
+            <img
+              src="tutorial/cartao-imagem.webp"
+              alt="Aba Imagem do cartão com a foto do território em zoom"
+            />
+            <figcaption>Aba Imagem — a foto do cartão, com zoom e arraste.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Mapa</strong>
+              <span>
+                Áreas desenhadas sobre o mapa da cidade. O ✕ no mapa limpa o destaque. GPS e rota
+                até a quadra mais próxima ficam nesta vista.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Imagem</strong>
+              <span>
+                A foto cujo link foi colado no cadastro. Se não houver link, a caixa pede para um
+                editor colar o endereço.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Os dois juntos</strong>
+              <span>
+                Tela cheia: mapa e foto lado a lado (ou um sobre o outro, no botão de orientação).
+                Esc ou X fecha e volta ao Mapa.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · O cartão</span>
+          </span>
+          <span class="page-num">23</span>
+        </div>
+      </article>
+
+      <!-- 24 NÃO EM CASA -->
+      <article class="page" id="nao-em-casa" aria-label="Não em casa">
+        <div class="page-inner">
+          <p class="eyebrow">06 · Não em casa</p>
+          <h2>O checklist do cartão</h2>
+          <p>
+            Abaixo do mapa. Cada card é uma <strong>quadra</strong>, com uma ou mais
+            <strong>ruas</strong> e os <strong>números</strong> das casas. Toque no card para
+            destacar a quadra no mapa; toque no número para marcar a visita.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/cartao-nao-em-casa.webp"
+              alt="Seção Não em casa com os cards de quadra, ruas e números de casa"
+            />
+            <figcaption>Bloco Não em casa no cartão.</figcaption>
+          </figure>
+
+          <div class="sample">
+            <img
+              src="tutorial/cartao-quadra.webp"
+              alt="Card de uma quadra com rua, números de casa e contagem do que falta"
+            />
+            <div class="txt">
+              <strong class="label">Uma quadra</strong>
+              <p>
+                O nome da quadra (o mesmo rótulo da área no mapa), as ruas, a descrição se houver,
+                e cada número. O contador mostra feitos / total. Verde e “Finalizado” quando todos
+                os números daquela quadra foram marcados.
+              </p>
+            </div>
+          </div>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Marcar e desmarcar</strong>
+              <span>
+                Toque no número marca na hora. Desmarcar pede confirmação, para não apagar um
+                visto sem querer. O papel Campo marca números; quem gerencia cadastra ruas e
+                casas no lápis da edição.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lápis Gerenciar</strong>
+              <span>
+                Abre a edição já na seção de não em casa, para incluir quadra, rua, números e
+                descrição.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Não em casa</span>
+          </span>
+          <span class="page-num">24</span>
+        </div>
+      </article>
+
+      <!-- 25 DIRIGENTES — A TELA -->
+      <article class="page" id="dirigentes" aria-label="Dirigentes — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">07 · Dirigentes</p>
+          <h2>A escala do serviço de campo</h2>
+          <p>
+            No menu, <strong>Dirigentes</strong>. Só quem gerencia a escala (editor ou admin)
+            entra aqui. A página lista as designações por data e os dias fixos da semana, com o
+            destaque de <em>hoje</em> no fuso de Brasília.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/dirigentes.webp"
+              alt="Página Dirigentes: busca, formulário para adicionar designação e cartões da escala"
+            />
+            <figcaption>Escala de dirigentes — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Dirigentes</span>
+          </span>
+          <span class="page-num">25</span>
+        </div>
+      </article>
+
+      <!-- 26 DIRIGENTES — ADICIONAR -->
+      <article class="page" id="dirigentes-form" aria-label="Dirigentes — adicionar">
+        <div class="page-inner">
+          <p class="eyebrow">07 · Dirigentes</p>
+          <h2>Adicionar uma designação</h2>
+          <p>
+            O bloco no topo grava um dirigente para <strong>uma data</strong> — não se repete na
+            semana seguinte. O dia da semana e o horário sugerido acompanham a data que você
+            escolhe.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/dirigentes-form.webp"
+              alt="Formulário Adicionar designação: data, dia da semana, horário, nome e botão Adicionar"
+            />
+            <figcaption>Formulário para incluir um designado numa data.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Data</strong>
+              <span>O dia do campo. Ao escolher, o dia da semana e o horário padrão se preenchem.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Dia da semana e horário</strong>
+              <span>
+                Sábado 08:00, domingo 09:00, quinta 09:00, demais noites 18:00. Dá para mudar o
+                horário na lista (08:00, 09:00 ou 18:00).
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Designado</strong>
+              <span>Nome de quem dirige aquele horário. Obrigatório.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Busca</strong>
+              <span>
+                Filtra a escala por nome, dia, data ou horário. Embaixo aparece quantas
+                designações restaram.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Dirigentes</span>
+          </span>
+          <span class="page-num">26</span>
+        </div>
+      </article>
+
+      <!-- 27 DIRIGENTES — HOJE E FIXOS -->
+      <article class="page" id="dirigentes-hoje" aria-label="Dirigentes — hoje e fixos">
+        <div class="page-inner">
+          <p class="eyebrow">07 · Dirigentes</p>
+          <h2>Hoje, datas e dias fixos</h2>
+          <p>
+            Os cartões com <strong>Hoje</strong> sobem para o topo. Há dois tipos de linha: a
+            data avulsa e o dia que se repete toda semana.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/dirigentes-hoje.webp"
+              alt="Cartão da escala com selo Hoje, data, horário e nome do dirigente"
+            />
+            <figcaption>Cartão do dia — a linha de hoje fica marcada em azul.</figcaption>
+          </figure>
+          <figure class="shot block">
+            <img
+              src="tutorial/dirigentes-fixos.webp"
+              alt="Cartão Dias fixos com o dia da semana, horário e dirigente que se repete"
+            />
+            <figcaption>Dias fixos — faixa verde; o nome se repete todo aquele dia da semana.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Clique no nome</strong>
+              <span>
+                Quem gerencia corrige o dirigente ali mesmo. Salvar dirigencia grava; X cancela.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lixeira</strong>
+              <span>
+                Remove a designação, com confirmação. Datas já passadas aparecem riscadas como
+                Finalizado — ainda dá para apagar o registro.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Dirigentes</span>
+          </span>
+          <span class="page-num">27</span>
+        </div>
+      </article>
+
+      <!-- 28 DIRIGENTES — NO DIA A DIA -->
+      <article class="page" id="dirigentes-passos" aria-label="Dirigentes — no dia a dia">
+        <div class="page-inner">
+          <p class="eyebrow">07 · Dirigentes</p>
+          <h2>Como montar a escala</h2>
+          <p>Esta página alimenta o bloco Dirigente do serviço de campo no Início.</p>
+
+          <ol class="steps">
+            <li>
+              <span>Abra Dirigentes. Confira o cartão com o selo Hoje.</span>
+            </li>
+            <li>
+              <span>
+                Para um sábado ou um dia especial, preencha Data, horário e Designado e clique em
+                <strong>Adicionar</strong>.
+              </span>
+            </li>
+            <li>
+              <span>
+                Dias que se repetem (toda terça às 18:00, por exemplo) ficam em
+                <strong>Dias fixos</strong>.
+              </span>
+            </li>
+            <li>
+              <span>
+                No Início, cada dirigente da escala de hoje pode receber um território do dia
+                (estrela).
+              </span>
+            </li>
+          </ol>
+
+          <div class="callout">
+            <strong>Quem acessa</strong>
+            <p>
+              Só editor e administrador. O papel Campo não vê esta página — marca casas no cartão,
+              mas não monta a escala.
+            </p>
+          </div>
+          <div class="callout">
+            <strong>Fuso</strong>
+            <p>
+              “Hoje” segue America/São_Paulo, mesmo se o computador estiver em outro fuso.
+            </p>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Dirigentes</span>
+          </span>
+          <span class="page-num">28</span>
+        </div>
+      </article>
+
+      <!-- 29 USUÁRIOS — A TELA -->
+      <article class="page" id="usuarios" aria-label="Usuários — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">08 · Usuários</p>
+          <h2>Contas e papéis</h2>
+          <p>
+            No menu, <strong>Usuários → Criar usuários</strong>. Só o administrador vê esta
+            página. Em cima, o formulário de conta nova; embaixo, a lista com papel, lápis e
+            lixeira.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/usuarios.webp"
+              alt="Página Usuários e papéis: formulário de novo usuário e lista de contas"
+            />
+            <figcaption>Gestão de usuários — captura real. Só o administrador entra aqui.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Usuários</span>
+          </span>
+          <span class="page-num">29</span>
+        </div>
+      </article>
+
+      <!-- 30 USUÁRIOS — NOVO E PAPÉIS -->
+      <article class="page" id="usuarios-novo" aria-label="Usuários — novo e papéis">
+        <div class="page-inner">
+          <p class="eyebrow">08 · Usuários</p>
+          <h2>Criar conta e entender os papéis</h2>
+          <figure class="shot block">
+            <img
+              src="tutorial/usuarios-novo.webp"
+              alt="Formulário Novo usuário: nome, email, senha, papel e Criar Usuário"
+            />
+            <figcaption>Nome, email, senha forte, papel e o botão Criar Usuário.</figcaption>
+          </figure>
+          <figure class="shot frame">
+            <img
+              src="tutorial/usuarios-papeis-caixa.webp"
+              alt="Janela Papéis e permissões com admin, editor, campo e visualizador"
+            />
+            <figcaption>Janela do interrogação: o que cada papel pode fazer.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Papel</strong>
+              <span>
+                O interrogação ao lado abre a janela Papéis e permissões. Admin: tudo. Editor:
+                territórios e escala. Campo: lê cartões e marca números. Visualizador: só lê.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lápis e lixeira</strong>
+              <span>
+                O lápis edita nome, email, papel e, se quiser, a senha (em branco = não muda). A
+                lixeira exclui, com confirmação — você não pode excluir a própria conta.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Região</strong>
+              <span>
+                A conta nova entra no mesmo CEP de quem a cadastrou. Email e papel depois só o
+                administrador altera.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Usuários</span>
+          </span>
+          <span class="page-num">30</span>
+        </div>
+      </article>
+
+      <!-- 31 MINHA CONTA -->
+      <article class="page" id="conta" aria-label="Minha conta">
+        <div class="page-inner">
+          <p class="eyebrow">08 · Usuários</p>
+          <h2>Minha conta</h2>
+          <p>
+            No menu, <strong>Usuários → Minha conta</strong> — ou o ícone da pessoa no canto.
+            Todos os papéis entram aqui. Você edita o próprio nome; email e papel ficam
+            bloqueados.
+          </p>
+          <figure class="shot frame">
+            <img
+              src="tutorial/conta.webp"
+              alt="Página Minha conta: perfil com nome, email, papel e o bloco de senha"
+            />
+            <figcaption>Minha conta — o nome aparece no GPS e nas listas.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Nome e Salvar</strong>
+              <span>O nome é o que os outros veem no mapa. Salvar grava só o nome.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Trocar Senha</strong>
+              <span>
+                Abre a tela de senha forte: atual, nova e confirmação, com medidor e gerador.
+                Mínimo 10 caracteres, maiúscula, minúscula, número e especial.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Minha conta</span>
+          </span>
+          <span class="page-num">31</span>
+        </div>
+      </article>
+
+      <!-- 32 CONFIGURAÇÃO — A TELA -->
+      <article class="page" id="configuracao" aria-label="Configuração — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">09 · Configuração</p>
+          <h2>A região de trabalho</h2>
+          <p>
+            No ícone da conta, <strong>Configuração</strong> (não está no menu de cima). O CEP
+            define quais territórios, mapas, dirigentes e histórico você vê. Congregações
+            diferentes usam o mesmo sistema sem misturar os cartões.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/configuracao.webp"
+              alt="Página Configuração: região atual, alterar CEP e nome da congregação"
+            />
+            <figcaption>Configuração — captura real. O CEP fica gravado na sua conta.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Configuração</span>
+          </span>
+          <span class="page-num">32</span>
+        </div>
+      </article>
+
+      <!-- 33 CONFIGURAÇÃO — ALTERAR -->
+      <article class="page" id="configuracao-alterar" aria-label="Configuração — alterar região">
+        <div class="page-inner">
+          <p class="eyebrow">09 · Configuração</p>
+          <h2>Alterar CEP e congregação</h2>
+          <figure class="shot block">
+            <img
+              src="tutorial/configuracao-alterar.webp"
+              alt="Formulário Alterar região: nome da congregação, CEP, consultar e Salvar região"
+            />
+            <figcaption>Nome da congregação, CEP, lupa para consultar e Salvar região.</figcaption>
+          </figure>
+          <figure class="shot block">
+            <img
+              src="tutorial/configuracao-regioes.webp"
+              alt="Atalhos das regiões já cadastradas no sistema"
+            />
+            <figcaption>Atalhos das regiões que já têm territórios neste sistema.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Lupa e Salvar região</strong>
+              <span>
+                A lupa consulta o CEP e mostra cidade e bairro. Salvar pede confirmação se o CEP
+                for outro — os dados da região anterior continuam no banco.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Usar CEP padrão</strong>
+              <span>
+                Volta ao CEP do servidor (.env), se a conta estiver num CEP gravado.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Configuração</span>
+          </span>
+          <span class="page-num">33</span>
+        </div>
+      </article>
+
+      <!-- 34 FINALIZADOS — A TELA -->
+      <article class="page" id="finalizados" aria-label="Finalizados — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">10 · Finalizados</p>
+          <h2>O histórico do campo</h2>
+          <p>
+            No menu, <strong>Territórios → Finalizados</strong>. Cada linha é um horário já
+            encerrado: dia, horário, dirigente, território, quem registrou e quando. A aba
+            Métricas está na última folha.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/finalizados.webp"
+              alt="Página Finalizados: abas Métricas e Finalizados, busca, botão de relatório e tabela do histórico"
+            />
+            <figcaption>Histórico de finalizações — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Finalizados</span>
+          </span>
+          <span class="page-num">34</span>
+        </div>
+      </article>
+
+      <!-- 35 FINALIZADOS — TABELA E RELATÓRIO -->
+      <article class="page" id="finalizados-tabela" aria-label="Finalizados — tabela e relatório">
+        <div class="page-inner">
+          <p class="eyebrow">10 · Finalizados</p>
+          <h2>Tabela, busca e relatório A4</h2>
+          <figure class="shot frame">
+            <img
+              src="tutorial/finalizados-tabela.webp"
+              alt="Tabela do histórico: dia, horário, dirigente, território, registro e fim"
+            />
+            <figcaption>Colunas: Dia, Horário, Dirigente, Território, Registro e Fim.</figcaption>
+          </figure>
+
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Busca</strong>
+              <span>Filtra por dia, horário, dirigente, território ou quem registrou.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Ícone de mapa</strong>
+              <span>Abre o cartão daquele território, se ele ainda existir.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Relatório</strong>
+              <span>
+                O ícone de documento liga o checklist. Marque as linhas, confirme — abre o
+                relatório A4 para imprimir ou salvar PDF. Somas não contam duas vezes o mesmo
+                território.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lixeira (só admin)</strong>
+              <span>
+                Apaga um registro do histórico, com confirmação. Não desfaz o campo já feito —
+                só some a linha.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Finalizados</span>
+          </span>
+          <span class="page-num">35</span>
+        </div>
+      </article>
+
+      <!-- 36 FINALIZADOS — MÉTRICAS -->
+      <article class="page" id="finalizados-metricas" aria-label="Finalizados — métricas">
+        <div class="page-inner">
+          <p class="eyebrow">10 · Finalizados</p>
+          <h2>Métricas</h2>
+          <p>
+            A outra aba. Cartões de resumo (finalizações, pessoas, não em casa, dias) e gráficos
+            do histórico: linhas do dia a dia, pessoas no período, não em casa empilhado e a
+            participação de cada dirigente.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/finalizados-metricas.webp"
+              alt="Aba Métricas dos Finalizados com cartões de resumo e gráficos do histórico"
+            />
+            <figcaption>Aba Métricas — os números vêm só desta região (CEP).</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Finalizados</span>
+          </span>
+          <span class="page-num">36</span>
+        </div>
+      </article>
+
+      <!-- 37 CHAT — A TELA -->
+      <article class="page" id="chat" aria-label="Chat — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">11 · Chat</p>
+          <h2>O botão no canto</h2>
+          <p>
+            Em todas as telas depois do login, o círculo azul no canto inferior direito abre o
+            chat da região. As mensagens são para quem está online agora — não ficam gravadas no
+            banco. Ao sair ou fechar o navegador, o histórico da sessão some.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/chat-painel.webp"
+              alt="Início do CAMPO com o painel de chat aberto no canto inferior direito"
+            />
+            <figcaption>Chat aberto sobre o Início — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Chat</span>
+          </span>
+          <span class="page-num">37</span>
+        </div>
+      </article>
+
+      <!-- 38 CHAT — O PAINEL -->
+      <article class="page" id="chat-painel" aria-label="Chat — o painel">
+        <div class="page-inner">
+          <p class="eyebrow">11 · Chat</p>
+          <h2>Para que serve cada parte</h2>
+          <div class="split">
+            <figure class="shot">
+              <img
+                src="tutorial/chat-caixa.webp"
+                alt="Painel do chat: online agora, mensagens e campo para escrever"
+              />
+              <figcaption>O painel recolhido vira esta caixa.</figcaption>
+            </figure>
+            <div class="parts">
+              <div class="part">
+                <strong class="label">Círculo azul</strong>
+                <span>
+                  Abre e fecha. Ponto verde = tem gente online além de você. Número vermelho =
+                  mensagens não lidas.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Online agora</strong>
+                <span>
+                  Quem está com o CAMPO aberto nesta região. “(você)” é a sua conta; [3] são
+                  três abas da mesma pessoa.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Mensagens</strong>
+                <span>
+                  Texto para todos os online. Avisos de entrou/saiu aparecem no meio. Emoticons
+                  no compositor; o botão de enviar só tem o ícone.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">X</strong>
+                <span>Recolhe o painel. O círculo azul continua no canto.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Chat</span>
+          </span>
+          <span class="page-num">38</span>
+        </div>
+      </article>
+
+      <!-- 39 EDITAR TERRITÓRIO -->
+      <article class="page" id="editar" aria-label="Editar território">
+        <div class="page-inner">
+          <p class="eyebrow">12 · Editar</p>
+          <h2>Ajustar o cartão já criado</h2>
+          <p>
+            O lápis da lista (ou do cartão) abre a edição. Em cima: localidade, Terr. N.º, link
+            da imagem e o mapa para redesenhar as quadras. O seletor <strong>Mapa</strong> ·
+            <strong>Mapa + Imagem</strong> compara o desenho com a foto em tela cheia. Embaixo
+            fica o cadastro de não em casa.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/editar.webp"
+              alt="Tela Editar território: localidade, número, link da imagem e mapa com áreas"
+            />
+            <figcaption>Edição do território — captura real. Aba Mapa.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Editar</span>
+          </span>
+          <span class="page-num">39</span>
+        </div>
+      </article>
+
+      <!-- 40 EDITAR — NÃO EM CASA -->
+      <article class="page" id="editar-nao-em-casa" aria-label="Editar — cadastrar não em casa">
+        <div class="page-inner">
+          <p class="eyebrow">12 · Editar</p>
+          <h2>Cadastrar ruas e casas</h2>
+          <p>
+            Role até <strong>Não em casa</strong>, ou use o lápis Gerenciar no cartão. A quadra
+            deve ter o mesmo nome da área desenhada no mapa — senão o destaque mapa ↔ card não
+            combina.
+          </p>
+          <figure class="shot frame">
+            <img
+              src="tutorial/editar-form-rua.webp"
+              alt="Formulário de não em casa: quadra do mapa, nome da rua e números das casas"
+            />
+            <figcaption>Quadra (mapa), rua, números e descrição opcional.</figcaption>
+          </figure>
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Quadra (mapa)</strong>
+              <span>Escolha o rótulo da área. Dá para ter várias ruas na mesma quadra.</span>
+            </div>
+            <div class="part">
+              <strong class="label">Rua e números</strong>
+              <span>
+                Nome da rua e as casas, separadas por vírgula (101, 103, 105). O + adiciona
+                outra rua no mesmo cadastro.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Descrição</strong>
+              <span>
+                Texto opcional (portão dos fundos, casa amarela…). Só aparece no card se
+                preenchida.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Salvar e excluir</strong>
+              <span>
+                Salvar grava a rua. Na lista abaixo, toque para editar; a lixeira e a exclusão
+                em massa pedem confirmação.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Editar</span>
+          </span>
+          <span class="page-num">40</span>
+        </div>
+      </article>
+
+      <!-- 41 MAPA E GPS -->
+      <article class="page" id="mapa" aria-label="Mapa e GPS">
+        <div class="page-inner">
+          <p class="eyebrow">13 · Mapa</p>
+          <h2>Controles no mapa do cartão</h2>
+          <p>
+            Na aba Mapa do cartão, a coluna de botões à direita e a busca de endereço no canto.
+            O GPS mostra você e os outros online da mesma região, cada um numa cor.
+          </p>
+          <figure class="shot frame">
+            <img
+              src="tutorial/mapa.webp"
+              alt="Mapa do território com áreas desenhadas e botões de controle à direita"
+            />
+            <figcaption>Mapa do cartão — captura real, com as áreas da quadra.</figcaption>
+          </figure>
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">GPS (pino)</strong>
+              <span>
+                Liga ou desliga a sua localização. Com o GPS on, o mapa não “gruda” em você —
+                dá para arrastar. A presença some sozinha ~45s depois de desligar ou fechar.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Enquadrar / voltar</strong>
+              <span>
+                GPS on: volta ao seu ponto. GPS off: enquadra as quadras. Com o GPS ativo, o
+                sistema traça a rota de carro até a quadra mais próxima (distância e tempo).
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Tela cheia e cores</strong>
+              <span>
+                Expande o mapa (Esc sai). O outro botão troca áreas coloridas por preto e
+                branco, para ler o fundo do mapa.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Busca de endereço</strong>
+              <span>
+                Digite a rua e a lupa voa até o ponto, com um pin. O ✕ no mapa limpa o destaque
+                da quadra.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Mapa</span>
+          </span>
+          <span class="page-num">41</span>
+        </div>
+      </article>
+
+      <!-- 42 RELATÓRIO A4 -->
+      <article class="page" id="relatorio" aria-label="Relatório A4">
+        <div class="page-inner">
+          <p class="eyebrow">14 · Relatório</p>
+          <h2>Imprimir o histórico em A4</h2>
+          <p>
+            Em Finalizados, o ícone de documento liga o checklist. Marque as linhas (ou
+            selecione todas), confirme, e o CAMPO abre a pré-visualização em folhas A4: capa,
+            totais e cada finalização por extenso. Imprimir / Salvar PDF fica no topo.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/relatorio.webp"
+              alt="Pré-visualização do relatório A4 de finalizações, com capa preta e folhas do histórico"
+            />
+            <figcaption>Pré-visualização A4 — o mesmo formato deste tutorial.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Relatório</span>
+          </span>
+          <span class="page-num">42</span>
         </div>
       </article>
     </div>

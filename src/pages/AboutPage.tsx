@@ -40,6 +40,26 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Tutorial: chat, edição, mapa e relatório (v0.0.23)',
+    items: [
+      'Capítulos de Chat, Editar território, controles do mapa (GPS) e Relatório A4, com capturas reais em WebP',
+    ],
+  },
+  {
+    title: 'Tutorial completo (v0.0.22)',
+    items: [
+      'Capítulos de Dirigentes, Usuários, Minha conta, Configuração e Finalizados, com capturas reais em WebP',
+      'O tutorial A4 cobre o fluxo do dia a dia: login, início, cartões, escala, contas, região e histórico',
+    ],
+  },
+  {
+    title: 'Tutorial: Territórios e o cartão (v0.0.21)',
+    items: [
+      'Capítulos de Territórios, Novo território e o cartão (mapa, imagem e não em casa), com capturas reais em WebP',
+      'Cada controle da lista e do cartão explicado ao lado da imagem, no mesmo formato A4',
+    ],
+  },
+  {
     title: 'Tutorial A4 e menu (v0.0.20)',
     items: [
       'Tutorial em folhas A4 (capa, sumário e capítulos) com capturas reais em WebP, para ler na tela ou imprimir',
