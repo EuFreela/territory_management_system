@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutorial CAMPO</title>
+    <style>
+      /*
+        Layout A4
+        Folha:     210mm × 297mm
+        Margem:    14mm vertical · 16mm horizontal
+        Cada .page = exatamente 1 folha na impressão (page-break).
+      */
+      :root {
+        --a4-w: 210mm;
+        --a4-h: 297mm;
+        --page-pad-x: 16mm;
+        --page-pad-y: 14mm;
+        --content-w: 178mm;
+        --content-h: 269mm;
+
+        --noir: #111111;
+        --white: #ffffff;
+        --zinc-900: #18181b;
+        --zinc-700: #3f3f46;
+        --zinc-600: #52525b;
+        --zinc-500: #71717a;
+        --stone-50: #fafaf9;
+        --stone-100: #f5f5f4;
+        --stone-200: #e7e5e4;
+        --stone-300: #d6d3d1;
+        --desk: #e8e6e2;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--zinc-900);
+        background: var(--desk);
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        font-size: 10.5pt;
+      }
+
+      .print-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.85rem 1.25rem;
+        background: rgba(255, 255, 255, 0.92);
+        border-bottom: 1px solid var(--stone-200);
+        backdrop-filter: blur(10px);
+      }
+
+      .print-toolbar p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--zinc-600);
+      }
+
+      .print-toolbar strong {
+        color: var(--zinc-900);
+        font-weight: 500;
+      }
+
+      .print-toolbar button {
+        border: 0;
+        border-radius: 9999px;
+        background: var(--zinc-900);
+        color: var(--white);
+        padding: 0.65rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .print-toolbar button:hover { background: var(--zinc-700); }
+
+      .sheet-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18mm;
+        padding: 12mm 8mm 24mm;
+      }
+
+      .page {
+        width: var(--a4-w);
+        height: var(--a4-h);
+        min-height: var(--a4-h);
+        max-height: var(--a4-h);
+        padding: var(--page-pad-y) var(--page-pad-x);
+        background: var(--white);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .page-inner {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: var(--content-w);
+        overflow: hidden;
+      }
+
+      .page-foot {
+        margin-top: auto;
+        padding-top: 4mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8pt;
+        letter-spacing: 0.04em;
+        color: var(--zinc-500);
+        border-top: 1px solid var(--stone-200);
+      }
+
+      .page-foot .page-num::before { content: 'Folha '; }
+
+      /* ——— Capa ——— */
+      .page.cover {
+        padding: 0;
+        background: var(--noir);
+        color: var(--white);
+        justify-content: flex-end;
+      }
+
+      .page.cover .page-inner {
+        max-width: none;
+        width: 100%;
+        height: 100%;
+        padding: 22mm 18mm 18mm;
+        justify-content: flex-end;
+        position: relative;
+      }
+
+      .page.cover .page-inner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 78% 16%, rgba(255, 255, 255, 0.16), transparent 32%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%, rgba(0, 0, 0, 0.4) 100%);
+        pointer-events: none;
+      }
+
+      .cover-content { position: relative; z-index: 1; }
+
+      .cover-logo {
+        height: 22mm;
+        width: 22mm;
+        object-fit: cover;
+        border-radius: 5mm;
+        margin-bottom: 14mm;
+        display: block;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 8pt;
+        font-weight: 500;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--zinc-500);
+      }
+
+      .page.cover .eyebrow { color: rgba(255, 255, 255, 0.55); }
+
+      h1 {
+        margin: 3mm 0 0;
+        font-weight: 300;
+        font-size: 30pt;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+
+      h2 {
+        margin: 2mm 0 0;
+        font-weight: 300;
+        font-size: 18pt;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        color: var(--zinc-900);
+      }
+
+      h3 {
+        margin: 5mm 0 2mm;
+        font-weight: 500;
+        font-size: 10pt;
+        color: var(--zinc-900);
+      }
+
+      p {
+        margin: 2.5mm 0 0;
+        color: var(--zinc-600);
+        font-size: 9.5pt;
+      }
+
+      .lead {
+        margin-top: 5mm;
+        max-width: 128mm;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 11pt;
+        line-height: 1.5;
+      }
+
+      .meta {
+        margin-top: 10mm;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2mm 7mm;
+        font-size: 9pt;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      /* ——— Sumário ——— */
+      .toc-list {
+        margin: 7mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .toc-list li {
+        display: flex;
+        align-items: baseline;
+        gap: 0;
+        padding: 3.2mm 0;
+        font-size: 10.5pt;
+        color: var(--zinc-900);
+      }
+
+      .toc-list a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .toc-list .dots {
+        flex: 1 1 auto;
+        margin: 0 3mm;
+        min-width: 10mm;
+        height: 0;
+        border: 0;
+        border-bottom: 1.5px dotted var(--stone-300);
+        transform: translateY(-0.35em);
+      }
+
+      .toc-list .n {
+        color: var(--zinc-500);
+        font-variant-numeric: tabular-nums;
+        font-size: 9.5pt;
+        min-width: 8mm;
+        text-align: right;
+      }
+
+      .toc-list .soon {
+        color: var(--zinc-500);
+        font-size: 8.5pt;
+      }
+
+      .toc-kicker {
+        margin-top: 8mm;
+        padding: 4.5mm 5mm;
+        border-radius: 3mm;
+        background: var(--stone-50);
+        border: 1px solid var(--stone-200);
+      }
+
+      .toc-kicker p {
+        margin: 0;
+        color: var(--zinc-700);
+        font-size: 9pt;
+      }
+
+      /* ——— Figuras ——— */
+      figure.shot {
+        margin: 4mm 0 0;
+        padding: 0;
+      }
+
+      figure.shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 168mm;
+        object-fit: contain;
+        object-position: top center;
+        background: #09090b;
+        border-radius: 3mm;
+        border: 1px solid var(--stone-200);
+      }
+
+      figure.shot figcaption {
+        margin-top: 2mm;
+        font-size: 8pt;
+        color: var(--zinc-500);
+      }
+
+      figure.shot.phone {
+        margin: 0;
+      }
+
+      figure.shot.phone img {
+        width: auto;
+        max-width: 100%;
+        height: 148mm;
+        margin-inline: auto;
+        object-fit: contain;
+      }
+
+      figure.shot.bar img {
+        max-height: 18mm;
+        object-fit: cover;
+        object-position: top center;
+        background: var(--white);
+      }
+
+      figure.shot.frame img {
+        max-height: 88mm;
+        object-fit: contain;
+        object-position: top center;
+      }
+
+      figure.shot.block img {
+        max-height: 58mm;
+        object-fit: contain;
+        object-position: top center;
+        background: var(--white);
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 58mm 1fr;
+        gap: 6mm;
+        margin-top: 5mm;
+        align-items: start;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .parts.two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.4mm;
+        margin-top: 4mm;
+      }
+
+      .sample {
+        display: grid;
+        grid-template-columns: 86mm 1fr;
+        gap: 4mm;
+        align-items: start;
+        margin-top: 3.6mm;
+      }
+
+      .sample img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 46mm;
+        object-fit: contain;
+        object-position: left top;
+        background: var(--white);
+        border: 1px solid var(--stone-200);
+        border-radius: 2.4mm;
+      }
+
+      .sample.crop-tr img {
+        height: 50mm;
+        max-height: 50mm;
+        object-fit: cover;
+        object-position: top right;
+      }
+
+      .sample .txt .label {
+        display: block;
+        font-size: 8.5pt;
+        font-weight: 600;
+        color: var(--zinc-900);
+      }
+
+      .sample .txt p {
+        margin: 1mm 0 0;
+        font-size: 8pt;
+        color: var(--zinc-600);
+        line-height: 1.4;
+      }
+
+      .parts {
+        display: flex;
+        flex-direction: column;
+        gap: 2.4mm;
+      }
+
+      .part {
+        padding: 2.6mm 3.2mm;
+        border-radius: 2.4mm;
+        background: var(--stone-50);
+        border: 1px solid var(--stone-200);
+      }
+
+      .part .label {
+        display: block;
+        font-size: 8.5pt;
+        font-weight: 600;
+        color: var(--zinc-900);
+      }
+
+      .part span {
+        display: block;
+        margin-top: 0.8mm;
+        font-size: 8pt;
+        color: var(--zinc-600);
+        line-height: 1.4;
+      }
+
+      .steps {
+        margin: 4mm 0 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: passo;
+      }
+
+      .steps li {
+        display: grid;
+        grid-template-columns: 9mm 1fr;
+        gap: 3.5mm;
+        padding: 3.2mm 0;
+        border-bottom: 1px solid var(--stone-200);
+        color: var(--zinc-700);
+        font-size: 9.5pt;
+      }
+
+      .steps li > span {
+        min-width: 0;
+      }
+
+      .steps li::before {
+        counter-increment: passo;
+        content: counter(passo, decimal-leading-zero);
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+        font-size: 9pt;
+        letter-spacing: 0.04em;
+        color: var(--zinc-500);
+        padding-top: 0.2mm;
+      }
+
+      .callout {
+        margin-top: 4mm;
+        padding: 4mm 4.5mm;
+        border-radius: 3mm;
+        background: var(--stone-50);
+        border: 1px solid var(--stone-200);
+      }
+
+      .callout strong {
+        display: block;
+        font-size: 9pt;
+        color: var(--zinc-900);
+        margin-bottom: 1mm;
+      }
+
+      .callout p {
+        margin: 0;
+        font-size: 9pt;
+      }
+
+      .callout + .callout { margin-top: 3mm; }
+
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      @media print {
+        body {
+          background: none;
+          margin: 0;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .print-toolbar { display: none !important; }
+
+        .sheet-stack {
+          display: block;
+          padding: 0;
+          gap: 0;
+        }
+
+        .page {
+          width: var(--a4-w);
+          height: var(--a4-h);
+          min-height: var(--a4-h);
+          max-height: var(--a4-h);
+          margin: 0;
+          box-shadow: none;
+          page-break-after: always;
+          break-after: page;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          overflow: hidden;
+        }
+
+        .page:last-child {
+          page-break-after: auto;
+          break-after: auto;
+        }
+
+        a {
+          text-decoration: none;
+          color: inherit;
+        }
+      }
+
+      @media screen and (max-width: 230mm) {
+        .sheet-stack {
+          transform-origin: top center;
+          transform: scale(0.92);
+          margin-bottom: -8%;
+        }
+      }
+
+      @media screen and (max-width: 200mm) {
+        .sheet-stack {
+          transform: scale(0.78);
+          margin-bottom: -22%;
+        }
+      }
+
+      @media screen and (max-width: 170mm) {
+        .sheet-stack {
+          transform: scale(0.62);
+          margin-bottom: -38%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-toolbar">
+      <p>
+        <strong>Tutorial CAMPO · A4</strong> — cada bloco é uma folha (210×297&nbsp;mm). Use Imprimir
+        para PDF ou papel.
+      </p>
+      <button type="button" onclick="window.print()">Imprimir / Salvar PDF</button>
+    </div>
+
+    <div class="sheet-stack">
+      <!-- 01 CAPA -->
+      <article class="page cover" id="capa" aria-label="Capa">
+        <div class="page-inner">
+          <div class="cover-content">
+            <img class="cover-logo" src="../logo.webp" alt="CAMPO" />
+            <p class="eyebrow">Sistema de territórios</p>
+            <h1>Tutorial<br />CAMPO</h1>
+            <p class="lead">
+              Como usar o sistema: o que é cada tela, para que serve cada campo e como realizar
+              as tarefas do dia a dia na congregação.
+            </p>
+            <div class="meta">
+              <span>Guia do usuário</span>
+              <span>v0.0.20</span>
+              <span>Agosto 2026</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 02 SUMÁRIO -->
+      <article class="page" id="sumario" aria-label="Sumário">
+        <div class="page-inner">
+          <p class="eyebrow">Documento</p>
+          <h2>Sumário</h2>
+
+          <ol class="toc-list">
+            <li>
+              <a href="#sumario">Sumário</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">02</span>
+            </li>
+            <li>
+              <a href="#login">Login — a tela</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">03</span>
+            </li>
+            <li>
+              <a href="#login-campos">Login — cada campo</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">04</span>
+            </li>
+            <li>
+              <a href="#login-passos">Login — como entrar</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">05</span>
+            </li>
+            <li>
+              <a href="#inicio">Início — a tela</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">06</span>
+            </li>
+            <li>
+              <a href="#inicio-menu">Início — o menu</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">07</span>
+            </li>
+            <li>
+              <a href="#inicio-dirigentes">Início — dirigentes</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">08</span>
+            </li>
+            <li>
+              <a href="#inicio-dia">Início — território do dia</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">09</span>
+            </li>
+            <li>
+              <a href="#inicio-finalizar">Início — finalizar</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">10</span>
+            </li>
+            <li>
+              <a href="#inicio-finalizar-opcoes">Início — opções ao finalizar</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">11</span>
+            </li>
+            <li>
+              <a href="#inicio-pendentes">Início — não finalizados</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">12</span>
+            </li>
+            <li>
+              <span>Territórios</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Novo território e mapa</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Imagem do cartão</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Não em casa</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Dirigentes</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Usuários e minha conta</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Configuração</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+            <li>
+              <span>Finalizados</span>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n soon">em breve</span>
+            </li>
+          </ol>
+
+          <div class="toc-kicker">
+            <p>
+              Os capítulos seguintes entram neste mesmo arquivo, cada um em folhas próprias, com
+              capturas reais do sistema ao lado das instruções.
+            </p>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial</span>
+          <span class="page-num">02</span>
+        </div>
+      </article>
+
+      <!-- 03 LOGIN — A TELA -->
+      <article class="page" id="login" aria-label="Login — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">01 · Login</p>
+          <h2>A tela de entrada</h2>
+          <p>
+            O login é a porta do CAMPO. Só quem tem conta vê territórios, mapas e a escala.
+            Não há cadastro nesta tela: o administrador cria o usuário, ou a pessoa entra
+            pela primeira vez com Google — se estiver habilitado.
+          </p>
+          <p>
+            Abra o endereço do sistema no navegador. A primeira tela é sempre esta: fundo escuro
+            com o cartão de acesso no centro.
+          </p>
+
+          <figure class="shot">
+            <img
+              src="tutorial/login.webp"
+              alt="Tela de login do CAMPO no computador: fundo escuro com pontos, cartão central com logo, email, senha, Entrar e Entrar com Google"
+            />
+            <figcaption>Tela de login no computador — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-num">03</span>
+        </div>
+      </article>
+
+      <!-- 04 LOGIN — CAMPOS + CELULAR -->
+      <article class="page" id="login-campos" aria-label="Login — cada campo">
+        <div class="page-inner">
+          <p class="eyebrow">01 · Login</p>
+          <h2>Para que serve cada parte</h2>
+          <p>
+            No celular a mesma tela se empilha. À esquerda, a captura no telefone; à direita, o
+            que cada controle faz.
+          </p>
+
+          <div class="split">
+            <figure class="shot phone">
+              <img
+                src="tutorial/login-mobile.webp"
+                alt="Tela de login do CAMPO no celular"
+              />
+              <figcaption>Login no celular.</figcaption>
+            </figure>
+
+            <div class="parts">
+              <div class="part">
+                <strong class="label">Cabeçalho</strong>
+                <span>
+                  À esquerda, CAMPO e a versão. À direita, o sol/lua troca o tema claro ou
+                  escuro do cartão.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Logo e lema</strong>
+                <span>
+                  Identificam o aplicativo. Sob o título aparece o lema
+                  <em>Unidos por Jeová</em> — o sistema atende várias congregações, cada uma
+                  com o seu CEP.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Email</strong>
+                <span>
+                  O endereço com o qual a conta foi criada. Use o mesmo informado pelo
+                  administrador.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Senha e o olho</strong>
+                <span>
+                  Digite a senha. O ícone de olho mostra ou oculta o que foi digitado, para
+                  conferir sem errar.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Entrar</strong>
+                <span>
+                  Envia email e senha. Se estiver certo, abre o Início.
+                </span>
+              </div>
+              <div class="part">
+                <strong class="label">Entrar com Google</strong>
+                <span>
+                  Atalho quando o Google está configurado. O CAMPO coleta só informações
+                  públicas da conta: nome e e-mail. Nada mais é pedido (senha do Google,
+                  fotos, contatos etc.). Se o botão falhar, use email e senha.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-num">04</span>
+        </div>
+      </article>
+
+      <!-- 05 LOGIN — PASSOS -->
+      <article class="page" id="login-passos" aria-label="Login — como entrar">
+        <div class="page-inner">
+          <p class="eyebrow">01 · Login</p>
+          <h2>Como entrar</h2>
+          <p>Siga a ordem abaixo. Não é preciso instalar nada — só o navegador.</p>
+
+          <ol class="steps">
+            <li>
+              <span>Abra o endereço do CAMPO. A primeira tela é o login.</span>
+            </li>
+            <li>
+              <span>Preencha <strong>Email</strong> e <strong>Senha</strong>.</span>
+            </li>
+            <li>
+              <span>Se quiser conferir a senha, clique no olho à direita do campo.</span>
+            </li>
+            <li>
+              <span>
+                Clique em <strong>Entrar</strong> — ou em <strong>Entrar com Google</strong>, se
+                for o seu caso.
+              </span>
+            </li>
+          </ol>
+
+          <div class="callout">
+            <strong>Se o login falhar</strong>
+            <p>
+              Confira se o e-mail está certo (sem espaço) e se a senha é a atual. Contas não se
+              criam sozinhas nesta tela — peça acesso ao administrador.
+            </p>
+          </div>
+
+          <div class="callout">
+            <strong>Acesso restrito</strong>
+            <p>
+              O rodapé do cartão lembra: as contas são criadas pelo administrador ou na primeira
+              entrada com Google, quando essa opção está ligada no servidor.
+            </p>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Login</span>
+          <span class="page-num">05</span>
+        </div>
+      </article>
+
+      <!-- 06 INÍCIO — A TELA -->
+      <article class="page" id="inicio" aria-label="Início — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>A visão do dia</h2>
+          <p>
+            Depois do login você chega ao <strong>Início</strong>. É o painel do dia de campo:
+            quem dirige, qual território está em destaque e o que ainda falta no não em casa.
+            O subtítulo mostra a congregação da região em que você está trabalhando.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/inicio.webp"
+              alt="Tela Início do CAMPO: menu no topo, dirigentes do dia, território do dia e lista do que falta"
+            />
+            <figcaption>Tela Início no computador — captura real do sistema.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">06</span>
+        </div>
+      </article>
+
+      <!-- 07 INÍCIO — O MENU -->
+      <article class="page" id="inicio-menu" aria-label="Início — o menu">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>Para que serve cada parte do menu</h2>
+          <p>
+            Essa faixa aparece em todas as telas depois do login. Cada item leva a um lugar
+            diferente do sistema.
+          </p>
+          <figure class="shot bar">
+            <img
+              src="tutorial/inicio-cabecalho.webp"
+              alt="Cabeçalho do CAMPO: logo, Início, Territórios, Dirigentes, Usuários, Tutorial, Sobre, conta e tema"
+            />
+            <figcaption>
+              Logo (volta ao Início) · Início · Territórios · Dirigentes · Usuários · Tutorial ·
+              Sobre · ícone da conta · sol/lua (tema).
+            </figcaption>
+          </figure>
+
+          <div class="sample">
+            <img
+              src="tutorial/inicio-menu-territorios.webp"
+              alt="Menu Territórios aberto: Lista de territórios e Finalizados"
+            />
+            <div class="txt">
+              <strong class="label">Territórios</strong>
+              <p>
+                Lista de territórios: todos os cartões da região. Finalizados: o histórico
+                dos dias já encerrados.
+              </p>
+            </div>
+          </div>
+
+          <div class="sample">
+            <img
+              src="tutorial/inicio-menu-usuarios.webp"
+              alt="Menu Usuários aberto: Minha conta e Criar usuários"
+            />
+            <div class="txt">
+              <strong class="label">Usuários</strong>
+              <p>
+                Minha conta: seu nome e senha. Criar usuários: cadastro de contas, só para o
+                administrador.
+              </p>
+            </div>
+          </div>
+
+          <div class="sample crop-tr">
+            <img
+              src="tutorial/inicio-conta.webp"
+              alt="Menu da conta: nome, papel, congregação, CEP, Configuração e Sair"
+            />
+            <div class="txt">
+              <strong class="label">Ícone da conta e tema</strong>
+              <p>
+                A pessoa mostra nome, papel, congregação e CEP. Dali saem Configuração e Sair.
+                O sol/lua ao lado troca o tema claro ou escuro (fica salvo na conta).
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">07</span>
+        </div>
+      </article>
+
+      <!-- 08 INÍCIO — DIRIGENTES -->
+      <article class="page" id="inicio-dirigentes" aria-label="Início — dirigentes">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>Dirigente do serviço de campo</h2>
+          <p>
+            Primeiro bloco da página. Diz quem está designado para dirigir o campo
+            <em>hoje</em>, com o dia da semana e a data. O atalho Ver escala (se aparecer)
+            abre a página onde a escala é montada.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/inicio-bloco-dirigentes.webp"
+              alt="Bloco Dirigente do serviço de campo com a data e os nomes da escala de hoje"
+            />
+            <figcaption>Amostra do bloco de dirigentes no Início.</figcaption>
+          </figure>
+
+          <div class="sample">
+            <img
+              src="tutorial/inicio-dirigente-designado.webp"
+              alt="Cartão de dirigente designado, com dia, horário, nome e lápis para editar"
+            />
+            <div class="txt">
+              <strong class="label">Designado</strong>
+              <p>
+                Nome marcado para um dia específico — não se repete sozinho na semana
+                seguinte — com o horário, se houver. O lápis (quando aparece) corrige o nome
+                sem sair do Início.
+              </p>
+            </div>
+          </div>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Fixo</strong>
+              <span>
+                Nome que se repete todo aquele dia da semana, em faixa verde. Exemplo: toda
+                terça às 18:00. Também pode ter lápis para quem gerencia a escala.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Nenhum dirigente designado para hoje</strong>
+              <span>
+                A escala deste dia ainda está vazia. Quem monta a escala preenche isso em
+                Dirigentes.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">08</span>
+        </div>
+      </article>
+
+      <!-- 09 INÍCIO — TERRITÓRIO DO DIA -->
+      <article class="page" id="inicio-dia" aria-label="Início — território do dia">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>Território do dia</h2>
+          <p>
+            Segundo bloco. É o cartão que aquela congregação vai trabalhar neste horário.
+            Há um território do dia por dirigente da escala.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/inicio-bloco-territorio.webp"
+              alt="Bloco Território do dia com os cartões em destaque para cada dirigente"
+            />
+            <figcaption>Amostra do bloco Território do dia.</figcaption>
+          </figure>
+
+          <div class="sample">
+            <img
+              src="tutorial/inicio-cartao-dia.webp"
+              alt="Cartão do território do dia: dirigente, etiqueta Do dia, localidade, Finalizar, estrela e desvincular"
+            />
+            <div class="txt">
+              <strong class="label">O cartão</strong>
+              <p>
+                Em cima, o dirigente (estrela e horário) e a etiqueta Fixo ou Designado.
+                A etiqueta Do dia marca o destaque de hoje. Localidade e Terr. N.º abrem o
+                mapa e o checklist.
+              </p>
+            </div>
+          </div>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Finalizar</strong>
+              <span>
+                Botão verde. Abre a janela da folha seguinte, para encerrar o território do
+                dia sem sair da lista.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Estrela e elo</strong>
+              <span>
+                A estrela troca ou marca o cartão daquele dirigente. O elo desvincula sem
+                gravar no histórico — o território volta a ser um cartão comum.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Sem território do dia</strong>
+              <span>
+                Aquele dirigente ainda não tem cartão. Quem pode marcar o dia usa a estrela
+                para escolher um na lista de Territórios.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">09</span>
+        </div>
+      </article>
+
+      <!-- 10 INÍCIO — FINALIZAR (janela) -->
+      <article class="page" id="inicio-finalizar" aria-label="Início — finalizar">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>Janela Finalizar território do dia</h2>
+          <p>
+            Ao clicar no botão verde <strong>Finalizar</strong>, esta janela abre por cima do
+            Início. Nada é gravado até você confirmar. A folha seguinte descreve cada campo.
+          </p>
+          <figure class="shot">
+            <img
+              src="tutorial/inicio-modal-finalizar.webp"
+              alt="Janela Finalizar território do dia: aviso, dirigente, pessoas no campo, cancelar e confirmar"
+            />
+            <figcaption>Janela que aparece ao clicar em Finalizar — captura real.</figcaption>
+          </figure>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">10</span>
+        </div>
+      </article>
+
+      <!-- 11 INÍCIO — OPÇÕES AO FINALIZAR -->
+      <article class="page" id="inicio-finalizar-opcoes" aria-label="Início — opções ao finalizar">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>O que cada opção da janela significa</h2>
+          <p>Campos e botões da janela Finalizar, de cima para baixo.</p>
+
+          <div class="parts" style="margin-top: 5mm">
+            <div class="part">
+              <strong class="label">Texto no topo</strong>
+              <span>
+                Explica o que vai acontecer: o registro vai para Finalizados (dia, horário,
+                dirigente, pessoas e quem registrou), o cartão sai do dia e você é levado à
+                lista de finalizados.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Atenção (faixa amarela)</strong>
+              <span>
+                Só aparece se ainda restarem casas no não em casa. Não impede finalizar: é um
+                aviso do que ficou pendente.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Dirigente</strong>
+              <span>
+                Se houver mais de um na escala de hoje, escolha quem dirigiu este território
+                (lista Fixo ou Designado). Se houver só um, o nome já vem preenchido. Se não
+                houver ninguém, o histórico fica sem dirigente.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Pessoas no campo</strong>
+              <span>
+                Quantas pessoas participaram deste horário. Número inteiro, no mínimo 1.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">X e Finalizar</strong>
+              <span>
+                O X fecha a janela sem gravar nada. O botão verde Finalizar confirma, registra
+                o histórico e tira o cartão do destaque do dia.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">11</span>
+        </div>
+      </article>
+
+      <!-- 12 INÍCIO — NÃO FINALIZADOS -->
+      <article class="page" id="inicio-pendentes" aria-label="Início — não finalizados">
+        <div class="page-inner">
+          <p class="eyebrow">02 · Início</p>
+          <h2>Não finalizados</h2>
+          <p>
+            Terceiro bloco, no fim da página. Lista os territórios da região em que ainda
+            há casas de <em>não em casa</em> por visitar. Não é o território do dia: é o
+            que ficou pendente de outros horários.
+          </p>
+          <figure class="shot block">
+            <img
+              src="tutorial/inicio-bloco-pendentes.webp"
+              alt="Bloco Não finalizados com a lista de territórios que ainda têm casas pendentes"
+            />
+            <figcaption>Amostra do bloco Não finalizados.</figcaption>
+          </figure>
+
+          <div class="sample">
+            <img
+              src="tutorial/inicio-linha-pendente.webp"
+              alt="Linha de território não finalizado com localidade, número, quadras, ruas, casas e seta"
+            />
+            <div class="txt">
+              <strong class="label">Cada linha</strong>
+              <p>
+                Um território incompleto: localidade, Terr. N.º e o que falta (quadras, ruas
+                e casas). A seta abre o cartão para continuar o checklist.
+              </p>
+            </div>
+          </div>
+
+          <div class="parts" style="margin-top: 3.5mm">
+            <div class="part">
+              <strong class="label">Quadras, ruas e casas</strong>
+              <span>
+                Quadra é o agrupamento no cartão; rua é cada registro de não em casa; casas
+                são os números ainda não marcados no checklist.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Nada pendente</strong>
+              <span>
+                Todas as casas de não em casa já foram feitas, ou ainda não há registros
+                cadastrados.
+              </span>
+            </div>
+          </div>
+
+          <h3>Como usar o Início no dia de campo</h3>
+          <ol class="steps">
+            <li>
+              <span>Olhe quem dirige hoje e se cada um já tem território do dia.</span>
+            </li>
+            <li>
+              <span>Toque no cartão do dia para abrir mapa e não em casa.</span>
+            </li>
+            <li>
+              <span>
+                Ao terminar o horário, use <strong>Finalizar</strong> e informe as pessoas no
+                campo.
+              </span>
+            </li>
+            <li>
+              <span>O que ainda faltar nas casas continua em Não finalizados.</span>
+            </li>
+          </ol>
+        </div>
+        <div class="page-foot">
+          <span>CAMPO · Tutorial · Início</span>
+          <span class="page-num">12</span>
+        </div>
+      </article>
+    </div>
+  </body>
+</html>

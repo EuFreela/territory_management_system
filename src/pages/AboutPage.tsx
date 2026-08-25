@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Tutorial A4 e menu (v0.0.20)',
+    items: [
+      'Tutorial em folhas A4 (capa, sumário e capítulos) com capturas reais em WebP, para ler na tela ou imprimir',
+      'No menu, item Tutorial; Configuração fica só no ícone da conta',
+      'Capítulos de Login e Início: cada parte da tela explicada ao lado da imagem',
+    ],
+  },
+  {
     title: 'Nome da congregação no CEP (v0.0.19)',
     items: [
       'Na Configuração, campo para nomear o CEP com o nome da congregação',
@@ -539,7 +547,7 @@ export default function AboutPage() {
                 <p className={SECTION_HEADING_CLASS}>Versão atual</p>
                 <p className="mt-1 text-[28px] font-semibold tracking-tight">{APP_VERSION}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Congregação Alpinópolis · CAMPO
+                  Unidos por Jeová · CAMPO
                 </p>
               </div>
               <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/15 dark:text-blue-300">
