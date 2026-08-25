@@ -16,6 +16,7 @@ import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
 import RelatorioFinalizadosPage from './pages/RelatorioFinalizadosPage';
+import SettingsPage from './pages/SettingsPage';
 import { useAuth } from './lib/auth-context';
 
 function HomeRedirect() {
@@ -86,6 +87,7 @@ export default function App() {
             }
           />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route path="/configuracao" element={<SettingsPage />} />
           <Route path="/sobre" element={<AboutPage />} />
         </Route>
 

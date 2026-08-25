@@ -32,7 +32,7 @@ import { useAuth } from '@/lib/auth-context';
 import type { DashboardData, FieldAssignment, FieldLeadersToday } from '@/lib/types';
 
 export default function DashboardPage() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [leaders, setLeaders] = useState<FieldLeadersToday | null>(null);
@@ -252,7 +252,8 @@ export default function DashboardPage() {
         <p className="text-sm font-medium text-muted-foreground">Visão geral</p>
         <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">Início</h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-          Território do dia, dirigentes e o que ainda falta.
+          Território do dia, dirigentes e o que ainda falta
+          {user?.working_cep ? ` na região ${user.working_cep}` : ''}.
         </p>
       </header>
 

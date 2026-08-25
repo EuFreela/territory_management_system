@@ -4,6 +4,7 @@ import { createLocalJWKSet, jwtVerify } from 'jose';
 import pool from '../lib/db.js';
 import { cookieOptions, cookieSecure, signToken } from '../lib/auth.js';
 import { loadRbacUserById } from '../lib/load-user.js';
+import { resolveWorkingCep } from '../lib/map-config.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
@@ -232,10 +233,21 @@ router.get('/google/callback', callbackLimiter, async (req, res) => {
       const roleId = (fieldRole as Array<{ id: number }>)[0]?.id ?? null;
 
       try {
-        const [insertResult] = await pool.execute(
-          'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, NULL, ?)',
-          [name, email, roleId],
-        );
+        const defaultCep = resolveWorkingCep(null);
+        let insertResult;
+        try {
+          [insertResult] = await pool.execute(
+            'INSERT INTO users (name, email, password_hash, role_id, active_cep) VALUES (?, ?, NULL, ?, ?)',
+            [name, email, roleId, defaultCep],
+          );
+        } catch (inner) {
+          const innerMsg = extractErrorMessage(inner);
+          if (!/active_cep|Unknown column/i.test(innerMsg)) throw inner;
+          [insertResult] = await pool.execute(
+            'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, NULL, ?)',
+            [name, email, roleId],
+          );
+        }
         userId = Number((insertResult as { insertId: number }).insertId);
       } catch (err) {
         const msg = extractErrorMessage(err);

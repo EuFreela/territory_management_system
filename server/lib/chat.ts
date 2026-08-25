@@ -14,6 +14,8 @@ export type ChatMessage = {
   created_at: string;
   /** user = mensagem normal; system = aviso (ex.: saiu) */
   kind: ChatMessageKind;
+  /** Região (8 dígitos). Mensagens de congregações diferentes não se misturam. */
+  cep: string;
 };
 
 const MAX_BODY = 500;
@@ -34,19 +36,23 @@ export function normalizeChatBody(raw: unknown): string | null {
 export function listChatMessages(options?: {
   afterId?: number;
   limit?: number;
+  cep?: string | null;
 }): ChatMessage[] {
   const afterId = Math.max(0, Math.floor(Number(options?.afterId) || 0));
   const limit = Math.min(
     MAX_LIMIT,
     Math.max(1, Math.floor(Number(options?.limit) || DEFAULT_LIMIT)),
   );
+  const cep = (options?.cep || '').replace(/\D/g, '');
+
+  const scoped = cep ? messages.filter((m) => m.cep === cep) : messages;
 
   if (afterId > 0) {
-    return messages.filter((m) => m.id > afterId).slice(0, limit);
+    return scoped.filter((m) => m.id > afterId).slice(0, limit);
   }
 
-  if (messages.length <= limit) return [...messages];
-  return messages.slice(messages.length - limit);
+  if (scoped.length <= limit) return [...scoped];
+  return scoped.slice(scoped.length - limit);
 }
 
 function pushMessage(message: Omit<ChatMessage, 'id' | 'created_at'>): ChatMessage {
@@ -66,34 +72,41 @@ export function insertChatMessage(input: {
   userId: number;
   userName: string;
   body: string;
+  cep: string;
 }): ChatMessage {
   return pushMessage({
     user_id: input.userId,
     user_name: input.userName.trim() || `Usuário ${input.userId}`,
     body: input.body,
     kind: 'user',
+    cep: input.cep.replace(/\D/g, ''),
   });
 }
 
 /** Aviso de sistema no canal (ex.: alguém saiu). */
-export function insertSystemMessage(body: string, relatedUser?: {
-  userId: number;
-  userName: string;
-}): ChatMessage {
+export function insertSystemMessage(
+  body: string,
+  relatedUser?: {
+    userId: number;
+    userName: string;
+    cep?: string;
+  },
+): ChatMessage {
   return pushMessage({
     user_id: relatedUser?.userId ?? 0,
     user_name: relatedUser?.userName?.trim() || 'Sistema',
     body,
     kind: 'system',
+    cep: (relatedUser?.cep || '').replace(/\D/g, ''),
   });
 }
 
-export function announceUserLeft(userId: number, userName: string): ChatMessage {
+export function announceUserLeft(userId: number, userName: string, cep = ''): ChatMessage {
   const name = userName.trim() || `Usuário ${userId}`;
-  return insertSystemMessage(`${name} saiu`, { userId, userName: name });
+  return insertSystemMessage(`${name} saiu`, { userId, userName: name, cep });
 }
 
-export function announceUserJoined(userId: number, userName: string): ChatMessage {
+export function announceUserJoined(userId: number, userName: string, cep = ''): ChatMessage {
   const name = userName.trim() || `Usuário ${userId}`;
-  return insertSystemMessage(`${name} entrou`, { userId, userName: name });
+  return insertSystemMessage(`${name} entrou`, { userId, userName: name, cep });
 }

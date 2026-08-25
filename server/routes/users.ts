@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import pool from '../lib/db.js';
+import { resolveWorkingCep } from '../lib/map-config.js';
 import { ROLE_ADMIN, SCOPES } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -123,10 +124,22 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
-      [name.trim(), emailNorm, passwordHash, role_id],
-    );
+    const creator = (req as AuthedRequest).user;
+    const activeCep = resolveWorkingCep(creator);
+    let result;
+    try {
+      [result] = await pool.execute(
+        'INSERT INTO users (name, email, password_hash, role_id, active_cep) VALUES (?, ?, ?, ?, ?)',
+        [name.trim(), emailNorm, passwordHash, role_id, activeCep],
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/active_cep|Unknown column/i.test(msg)) throw err;
+      [result] = await pool.execute(
+        'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
+        [name.trim(), emailNorm, passwordHash, role_id],
+      );
+    }
 
     res.status(201).json({
       id: (result as { insertId: number }).insertId,

@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import pool from '../lib/db.js';
 import { recordTerritoryFinished, listTodayLeaders } from '../lib/finish-history.js';
-import { getMapConfig } from '../lib/map-config.js';
+import {
+  getMapConfig,
+  resolveWorkingCep,
+  resolveWorkingCepDigits,
+  sqlCepDigitsEq,
+} from '../lib/map-config.js';
 import { territorySchema, blockSchema, toggleHouseSchema } from '../lib/validations.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 import { requireAdmin, requirePermission } from '../middleware/requirePermission.js';
@@ -73,9 +78,16 @@ function mapBlock(row: Record<string, unknown>) {
   };
 }
 
-/** Territórios são compartilhados (congregação); RBAC controla o que cada papel pode fazer. */
-async function findTerritory(id: string | number) {
-  const [rows] = await pool.execute('SELECT * FROM territories WHERE id = ?', [String(id)]);
+function workingDigits(user: { active_cep?: string | null } | null | undefined): string {
+  return resolveWorkingCepDigits(user ?? null);
+}
+
+/** Territórios da região de trabalho (CEP); RBAC controla o que cada papel pode fazer. */
+async function findTerritory(id: string | number, cepDigits: string) {
+  const [rows] = await pool.execute(
+    `SELECT * FROM territories WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+    [String(id), cepDigits],
+  );
   return (rows as Array<Record<string, unknown>>)[0] ?? null;
 }
 
@@ -83,34 +95,40 @@ function paramId(value: string | string[]): string {
   return Array.isArray(value) ? String(value[0]) : String(value);
 }
 
-router.get('/', requireAuth, requirePermission('territory:read'), async (_req, res) => {
+router.get('/', requireAuth, requirePermission('territory:read'), async (req, res) => {
   // Lista por Terr. N.º (numérico); sem número por último; desempate por nome.
   // daily_leader_name = dirigente vinculado ao território do dia.
+  const digits = workingDigits((req as AuthedRequest).user);
   const [rows] = await pool.execute(
     `SELECT t.*, fa.assignee_name AS daily_leader_name
      FROM territories t
      LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
+     WHERE ${sqlCepDigitsEq('t.cep')}
      ORDER BY
        CASE WHEN t.number IS NULL OR TRIM(t.number) = '' THEN 1 ELSE 0 END ASC,
        CAST(t.number AS UNSIGNED) ASC,
        t.number ASC,
        t.name ASC`,
+    [digits],
   );
   res.json(rows);
 });
 
 router.get('/dashboard', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const user = (req as AuthedRequest).user;
+  const digits = workingDigits(user);
 
   const [territories] = await pool.execute(
     `SELECT t.*, fa.assignee_name AS daily_leader_name
      FROM territories t
      LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
+     WHERE ${sqlCepDigitsEq('t.cep')}
      ORDER BY
        CASE WHEN t.number IS NULL OR TRIM(t.number) = '' THEN 1 ELSE 0 END ASC,
        CAST(t.number AS UNSIGNED) ASC,
        t.number ASC,
        t.name ASC`,
+    [digits],
   );
   const territoryList = territories as Array<Record<string, unknown>>;
 
@@ -118,15 +136,18 @@ router.get('/dashboard', requireAuth, requirePermission('territory:read'), async
     `SELECT t.*, fa.assignee_name AS daily_leader_name
      FROM territories t
      LEFT JOIN field_assignments fa ON fa.id = t.daily_assignment_id
-     WHERE t.is_daily = 1
+     WHERE t.is_daily = 1 AND ${sqlCepDigitsEq('t.cep')}
      ORDER BY t.id ASC`,
+    [digits],
   );
   const dailyList = dailyRows as Array<Record<string, unknown>>;
 
   const [allBlockRows] = await pool.execute(
     `SELECT b.* FROM blocks b
      INNER JOIN territories t ON t.id = b.territory_id
+     WHERE ${sqlCepDigitsEq('t.cep')}
      ORDER BY b.sort_order ASC, b.id ASC`,
+    [digits],
   );
   const allBlocks = (allBlockRows as Array<Record<string, unknown>>).map((row) => ({
     ...mapBlock(row),
@@ -213,7 +234,8 @@ router.get(
   '/finished-history',
   requireAuth,
   requirePermission('territory:read'),
-  async (_req, res) => {
+  async (req, res) => {
+    const digits = workingDigits((req as AuthedRequest).user);
     try {
       const [rows] = await pool.execute(
         `SELECT id, territory_id, territory_name, territory_number,
@@ -221,7 +243,9 @@ router.get(
                 quadras_count, ruas_count, casas_count, restam_casas,
                 finished_by_user_id, finished_by_name, finished_at
          FROM territory_finish_history
+         WHERE ${sqlCepDigitsEq('cep')}
          ORDER BY field_date DESC, finished_at DESC, id DESC`,
+        [digits],
       );
       res.json(rows);
     } catch (error) {
@@ -232,10 +256,10 @@ router.get(
         });
         return;
       }
-      if (/Unknown column|quadras_count|ruas_count|casas_count/i.test(msg)) {
+      if (/Unknown column|quadras_count|ruas_count|casas_count|\bcep\b/i.test(msg)) {
         res.status(503).json({
           error:
-            'Histórico desatualizado. Rode: npm run migrate:finish-history',
+            'Histórico desatualizado. Rode: npm run migrate:finish-history e npm run migrate:active-cep',
         });
         return;
       }
@@ -252,10 +276,11 @@ router.delete(
   requireAdmin,
   async (req, res) => {
     const historyId = paramId(req.params.historyId);
+    const digits = workingDigits((req as AuthedRequest).user);
     try {
       const [result] = await pool.execute(
-        'DELETE FROM territory_finish_history WHERE id = ?',
-        [historyId],
+        `DELETE FROM territory_finish_history WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+        [historyId, digits],
       );
       const deleteResult = result as { affectedRows?: number };
       if (!deleteResult.affectedRows) {
@@ -297,16 +322,20 @@ router.post('/', requireAuth, requirePermission('territory:create'), async (req,
 
   let location;
   try {
-    location = await getMapConfig();
+    location = await getMapConfig(resolveWorkingCep(user));
   } catch (error) {
     res.status(500).json({
-      error: error instanceof Error ? error.message : 'CEP do sistema (TERRITORY_CEP) inválido.',
+      error: error instanceof Error ? error.message : 'CEP da região de trabalho inválido.',
     });
     return;
   }
 
   if (is_daily) {
-    await pool.execute('UPDATE territories SET is_daily = 0, daily_assignment_id = NULL');
+    await pool.execute(
+      `UPDATE territories SET is_daily = 0, daily_assignment_id = NULL
+       WHERE ${sqlCepDigitsEq('cep')}`,
+      [workingDigits(user)],
+    );
   }
 
   const [result] = await pool.execute(
@@ -337,7 +366,7 @@ router.post('/', requireAuth, requirePermission('territory:create'), async (req,
 
 router.get('/:id', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const id = paramId(req.params.id);
-  const territory = await findTerritory(id);
+  const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
 
   if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
@@ -363,7 +392,7 @@ router.put('/:id', requireAuth, requirePermission('territory:update'), async (re
     return;
   }
 
-  const existing = await findTerritory(id);
+  const existing = await findTerritory(id, workingDigits((req as AuthedRequest).user));
   if (!existing) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
@@ -378,35 +407,27 @@ router.put('/:id', requireAuth, requirePermission('territory:update'), async (re
     return;
   }
 
-  let location;
-  try {
-    location = await getMapConfig();
-  } catch (error) {
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'CEP do sistema (TERRITORY_CEP) inválido.',
-    });
-    return;
-  }
-
   await pool.execute(
     `UPDATE territories
-     SET name = ?, number = ?, cep = ?, geojson = ?, map_lat = ?, map_lng = ?
+     SET name = ?, number = ?, geojson = ?
      WHERE id = ?`,
-    [name.trim(), number ?? null, location.cep, geojson, location.lat, location.lng, id],
+    [name.trim(), number ?? null, geojson, id],
   );
 
   res.json({
     message: 'Território atualizado com sucesso.',
-    cep: location.cep,
-    map_lat: location.lat,
-    map_lng: location.lng,
-    address: location.label,
+    cep: existing.cep,
+    map_lat: existing.map_lat,
+    map_lng: existing.map_lng,
   });
 });
 
 router.delete('/:id', requireAuth, requirePermission('territory:delete'), async (req, res) => {
   const id = paramId(req.params.id);
-  const [result] = await pool.execute('DELETE FROM territories WHERE id = ?', [id]);
+  const [result] = await pool.execute(
+    `DELETE FROM territories WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+    [id, workingDigits((req as AuthedRequest).user)],
+  );
   const deleteResult = result as { affectedRows?: number };
   if (!deleteResult.affectedRows) {
     res.status(404).json({ error: 'Território não encontrado.' });
@@ -421,7 +442,7 @@ router.post(
   requirePermission('territory:set_daily'),
   async (req, res) => {
     const id = paramId(req.params.id);
-    const territory = await findTerritory(id);
+    const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
     if (!territory) {
       res.status(404).json({ error: 'Território não encontrado.' });
       return;
@@ -438,7 +459,7 @@ router.post(
       assignmentId = Math.floor(n);
     }
 
-    const todayLeaders = await listTodayLeaders();
+    const todayLeaders = await listTodayLeaders(workingDigits((req as AuthedRequest).user));
 
     if (assignmentId != null) {
       // Dirigente escolhido precisa estar na escala de hoje
@@ -503,8 +524,9 @@ router.delete(
     const id = paramId(req.params.id);
 
     const [result] = await pool.execute(
-      'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE id = ?',
-      [id],
+      `UPDATE territories SET is_daily = 0, daily_assignment_id = NULL
+       WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+      [id, workingDigits((req as AuthedRequest).user)],
     );
 
     const updateResult = result as { affectedRows?: number };
@@ -526,8 +548,9 @@ router.post(
     const id = paramId(req.params.id);
 
     const [result] = await pool.execute(
-      'UPDATE territories SET is_reviewed = 1, reviewed_at = NOW() WHERE id = ?',
-      [id],
+      `UPDATE territories SET is_reviewed = 1, reviewed_at = NOW()
+       WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+      [id, workingDigits((req as AuthedRequest).user)],
     );
 
     const updateResult = result as { affectedRows?: number };
@@ -549,8 +572,9 @@ router.delete(
     const id = paramId(req.params.id);
 
     const [result] = await pool.execute(
-      'UPDATE territories SET is_reviewed = 0, reviewed_at = NULL WHERE id = ?',
-      [id],
+      `UPDATE territories SET is_reviewed = 0, reviewed_at = NULL
+       WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+      [id, workingDigits((req as AuthedRequest).user)],
     );
 
     const updateResult = result as { affectedRows?: number };
@@ -574,7 +598,8 @@ router.post(
   requirePermission('territory:set_daily'),
   async (req, res) => {
     const id = paramId(req.params.id);
-    const territory = await findTerritory(id);
+    const digits = workingDigits((req as AuthedRequest).user);
+    const territory = await findTerritory(id, digits);
     if (!territory) {
       res.status(404).json({ error: 'Território não encontrado.' });
       return;
@@ -602,7 +627,7 @@ router.post(
       // Território do dia vinculado a um dirigente: usa esse vínculo,
       // desde que o dirigente ainda esteja na escala de hoje.
       const linked = Number(territory.daily_assignment_id);
-      const todayLeaders = await listTodayLeaders();
+      const todayLeaders = await listTodayLeaders(digits);
       if (todayLeaders.some((l) => l.id === linked)) {
         assignmentId = linked;
       }
@@ -616,6 +641,7 @@ router.post(
         finishedByUserId: authUser.id,
         finishedByName: authUser.name,
         assignmentId,
+        cepDigits: digits,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -635,8 +661,9 @@ router.post(
     }
 
     await pool.execute(
-      'UPDATE territories SET is_daily = 0, daily_assignment_id = NULL WHERE id = ?',
-      [id],
+      `UPDATE territories SET is_daily = 0, daily_assignment_id = NULL
+       WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
+      [id, digits],
     );
 
     res.json({
@@ -648,7 +675,7 @@ router.post(
 router.get('/:id/blocks', requireAuth, requirePermission('territory:read'), async (req, res) => {
   const id = paramId(req.params.id);
 
-  const territory = await findTerritory(id);
+  const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
   if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
@@ -669,7 +696,7 @@ router.get('/:id/blocks', requireAuth, requirePermission('territory:read'), asyn
 router.post('/:id/blocks', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const id = paramId(req.params.id);
 
-  const territory = await findTerritory(id);
+  const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
   if (!territory) {
     res.status(404).json({ error: 'Território não encontrado.' });
     return;
@@ -739,6 +766,12 @@ router.put(
   async (req, res) => {
     const id = paramId(req.params.id);
     const blockId = paramId(req.params.blockId);
+
+    const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
 
     const parsed = blockSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -814,6 +847,12 @@ router.patch(
     const id = paramId(req.params.id);
     const blockId = paramId(req.params.blockId);
 
+    const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
     const parsed = toggleHouseSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
@@ -875,6 +914,12 @@ router.delete(
     const id = paramId(req.params.id);
     const blockId = paramId(req.params.blockId);
 
+    const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
+    if (!territory) {
+      res.status(404).json({ error: 'Território não encontrado.' });
+      return;
+    }
+
     const [result] = await pool.execute(
       `DELETE FROM blocks WHERE id = ? AND territory_id = ?`,
       [blockId, id],
@@ -912,7 +957,7 @@ router.post(
       return;
     }
 
-    const territory = await findTerritory(id);
+    const territory = await findTerritory(id, workingDigits((req as AuthedRequest).user));
     if (!territory) {
       res.status(404).json({ error: 'Território não encontrado.' });
       return;

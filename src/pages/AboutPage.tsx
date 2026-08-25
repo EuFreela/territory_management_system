@@ -40,6 +40,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Região de trabalho por CEP (v0.0.17)',
+    items: [
+      'Página Configuração para informar o CEP da congregação; o .env guarda só o CEP padrão',
+      'Territórios, mapas, dirigentes e histórico ficam vinculados ao CEP da região de trabalho',
+      'Outras congregações usam o mesmo sistema na própria cidade, sem misturar os mapas',
+      'Chat e GPS compartilhado também ficam na mesma região',
+      'Novos usuários criados pelo administrador entram na mesma região de quem os cadastrou',
+    ],
+  },
+  {
     title: 'Chat entre usuários online (v0.0.16)',
     items: [
       'Ícone flutuante no canto inferior direito em todas as páginas: chat recolhido que expande em painel compacto',

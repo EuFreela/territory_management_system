@@ -17,6 +17,7 @@
     "migrate:daily-per-leader": "node scripts/migrate-daily-per-leader.js",
     "migrate:territory-reviewed": "node scripts/migrate-territory-reviewed.js",
     "migrate:google-oauth": "node scripts/migrate-google-oauth.js",
+    "migrate:active-cep": "node scripts/migrate-active-cep.js",
     "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {

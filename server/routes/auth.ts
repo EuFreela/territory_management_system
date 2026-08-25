@@ -80,6 +80,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       permissions: [],
       isAdmin: false,
       theme_preference: 'light' as const,
+      active_cep: null,
+      working_cep: '',
     };
 
     res.json({
