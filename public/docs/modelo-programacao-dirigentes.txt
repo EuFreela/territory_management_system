@@ -1,0 +1,25 @@
+# CAMPO — modelo de programação do serviço de campo
+# Salve este arquivo como .txt (UTF-8) e preencha as linhas.
+# Linhas em branco e linhas que começam com # são ignoradas.
+#
+# FORMATO ÚNICO (obrigatório):
+#
+# 1) Designação em uma data
+#    DD/MM/AAAA HH:MM Nome
+#    Horário em 24 horas: 00:00 até 23:59 (ex.: 07:30, 09:00, 14:00, 19:45)
+#
+# 2) Dia fixo (repete toda semana)
+#    FIXO Dia-da-semana HH:MM Nome
+#    Dias: Domingo  Segunda-feira  Terça-feira  Quarta-feira
+#          Quinta-feira  Sexta-feira  Sábado
+#
+# Exemplos (apague e coloque os da sua congregação):
+
+25/08/2026 18:00 Nome do dirigente
+26/08/2026 18:00 Nome do dirigente
+29/08/2026 08:00 Nome do dirigente
+30/08/2026 09:00 Nome do grupo
+
+FIXO Terça-feira 08:00 Nome do dirigente
+FIXO Quarta-feira 08:00 Nome do dirigente
+FIXO Quinta-feira 08:00 Nome do dirigente
