@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ImageOverlay, MapContainer, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { IconCompress, IconExpand, IconFocusAreas } from '@/components/Map/mapIcons';
 import { LoadingBox } from '@/components/ui/Spinner';
 import type { Territory } from '@/lib/types';

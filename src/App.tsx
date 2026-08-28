@@ -1,23 +1,25 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import RequirePermission from './components/RequirePermission';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { LoadingScreen } from './components/ui/Spinner';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import TerritoriesPage from './pages/TerritoriesPage';
-import FinishedTerritoriesPage from './pages/FinishedTerritoriesPage';
-import NewTerritoryPage from './pages/NewTerritoryPage';
-import TerritoryDetailPage from './pages/TerritoryDetailPage';
-import EditTerritoryPage from './pages/EditTerritoryPage';
-import FieldLeadersPage from './pages/FieldLeadersPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import UsersPage from './pages/UsersPage';
-import ProfilePage from './pages/ProfilePage';
-import AboutPage from './pages/AboutPage';
-import RelatorioFinalizadosPage from './pages/RelatorioFinalizadosPage';
-import SettingsPage from './pages/SettingsPage';
 import { useAuth } from './lib/auth-context';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TerritoriesPage = lazy(() => import('./pages/TerritoriesPage'));
+const FinishedTerritoriesPage = lazy(() => import('./pages/FinishedTerritoriesPage'));
+const NewTerritoryPage = lazy(() => import('./pages/NewTerritoryPage'));
+const TerritoryDetailPage = lazy(() => import('./pages/TerritoryDetailPage'));
+const EditTerritoryPage = lazy(() => import('./pages/EditTerritoryPage'));
+const FieldLeadersPage = lazy(() => import('./pages/FieldLeadersPage'));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const RelatorioFinalizadosPage = lazy(() => import('./pages/RelatorioFinalizadosPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -29,7 +31,7 @@ function HomeRedirect() {
 
 export default function App() {
   return (
-    <>
+    <Suspense fallback={<LoadingScreen label="Carregando…" />}>
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />
@@ -94,6 +96,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ScrollToTop />
-    </>
+    </Suspense>
   );
 }

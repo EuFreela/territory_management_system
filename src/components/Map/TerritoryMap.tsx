@@ -9,6 +9,7 @@
   useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { confirmToast } from '@/lib/confirm-toast';
 import { api } from '@/lib/api';

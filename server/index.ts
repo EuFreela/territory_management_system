@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'node:path';
@@ -36,6 +37,7 @@ app.use(
 );
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
+app.use(compression());
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
