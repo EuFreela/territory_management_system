@@ -11,6 +11,7 @@ import {
   CircleHelp,
   Columns2,
   Contrast,
+  Download,
   Expand,
   Eye,
   EyeOff,
@@ -111,5 +112,6 @@ export const IconColumns = icon(Columns2);
 export const IconPalette = icon(Palette);
 export const IconContrast = icon(Contrast);
 export const IconFileText = icon(FileText);
+export const IconDownload = icon(Download);
 export const IconPrinter = icon(Printer);
 export const IconSettings = icon(Settings);

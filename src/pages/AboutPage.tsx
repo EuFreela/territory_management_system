@@ -40,6 +40,20 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Inserir programação na escala (v0.0.24.1)',
+    items: [
+      'Na página Dirigentes, botão Inserir programação: cole o texto ou envie um .txt',
+      'Modelo .txt único para inserir a programação (data DD/MM/AAAA HH:MM Nome, ou FIXO Dia HH:MM Nome); horário em 24 horas',
+      'Botão para excluir toda a programação da região, com confirmação',
+    ],
+  },
+  {
+    title: 'Tutorial: Sobre, conta e tema (v0.0.24)',
+    items: [
+      'Capítulos da página Sobre, do ícone da conta (dados e atalhos) e do modo claro/escuro, com capturas reais em WebP',
+    ],
+  },
+  {
     title: 'Tutorial: chat, edição, mapa e relatório (v0.0.23)',
     items: [
       'Capítulos de Chat, Editar território, controles do mapa (GPS) e Relatório A4, com capturas reais em WebP',

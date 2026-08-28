@@ -3,11 +3,18 @@ import { z } from 'zod';
 import pool from '../lib/db.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 import { requirePermission } from '../middleware/requirePermission.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import {
   resolveWorkingCep,
   resolveWorkingCepDigits,
   sqlCepDigitsEq,
 } from '../lib/map-config.js';
+import {
+  parseScheduleProgram,
+  sanitizeScheduleText,
+  SCHEDULE_MAX_ITEMS,
+  SCHEDULE_TEXT_MAX,
+} from '../lib/schedule-import.js';
 import { todayIsoInAppTz, weekdayForDateStr } from '../lib/timezone.js';
 
 const router = Router();
@@ -26,6 +33,22 @@ const assignmentSchema = z.object({
 
 const updateNameSchema = z.object({
   assignee_name: z.string().min(1, 'Nome do dirigente é obrigatório').max(180),
+});
+
+const importSchema = z.object({
+  text: z.string().min(1, 'Cole a programação ou envie um .txt.').max(SCHEDULE_TEXT_MAX),
+});
+
+const importLimiter = rateLimit({
+  name: 'field-assignments-import',
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+});
+
+const clearProgramLimiter = rateLimit({
+  name: 'field-assignments-clear',
+  windowMs: 15 * 60 * 1000,
+  max: 5,
 });
 
 function weekdayLabelPt(day: number) {
@@ -99,6 +122,125 @@ router.get('/today', requireAuth, requirePermission('territory:read'), async (re
     fixed: fixedRows,
   });
 });
+
+router.post(
+  '/import',
+  requireAuth,
+  requirePermission('block:manage'),
+  importLimiter,
+  async (req, res) => {
+    const parsedBody = importSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      res.status(400).json({ error: parsedBody.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
+
+    const sanitized = sanitizeScheduleText(parsedBody.data.text);
+    if (!sanitized.ok) {
+      res.status(400).json({ error: sanitized.error });
+      return;
+    }
+
+    const { items, skipped } = parseScheduleProgram(sanitized.text);
+    if (items.length === 0) {
+      res.status(400).json({
+        error:
+          'Nenhuma linha no formato. Use o modelo: 25/08/2026 19:30 Nome  ou  FIXO Terça-feira 08:00 Nome.',
+        created: 0,
+        skipped,
+        duplicates: 0,
+      });
+      return;
+    }
+
+    const user = (req as AuthedRequest).user;
+    const cep = resolveWorkingCep(user);
+    const digits = resolveWorkingCepDigits(user);
+    const conn = await pool.getConnection();
+    let created = 0;
+    let duplicates = 0;
+
+    try {
+      await conn.beginTransaction();
+      for (const item of items.slice(0, SCHEDULE_MAX_ITEMS)) {
+        if (item.is_fixed) {
+          const [existing] = await conn.execute(
+            `SELECT id FROM field_assignments
+             WHERE is_fixed = 1
+               AND fixed_weekday = ?
+               AND assignee_name = ?
+               AND COALESCE(fixed_time, '') = ?
+               AND ${sqlCepDigitsEq('cep')}
+             LIMIT 1`,
+            [item.fixed_weekday, item.assignee_name, item.fixed_time, digits],
+          );
+          if ((existing as Array<{ id: number }>).length > 0) {
+            duplicates += 1;
+            continue;
+          }
+          await conn.execute(
+            `INSERT INTO field_assignments
+              (service_date, weekday_label, assignee_name, period_label, is_fixed, fixed_weekday, fixed_time, sort_order, cep)
+             VALUES (NULL, ?, ?, NULL, 1, ?, ?, 0, ?)`,
+            [
+              item.weekday_label,
+              item.assignee_name,
+              item.fixed_weekday,
+              item.fixed_time,
+              cep,
+            ],
+          );
+          created += 1;
+          continue;
+        }
+
+        const [existing] = await conn.execute(
+          `SELECT id FROM field_assignments
+           WHERE is_fixed = 0
+             AND service_date = ?
+             AND assignee_name = ?
+             AND COALESCE(fixed_time, '') = ?
+             AND ${sqlCepDigitsEq('cep')}
+           LIMIT 1`,
+          [item.service_date, item.assignee_name, item.fixed_time, digits],
+        );
+        if ((existing as Array<{ id: number }>).length > 0) {
+          duplicates += 1;
+          continue;
+        }
+        await conn.execute(
+          `INSERT INTO field_assignments
+            (service_date, weekday_label, assignee_name, period_label, is_fixed, fixed_weekday, fixed_time, sort_order, cep)
+           VALUES (?, ?, ?, ?, 0, NULL, ?, 0, ?)`,
+          [
+            item.service_date,
+            item.weekday_label,
+            item.assignee_name,
+            item.period_label || null,
+            item.fixed_time,
+            cep,
+          ],
+        );
+        created += 1;
+      }
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      console.error('[field-assignments/import]', err);
+      res.status(500).json({ error: 'Não foi possível gravar a programação.' });
+      return;
+    } finally {
+      conn.release();
+    }
+
+    res.status(201).json({
+      message: 'Programação importada.',
+      created,
+      skipped,
+      duplicates,
+    });
+  },
+);
 
 router.post('/', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const parsed = assignmentSchema.safeParse(req.body);
@@ -209,8 +351,28 @@ router.put('/:id', requireAuth, requirePermission('block:manage'), async (req, r
   res.json((rows as unknown[])[0]);
 });
 
+router.delete(
+  '/program',
+  requireAuth,
+  requirePermission('block:manage'),
+  clearProgramLimiter,
+  async (req, res) => {
+    const digits = workingDigits(req as AuthedRequest);
+    const [result] = await pool.execute(
+      `DELETE FROM field_assignments WHERE ${sqlCepDigitsEq('cep')}`,
+      [digits],
+    );
+    const deleted = Number((result as { affectedRows?: number }).affectedRows ?? 0);
+    res.json({ deleted, message: 'Programação excluída.' });
+  },
+);
+
 router.delete('/:id', requireAuth, requirePermission('block:manage'), async (req, res) => {
   const { id } = req.params;
+  if (!/^\d+$/.test(String(id))) {
+    res.status(400).json({ error: 'Identificador inválido.' });
+    return;
+  }
   const [result] = await pool.execute(
     `DELETE FROM field_assignments WHERE id = ? AND ${sqlCepDigitsEq('cep')}`,
     [id, workingDigits(req as AuthedRequest)],

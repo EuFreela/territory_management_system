@@ -1,5 +1,6 @@
 ﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  IconFileText,
   IconPlus,
   IconSave,
   IconSearch,
@@ -20,6 +21,7 @@ import {
 import { toast } from 'sonner';
 import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
+import ImportScheduleModal from '@/components/field-leaders/ImportScheduleModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
@@ -34,18 +36,6 @@ const WEEKDAYS_ALL = [
   'Quinta-feira',
   'Sexta-feira',
   'Sábado',
-] as const;
-
-/**
- * Horários da escala (select fixo):
- * - Sábado: 08:00 · Domingo: 09:00
- * - Seg/Ter/Qua/Sex: 18:00
- * - Quinta: 09:00
- */
-const TIME_OPTIONS = [
-  { value: '08:00', label: '08:00 — manhã' },
-  { value: '09:00', label: '09:00 — manhã' },
-  { value: '18:00', label: '18:00 — noite' },
 ] as const;
 
 const EVENING_WEEKDAYS = new Set([
@@ -71,11 +61,16 @@ function formatScheduleTime(value?: string | null) {
   return t || '—';
 }
 
-/** Rótulo curto do período a partir do horário */
+/** Rótulo curto do período a partir do horário (24 h) */
 function periodHintForTime(time: string) {
-  if (time === '09:00' || time === '08:00' || time === 'Manhã') return 'Manhã';
-  if (time === '18:00' || time === 'Noite') return 'Noite';
-  return '';
+  if (time === 'Manhã') return 'Manhã';
+  if (time === 'Tarde') return 'Tarde';
+  if (time === 'Noite') return 'Noite';
+  const hour = Number.parseInt(time.slice(0, 2), 10);
+  if (!Number.isFinite(hour)) return '';
+  if (hour < 12) return 'Manhã';
+  if (hour < 18) return 'Tarde';
+  return 'Noite';
 }
 
 function ScheduleTimeBadge({
@@ -91,11 +86,13 @@ function ScheduleTimeBadge({
   }
   const period = periodHintForTime(label);
   const tone =
-    period === 'Noite' || label === 'Noite' || label === '18:00'
+    period === 'Noite'
       ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
-      : period === 'Manhã' || label === 'Manhã' || label === '09:00' || label === '08:00'
-        ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300'
-        : 'bg-muted text-foreground';
+      : period === 'Tarde'
+        ? 'bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300'
+        : period === 'Manhã'
+          ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300'
+          : 'bg-muted text-foreground';
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${tone}`}>
       {label}
@@ -221,7 +218,9 @@ export default function FieldLeadersPage() {
   const [newTime, setNewTime] = useState<string>(defaultTimeForWeekday(WEEKDAYS_ALL[0]));
   const [newName, setNewName] = useState('');
   const [adding, setAdding] = useState(false);
-  const [addErrors, setAddErrors] = useState<{ date?: string; name?: string }>({});
+  const [addErrors, setAddErrors] = useState<{ date?: string; name?: string; time?: string }>({});
+  const [importOpen, setImportOpen] = useState(false);
+  const [clearingProgram, setClearingProgram] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -362,6 +361,35 @@ export default function FieldLeadersPage() {
     }
   }
 
+  function clearProgram() {
+    if (clearingProgram || rows.length === 0) return;
+    confirmToast({
+      title: 'Excluir toda a programação?',
+      description:
+        'Todas as designações desta região serão apagadas. Territórios do dia ligados a esses dirigentes serão desvinculados. Esta ação não pode ser desfeita.',
+      confirmLabel: 'Excluir tudo',
+      tone: 'danger',
+      onConfirm: async () => {
+        setClearingProgram(true);
+        try {
+          const result = await api<{ deleted: number }>('/api/field-assignments/program', {
+            method: 'DELETE',
+          });
+          setRows([]);
+          toast.success(
+            result.deleted === 1
+              ? '1 designação excluída.'
+              : `${result.deleted} designações excluídas.`,
+          );
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao excluir a programação.');
+        } finally {
+          setClearingProgram(false);
+        }
+      },
+    });
+  }
+
   function removeRow(id: number) {
     confirmToast({
       title: 'Remover designação',
@@ -382,11 +410,15 @@ export default function FieldLeadersPage() {
 
   async function addDated(event: FormEvent) {
     event.preventDefault();
-    const errors: { date?: string; name?: string } = {};
+    const errors: { date?: string; name?: string; time?: string } = {};
     if (!newDate) errors.date = 'Preencha este campo.';
     if (!newName.trim()) errors.name = 'Preencha este campo.';
+    const time = newTime.trim().slice(0, 5);
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      errors.time = 'Informe um horário (00:00–23:59).';
+    }
     setAddErrors(errors);
-    if (errors.date || errors.name) return;
+    if (errors.date || errors.name || errors.time) return;
 
     setAdding(true);
     setError('');
@@ -398,7 +430,7 @@ export default function FieldLeadersPage() {
           weekday_label: newWeekday,
           assignee_name: newName.trim(),
           period_label: 'Agosto',
-          fixed_time: newTime.trim(),
+          fixed_time: time,
           is_fixed: false,
         }),
       });
@@ -478,9 +510,31 @@ export default function FieldLeadersPage() {
       {/* Nova linha datada */}
       {canManage ? (
         <Card className="p-5 sm:p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Adicionar designação (por data)
-          </h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Adicionar designação (por data)
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+              >
+                <IconFileText />
+                Inserir programação
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={clearingProgram || rows.length === 0}
+                onClick={clearProgram}
+                className="text-destructive hover:text-destructive"
+              >
+                <IconTrash />
+                {clearingProgram ? 'Excluindo…' : 'Excluir programação'}
+              </Button>
+            </div>
+          </div>
           <form onSubmit={addDated} noValidate className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="grid gap-1.5">
               <Label htmlFor="new-assignment-date">Data</Label>
@@ -513,18 +567,21 @@ export default function FieldLeadersPage() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="new-assignment-time">Horário</Label>
-              <select
+              <Input
                 id="new-assignment-time"
+                type="time"
+                step={60}
                 value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                className={SELECT_CLASS}
-              >
-                {TIME_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(e) => {
+                  setNewTime(e.target.value);
+                  if (addErrors.time) setAddErrors((prev) => ({ ...prev, time: undefined }));
+                }}
+                aria-invalid={Boolean(addErrors.time)}
+                aria-describedby={addErrors.time ? 'new-assignment-time-error' : undefined}
+              />
+              {addErrors.time ? (
+                <FieldError id="new-assignment-time-error">{addErrors.time}</FieldError>
+              ) : null}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="new-assignment-name">Designado</Label>
@@ -588,19 +645,28 @@ export default function FieldLeadersPage() {
                     </span>
                   ) : null}
                 </div>
-                {group.label === 'Sábado' ? (
-                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                    Manhã · início 08:00
-                  </p>
-                ) : group.label === 'Domingo' ? (
-                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                    Manhã · início 09:00
-                  </p>
-                ) : isEveningWeekday(group.label) ? (
-                  <p className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                    Campo à noite · início 18:00
-                  </p>
-                ) : null}
+                {(() => {
+                  const times = [
+                    ...new Set(
+                      group.items
+                        .map((row) => formatScheduleTime(row.fixed_time))
+                        .filter((t) => t !== '—'),
+                    ),
+                  ].sort();
+                  if (times.length === 0) return null;
+                  return (
+                    <p
+                      className={cn(
+                        'text-xs font-medium',
+                        isEveningWeekday(group.label)
+                          ? 'text-indigo-700 dark:text-indigo-300'
+                          : 'text-amber-800 dark:text-amber-300',
+                      )}
+                    >
+                      {times.join(' · ')}
+                    </p>
+                  );
+                })()}
               </div>
               <div className="w-full">
                 <Table className="table-fixed">
@@ -751,7 +817,7 @@ export default function FieldLeadersPage() {
                 ) : null}
               </div>
               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                Manhã — horário e dirigente fixos
+                Horário e dirigente que se repetem toda semana
               </p>
             </div>
             <div className="w-full">
@@ -874,6 +940,14 @@ export default function FieldLeadersPage() {
           </Card>
         );
       })}
+
+      {canManage ? (
+        <ImportScheduleModal
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          onImported={() => void load()}
+        />
+      ) : null}
     </main>
   );
 }
