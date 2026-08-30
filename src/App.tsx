@@ -17,6 +17,7 @@ const EditTerritoryPage = lazy(() => import('./pages/EditTerritoryPage'));
 const FieldLeadersPage = lazy(() => import('./pages/FieldLeadersPage'));
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
+const CongregationsPage = lazy(() => import('./pages/CongregationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const RelatorioFinalizadosPage = lazy(() => import('./pages/RelatorioFinalizadosPage'));
@@ -86,6 +87,14 @@ export default function App() {
           <Route path="/usuarios" element={
               <RequirePermission scope="user:manage">
                 <UsersPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/congregacoes"
+            element={
+              <RequirePermission scope="congregation:manage">
+                <CongregationsPage />
               </RequirePermission>
             }
           />

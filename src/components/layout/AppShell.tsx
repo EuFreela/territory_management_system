@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
+  IconBuilding2,
   IconCheckCircle,
   IconChevronDown,
   IconHelp,
@@ -131,6 +132,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const profileActive = location.pathname === '/perfil';
   const usersActive = location.pathname === '/usuarios';
   const usersMenuActive = profileActive || usersActive;
+  const congregationsActive = location.pathname === '/congregacoes';
 
   useEffect(() => {
     if (!openMenu) return;
@@ -283,6 +285,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {can('block:manage') ? (
                 <NavLink to="/dirigentes" className={navClass}>
                   Dirigentes
+                </NavLink>
+              ) : null}
+
+              {can('congregation:manage') ? (
+                <NavLink to="/congregacoes" className={navClass}>
+                  <IconBuilding2 className="h-3.5 w-3.5 opacity-80" />
+                  Congregações
                 </NavLink>
               ) : null}
 
@@ -502,6 +511,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {can('block:manage') ? (
                 <NavLink to="/dirigentes" className={mobileNavClass}>
                   Dirigentes
+                </NavLink>
+              ) : null}
+
+              {can('congregation:manage') ? (
+                <NavLink to="/congregacoes" className={mobileNavClass({ isActive: congregationsActive })}>
+                  <IconBuilding2 className="h-4 w-4 opacity-70" />
+                  Congregações
                 </NavLink>
               ) : null}
 

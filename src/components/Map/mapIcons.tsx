@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   ArrowLeft,
   ArrowUp,
+  Building2,
   Check,
   ChevronDown,
   ChevronRight,
@@ -115,3 +116,4 @@ export const IconFileText = icon(FileText);
 export const IconDownload = icon(Download);
 export const IconPrinter = icon(Printer);
 export const IconSettings = icon(Settings);
+export const IconBuilding2 = icon(Building2);

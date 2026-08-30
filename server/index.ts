@@ -24,6 +24,7 @@ import authRoutes from './routes/auth.js';
 import fieldAssignmentRoutes from './routes/field-assignments.js';
 import googleAuthRoutes, { googleLoginEnabled } from './routes/google-auth.js';
 import chatRoutes from './routes/chat.js';
+import congregationsRoutes from './routes/congregations.js';
 import presenceRoutes from './routes/presence.js';
 import territoryRoutes from './routes/territories.js';
 import userRoutes from './routes/users.js';
@@ -257,6 +258,7 @@ app.use('/api/auth', googleAuthRoutes);
 app.use('/api/territories', territoryRoutes);
 app.use('/api/field-assignments', fieldAssignmentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/congregations', congregationsRoutes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/chat', chatRoutes);
 

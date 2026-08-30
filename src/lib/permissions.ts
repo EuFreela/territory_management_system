@@ -9,6 +9,7 @@ export const SCOPES = [
   'block:check',
   'user:manage',
   'config:cep',
+  'congregation:manage',
 ] as const;
 
 export type Scope = (typeof SCOPES)[number];
