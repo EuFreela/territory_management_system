@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { can } from '@/lib/permissions';
 import { confirmToast } from '@/lib/confirm-toast';
 import { formatCep, maskCepInput, onlyDigits } from '@/lib/cep';
 import type { CepLocation } from '@/lib/types';
@@ -31,7 +32,8 @@ type CepConfig = {
 };
 
 export default function SettingsPage() {
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
+  const canChangeRegion = can(user, 'config:cep');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -242,13 +244,14 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-semibold tracking-tight">Alterar região</h2>
-              <p className="mb-4 mt-1 text-sm leading-relaxed text-muted-foreground">
-                Informe o CEP da área e o nome da congregação. O mapa e as criações passam a usar
-                essa localidade.
-              </p>
+          {canChangeRegion ? (
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-lg font-semibold tracking-tight">Alterar região</h2>
+                <p className="mb-4 mt-1 text-sm leading-relaxed text-muted-foreground">
+                  Informe o CEP da área e o nome da congregação. O mapa e as criações passam a usar
+                  essa localidade.
+                </p>
 
               <form onSubmit={onSubmit} noValidate className="space-y-4">
                 <div className="grid gap-1.5 sm:max-w-md">
@@ -341,8 +344,32 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <IconMap className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold tracking-tight">
+                      Região definida pelo administrador
+                    </h2>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      Somente um administrador do sistema pode alterar o CEP da região de
+                      trabalho. Sua região continua sendo{' '}
+                      {config?.location?.city
+                        ? `${config.location.city}${config.location.state ? `/${config.location.state}` : ''}`
+                        : config?.cep ?? config?.default_cep ?? ''}
+                      .
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          {config?.regions && config.regions.length > 0 ? (
+          {canChangeRegion && config?.regions && config.regions.length > 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-lg font-semibold tracking-tight">Regiões já cadastradas</h2>
