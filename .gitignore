@@ -67,3 +67,5 @@ $RECYCLE.BIN/
 authcheck.json
 verify-admin-result.json
 *.sql.bak
+relatorio-seguranca.html
+security-report-harness/
