@@ -16,7 +16,9 @@ import {
 } from './lib/cep-region.js';
 import { getDefaultCep, getMapConfig, resolveWorkingCep } from './lib/map-config.js';
 import { rateLimit } from './middleware/rateLimit.js';
+import { securityHeaders } from './middleware/securityHeaders.js';
 import { requireAuth, type AuthedRequest } from './middleware/requireAuth.js';
+import { requirePermission } from './middleware/requirePermission.js';
 import authRoutes from './routes/auth.js';
 import fieldAssignmentRoutes from './routes/field-assignments.js';
 import googleAuthRoutes, { googleLoginEnabled } from './routes/google-auth.js';
@@ -29,6 +31,8 @@ const app = express();
 const port = Number(process.env.PORT) || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
+app.disable('x-powered-by');
+
 app.use(
   cors({
     origin: process.env.VITE_APP_URL || 'http://localhost:3000',
@@ -38,6 +42,7 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(compression());
+app.use(securityHeaders);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
@@ -115,8 +120,13 @@ const cepLimiter = rateLimit({
   max: 20,
 });
 
-/** Valida o CEP (BrasilAPI) sem gravar. */
-app.post('/api/config/cep/preview', requireAuth, cepLimiter, async (req, res) => {
+/** Valida o CEP (BrasilAPI) sem gravar. Só papéis com privilégio podem trocar de região. */
+app.post(
+  '/api/config/cep/preview',
+  requireAuth,
+  requirePermission('config:cep'),
+  cepLimiter,
+  async (req, res) => {
   try {
     const raw = (req.body as { cep?: unknown })?.cep;
     if (typeof raw !== 'string' || onlyDigits(raw).length !== 8) {
@@ -133,7 +143,12 @@ app.post('/api/config/cep/preview', requireAuth, cepLimiter, async (req, res) =>
 });
 
 /** Define o CEP da região de trabalho deste usuário. Body: { cep, congregation_name? }. */
-app.put('/api/config/cep', requireAuth, cepLimiter, async (req, res) => {
+app.put(
+  '/api/config/cep',
+  requireAuth,
+  requirePermission('config:cep'),
+  cepLimiter,
+  async (req, res) => {
   const user = (req as AuthedRequest).user;
   const body = req.body as { cep?: unknown; congregation_name?: unknown };
   const raw = body?.cep;

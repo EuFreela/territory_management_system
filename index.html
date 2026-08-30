@@ -7,18 +7,8 @@
     <link rel="icon" type="image/webp" href="/logo.webp" />
     <link rel="apple-touch-icon" href="/logo.webp" />
     <title>Campo</title>
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('campo-theme');
-          var dark =
-            t === 'dark' ||
-            (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (dark) document.documentElement.classList.add('dark');
-          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Script de tema externo (public/theme.js): CSP script-src 'self' bloqueia inline -->
+    <script src="/theme.js"></script>
   </head>
   <body>
     <div id="root"></div>
