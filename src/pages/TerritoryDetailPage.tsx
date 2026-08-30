@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   IconArrowLeft,
   IconCheck,
@@ -30,6 +31,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { renderMapCanvas } from '@/lib/map-card-image';
 import { hasTerritoryCardImage } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
 import { cn } from '@/lib/utils';
@@ -101,6 +103,44 @@ export default function TerritoryDetailPage() {
   function rotateSplit() {
     setSplitOrientation((prev) => (prev === 'horizontal' ? 'vertical' : 'horizontal'));
     setSplitResizeToken((n) => n + 1);
+  }
+
+  /** Largura/altura do PNG baixado pelo botão do mapa. */
+  const MAP_PRINT_W = 1200;
+  const MAP_PRINT_H = 840;
+
+  /**
+   * Baixa direto do botão "Imprimir" do mapa: gera o PNG do trecho visível
+   * (tiles OSM com nomes de rua + áreas desenhadas) e dispara o download.
+   * Nenhuma mensagem de "concluído" é mostrada antes do navegador salvar.
+   */
+  async function downloadMapCard(
+    viewport: { center: [number, number]; zoom: number; bw: boolean } | null,
+  ) {
+    if (!territory) return;
+    try {
+      const mapCanvas = await renderMapCanvas(splitAreas, {
+        width: MAP_PRINT_W,
+        height: MAP_PRINT_H,
+        viewport: viewport ?? undefined,
+        bw: viewport?.bw ?? false,
+      });
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        mapCanvas.toBlob((b) => resolve(b), 'image/png');
+      });
+      if (!blob) throw new Error('Falha ao gerar o arquivo de imagem.');
+
+      // Dispara o download via <a download>: abre o "Salvar como" e o
+      // navegador cuida do progresso (sem mensagem prematura de concluído).
+      const link = document.createElement('a');
+      link.download = 'mapa-territorio.png';
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar a imagem.');
+    }
   }
 
   // Esc fecha a modal de comparação e trava o scroll do body
@@ -459,7 +499,9 @@ export default function TerritoryDetailPage() {
               </div>
 
               <div id="territorio-mapa" className="mb-2 scroll-mt-6">
-                <p className="mb-2 text-sm font-medium text-muted-foreground">Área no mapa</p>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-muted-foreground">Área no mapa</p>
+                </div>
 
                 <div
                   className="mb-3 inline-flex w-full rounded-full bg-muted p-1 sm:w-auto"
@@ -557,6 +599,9 @@ export default function TerritoryDetailPage() {
                     finishedKeys={blocksByQuadra
                       .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
                       .map(([name]) => name)}
+                    onPrintViewport={(viewport) => {
+                      void downloadMapCard(viewport);
+                    }}
                   />
                   {!hasArea ? (
                     <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">

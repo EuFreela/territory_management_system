@@ -34,6 +34,7 @@ import {
   IconNote,
   IconPalette,
   IconPencil,
+  IconPrinter,
   IconRedo,
   IconSearch,
   IconTag,
@@ -708,6 +709,33 @@ function FlyToSearchResult({
   return null;
 }
 
+/**
+ * Mantém um ref sempre atualizado com o enquadramento do mapa (centro + zoom
+ * da tela visível). Vive dentro do MapContainer (precisa de useMap());
+ * o botão de imprimir fica nos controles do lado direito, lendo esse ref.
+ */
+function TrackMapViewport({
+  viewportRef,
+}: {
+  viewportRef: React.MutableRefObject<{ center: [number, number]; zoom: number }>;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    const update = () => {
+      const c = map.getCenter();
+      viewportRef.current = { center: [c.lat, c.lng] as [number, number], zoom: map.getZoom() };
+    };
+    update();
+    map.on('moveend zoomend move zoom', update);
+    return () => {
+      map.off('moveend zoomend move zoom', update);
+    };
+  }, [map, viewportRef]);
+
+  return null;
+}
+
 type AddressHit = { lat: number; lng: number; label: string };
 
 function InitialMapView({
@@ -749,23 +777,28 @@ function AreaLabelMarker({
   label,
   selected = false,
   finished = false,
+  bw = false,
 }: {
   position: LatLng;
   label: string;
   selected?: boolean;
   finished?: boolean;
+  /** Modo preto e branco: área selecionada usa balão cinza (não ciano). */
+  bw?: boolean;
 }) {
   const text = (label || '?').trim() || '?';
 
   const icon = useMemo(() => {
     if (selected) {
       // Selecionada: balão sólido. Finalizada usa cinza (como o card), sem trocar para ciano.
+      // Em modo preto e branco, a selecionada também fica cinza (sem ciano).
+      const gray = finished || bw;
       const title = finished ? 'Finalizada · selecionada' : 'Área destacada';
-      const bg = finished ? '#64748b' : '#0284c7';
-      const glow = finished
+      const bg = gray ? '#64748b' : '#0284c7';
+      const glow = gray
         ? '0 6px 16px rgba(51,65,85,0.4), 0 0 0 3px rgba(148,163,184,0.45)'
         : '0 6px 20px rgba(3,105,161,0.55), 0 0 0 3px rgba(14,165,233,0.35)';
-      const dot = finished ? '#cbd5e1' : '#7dd3fc';
+      const dot = gray ? '#cbd5e1' : '#7dd3fc';
       const approxWidth = Math.min(300, Math.max(150, text.length * 10 + (finished ? 72 : 56)));
       const height = finished ? 66 : 58;
       return L.divIcon({
@@ -893,7 +926,7 @@ function AreaLabelMarker({
       iconSize: [approxWidth, height],
       iconAnchor: [approxWidth / 2, height / 2],
     });
-  }, [text, selected, finished]);
+  }, [text, selected, finished, bw]);
 
   return (
     <Marker
@@ -985,6 +1018,16 @@ type TerritoryMapProps = {
    * sem desmontar o Leaflet/Google (evita novos requests de tiles).
    */
   resizeToken?: number;
+  /**
+   * Botão "Imprimir/Baixar" no mapa. Ao clicar, entrega o enquadramento
+   * atual (centro + zoom visível) e o modo de cor escolhido (preto e branco
+   * ou colorido) para gerar e baixar a imagem do trecho com as áreas.
+   */
+  onPrintViewport?: (region: {
+    center: [number, number];
+    zoom: number;
+    bw: boolean;
+  }) => void;
 };
 
 function areaIsFinished(areaLabel: string, finishedKeys: string[]) {
@@ -1010,6 +1053,7 @@ export default function TerritoryMap({
   onClearSelection,
   finishedKeys = [],
   resizeToken = 0,
+  onPrintViewport,
 }: TerritoryMapProps) {
   const { user } = useAuth();
   const [areas, setAreas] = useState<MapArea[]>(() => parseGeoJsonToAreas(value));
@@ -1076,6 +1120,11 @@ export default function TerritoryMap({
   const routeAbortRef = useRef<AbortController | null>(null);
 
   const drawingLocally = useRef(false);
+  /** Enquadramento atual do mapa (para o botão de imprimir). */
+  const mapViewportRef = useRef<{ center: [number, number]; zoom: number }>({
+    center: centerLat != null && centerLng != null ? [Number(centerLat), Number(centerLng)] : DEFAULT_CENTER,
+    zoom: centerLat != null ? MAP_DEFAULT_ZOOM : MAP_MIN_ZOOM,
+  });
   const seededFromServer = useRef(
     Boolean(
       value && (parseGeoJsonToAreas(value).length > 0 || parseGeoJsonToNotes(value).length > 0),
@@ -2079,7 +2128,9 @@ export default function TerritoryMap({
             : drawMode
               ? 'ring-2 ring-apple-blue/60'
               : selected || selectedNote
-                ? 'ring-2 ring-apple-blue/40'
+                ? bwAreas
+                  ? 'ring-2 ring-slate-400/40'
+                  : 'ring-2 ring-apple-blue/40'
                 : ''
         }`}
         onMouseEnter={() => setMapHovered(true)}
@@ -2090,22 +2141,24 @@ export default function TerritoryMap({
           <div className="pointer-events-none absolute left-3 top-3 z-[1000] max-w-[min(100%-1.5rem,18rem)]">
             {(() => {
               const selectedFinished = areaIsFinished(selected.label, finishedKeys);
+              // No modo preto e branco, o chip destacado também fica cinza (não ciano)
+              const selectedGray = selectedFinished || bwAreas;
               return (
                 <div
                   className={`territorio-map-selected-chip rounded-xl border-2 border-white px-3 py-2 text-white shadow-lg ${
-                    selectedFinished
+                    selectedGray
                       ? 'bg-slate-500 shadow-slate-800/30'
                       : 'bg-sky-600 shadow-sky-900/35'
                   }`}
                 >
                   <p
                     className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${
-                      selectedFinished ? 'text-slate-100' : 'text-sky-100'
+                      selectedGray ? 'text-slate-100' : 'text-sky-100'
                     }`}
                   >
                     <span
                       className={`territorio-map-selected-dot inline-block h-2 w-2 rounded-full ${
-                        selectedFinished ? 'bg-slate-200' : 'bg-sky-200'
+                        selectedGray ? 'bg-slate-200' : 'bg-sky-200'
                       }`}
                     />
                     {selectedFinished ? 'Finalizada · selecionada' : 'Área destacada'}
@@ -2124,6 +2177,18 @@ export default function TerritoryMap({
 
         {/* Controles acima do Leaflet (z~200–700), contidos por isolate no pai — não cobrem o header sticky */}
         <div className="absolute right-3 top-3 z-[1000] flex flex-col gap-2">
+          {onPrintViewport ? (
+            <button
+              type="button"
+              data-tooltip={tooltipText('Baixar imagem do trecho visível do mapa')}
+              data-tooltip-side="left"
+              aria-label="Baixar imagem do trecho visível do mapa"
+              onClick={() => onPrintViewport({ ...mapViewportRef.current, bw: bwAreas })}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-apple-line bg-apple-surface text-apple-ink shadow-md transition hover:bg-apple-fill"
+            >
+              <IconPrinter />
+            </button>
+          ) : null}
           <button
             type="button"
             data-tooltip={tooltipText(
@@ -2262,6 +2327,7 @@ export default function TerritoryMap({
           <FlyToSearchResult result={searchPin} token={searchFlyToken} />
           <FlyToUserGps position={gpsEnabled ? gpsPosition : null} token={gpsFlyToken} />
           <FocusOnSelected area={selected} focusToken={focusToken} />
+          <TrackMapViewport viewportRef={mapViewportRef} />
           <GoogleMapsTileLayer type="roadmap" onReady={() => setMapReady(true)} />
 
           <InitialMapView
@@ -2362,6 +2428,7 @@ export default function TerritoryMap({
                 label={area.label || '?'}
                 selected={selected != null && area.id === selected.id}
                 finished={areaIsFinished(area.label, finishedKeys)}
+                bw={bwAreas}
               />
             ) : null,
           )}
