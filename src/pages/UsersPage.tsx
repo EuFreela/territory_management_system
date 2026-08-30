@@ -50,6 +50,8 @@ type ManagedUser = {
   email: string;
   role_id: number | null;
   role: { id: number; slug: string; name: string } | null;
+  active_cep?: string | null;
+  congregation_name?: string | null;
   created_at?: string;
 };
 
@@ -107,7 +109,7 @@ export default function UsersPage() {
       .trim();
     if (!q) return users;
     return users.filter((u) => {
-      const haystack = `${u.name} ${u.email} ${u.role?.name ?? ''}`
+      const haystack = `${u.name} ${u.email} ${u.role?.name ?? ''} ${u.congregation_name ?? ''} ${u.active_cep ?? ''}`
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
@@ -178,7 +180,7 @@ export default function UsersPage() {
       setPassword('');
       setCreateErrors({});
       await load();
-      toast.success('Usuário criado com sucesso.');
+      toast.success('Usuário criado e vinculado à congregação do CEP definido nas Configurações.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao criar usuário.');
     } finally {
@@ -376,6 +378,17 @@ export default function UsersPage() {
               </select>
               {createErrors.role ? <FieldError id="new-role-error">{createErrors.role}</FieldError> : null}
             </div>
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium leading-none text-foreground">CEP (congregação)</span>
+              <p className="rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                {me?.working_cep ?? '—'}
+                {me?.congregation_name ? ` · ${me.congregation_name}` : ''}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Definido nas Configurações. O usuário fica vinculado à congregação deste CEP e só
+                verá os dados dela.
+              </p>
+            </div>
             <div className="flex justify-end sm:col-span-2">
               <Button
                 type="submit"
@@ -434,6 +447,12 @@ export default function UsersPage() {
                         ) : null}
                       </p>
                       <p className="text-sm text-muted-foreground">{u.email}</p>
+                      {u.active_cep || u.congregation_name ? (
+                        <p className="text-xs text-muted-foreground/80">
+                          {u.congregation_name ? `${u.congregation_name} · ` : ''}
+                          {u.active_cep ? `CEP ${u.active_cep}` : 'CEP padrão'}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
@@ -562,6 +581,17 @@ export default function UsersPage() {
                 ))}
               </select>
               {editErrors.role ? <FieldError id="edit-role-error">{editErrors.role}</FieldError> : null}
+            </div>
+
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium leading-none text-foreground">CEP (congregação)</span>
+              <p className="rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                {editing?.active_cep ?? 'CEP padrão'}
+                {editing?.congregation_name ? ` · ${editing.congregation_name}` : ''}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                A congregação deste usuário é definida nas Configurações.
+              </p>
             </div>
 
             <PasswordField

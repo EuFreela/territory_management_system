@@ -2,6 +2,8 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import pool from '../lib/db.js';
+import { formatCep, onlyDigits } from '../lib/cep.js';
+import { listCongregationNames } from '../lib/cep-region.js';
 import { resolveWorkingCep } from '../lib/map-config.js';
 import { ROLE_ADMIN, SCOPES } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
@@ -71,35 +73,74 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
   }
 });
 
-/** Lista usuários */
-router.get('/', requireAuth, requirePermission('user:manage'), async (_req, res) => {
+/** Lista usuários da mesma congregação (CEP de trabalho de quem consulta) */
+router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) => {
   try {
+    const user = (req as AuthedRequest).user;
+    const activeCep = formatCep(resolveWorkingCep(user));
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.role_id, u.created_at,
+      `SELECT u.id, u.name, u.email, u.role_id, u.active_cep, u.created_at,
               r.slug AS role_slug, r.name AS role_name
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
+       WHERE u.active_cep = ?
        ORDER BY u.name ASC`,
+      [activeCep],
     );
+    const names = await listCongregationNames();
     res.json(
-      (rows as Array<Record<string, unknown>>).map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role_id: u.role_id,
-        role: u.role_id
-          ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
-          : null,
-        created_at: u.created_at,
-      })),
+      (rows as Array<Record<string, unknown>>).map((u) => {
+        const rawCep =
+          typeof u.active_cep === 'string' && u.active_cep.trim() ? u.active_cep.trim() : null;
+        const cepKey =
+          rawCep && onlyDigits(rawCep).length === 8 ? formatCep(onlyDigits(rawCep)) : null;
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role_id: u.role_id,
+          role: u.role_id
+            ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
+            : null,
+          active_cep: cepKey,
+          congregation_name: cepKey ? (names.get(cepKey) ?? null) : null,
+          created_at: u.created_at,
+        };
+      }),
     );
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (/active_cep|Unknown column/i.test(msg)) {
+      // Banco ainda sem a migração active_cep: lista sem o vínculo de congregação.
+      const [rows] = await pool.execute(
+        `SELECT u.id, u.name, u.email, u.role_id, u.created_at,
+                r.slug AS role_slug, r.name AS role_name
+         FROM users u
+         LEFT JOIN roles r ON r.id = u.role_id
+         ORDER BY u.name ASC`,
+      );
+      res.json(
+        (rows as Array<Record<string, unknown>>).map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role_id: u.role_id,
+          role: u.role_id
+            ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
+            : null,
+          active_cep: null,
+          congregation_name: null,
+          created_at: u.created_at,
+        })),
+      );
+      return;
+    }
     console.error('[users/list]', error);
     res.status(500).json({ error: 'Erro ao listar usuários.' });
   }
 });
 
-/** Cria usuário */
+/** Cria usuário — vincula ao CEP da congregação já definido nas Configurações. */
 router.post('/', requireAuth, requirePermission('user:manage'), async (req, res) => {
   try {
     const parsed = createUserSchema.safeParse(req.body);
@@ -108,6 +149,8 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
       return;
     }
 
+    const creator = (req as AuthedRequest).user;
+    const activeCep = formatCep(resolveWorkingCep(creator));
     const { name, email, password, role_id } = parsed.data;
     const emailNorm = email.toLowerCase();
 
@@ -124,8 +167,6 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const creator = (req as AuthedRequest).user;
-    const activeCep = resolveWorkingCep(creator);
     let result;
     try {
       [result] = await pool.execute(
@@ -135,15 +176,16 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!/active_cep|Unknown column/i.test(msg)) throw err;
-      [result] = await pool.execute(
-        'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
-        [name.trim(), emailNorm, passwordHash, role_id],
-      );
+      res.status(503).json({
+        error:
+          'Vínculo de congregação por CEP ainda não migrado. Rode: npm run migrate:active-cep',
+      });
+      return;
     }
 
     res.status(201).json({
       id: (result as { insertId: number }).insertId,
-      message: 'Usuário criado com sucesso.',
+      message: `Usuário criado e vinculado à congregação do CEP ${activeCep}.`,
     });
   } catch (error) {
     console.error('[users/create]', error);
