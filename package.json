@@ -20,6 +20,7 @@
     "migrate:active-cep": "node scripts/migrate-active-cep.js",
     "migrate:territory-image-url": "node scripts/migrate-territory-image-url.js",
     "migrate:cep-congregation": "node scripts/migrate-cep-congregation.js",
+    "migrate:congregations": "node scripts/migrate-congregations.js",
     "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {

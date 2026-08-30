@@ -15,6 +15,8 @@ export const SCOPES = [
   // Trocar a região de trabalho (CEP) redireciona o acesso a dados de outra
   // congregação — escopo restrito a papéis privilegiados (padrão: admin).
   'config:cep',
+  // Gerir o cadastro de congregações do sistema (restrito a admin).
+  'congregation:manage',
 ] as const;
 
 export type Scope = (typeof SCOPES)[number];

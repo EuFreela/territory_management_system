@@ -15,6 +15,7 @@ const SCOPES = [
   'block:check',
   'user:manage',
   'config:cep',
+  'congregation:manage',
 ];
 
 const ROLES = [
