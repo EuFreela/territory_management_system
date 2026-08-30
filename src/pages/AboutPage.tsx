@@ -40,6 +40,28 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Usuários vinculados à congregação (v0.0.27)',
+    items: [
+      'Ao criar usuário, o CEP da congregação já aparece definido (somente leitura), vindo das Configurações',
+      'A lista de usuários mostra somente os da mesma congregação (mesmo CEP)',
+      'O tutorial abre em nova aba',
+    ],
+  },
+  {
+    title: 'Segurança e isolamento por CEP (v0.0.26)',
+    items: [
+      'Somente administrador pode trocar o CEP da região: novo escopo config:cep e Configuração bloqueada para os demais',
+      'Headers de segurança HTTP: CSP, proteção contra clickjacking, HSTS em HTTPS e remoção do X-Powered-By',
+      'A lista de congregações conhecidas fica visível só para quem pode trocar de região',
+    ],
+  },
+  {
+    title: 'Baixar imagem do mapa no botão (v0.0.25)',
+    items: [
+      'Botão para baixar a imagem do mapa direto no território, respeitando o modo PB/colorido e o destaque',
+    ],
+  },
+  {
     title: 'Inserir programação na escala (v0.0.24.1)',
     items: [
       'Na página Dirigentes, botão Inserir programação: cole o texto ou envie um .txt',
