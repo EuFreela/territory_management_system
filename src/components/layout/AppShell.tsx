@@ -5,6 +5,7 @@ import {
   IconCheckCircle,
   IconChevronDown,
   IconHelp,
+  IconImage,
   IconInfo,
   IconLogOut,
   IconMap,
@@ -122,10 +123,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const finishedActive = location.pathname === '/territories/finalizados';
+  const templateCardActive = location.pathname === '/territories/template';
   const territoriesActive =
     location.pathname === '/territories' ||
-    (location.pathname.startsWith('/territories/') && !finishedActive);
-  const territoriesMenuActive = territoriesActive || finishedActive;
+    (location.pathname.startsWith('/territories/') && !finishedActive && !templateCardActive);
+  const territoriesMenuActive = territoriesActive || finishedActive || templateCardActive;
   const profileActive = location.pathname === '/perfil';
   const usersActive = location.pathname === '/usuarios';
   const usersMenuActive = profileActive || usersActive;
@@ -264,6 +266,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     >
                       <IconCheckCircle className="h-4 w-4 shrink-0 text-apple-green" />
                       Finalizados
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => go('/territories/template')}
+                      className={menuItemClass(templateCardActive)}
+                    >
+                      <IconImage className="h-4 w-4 shrink-0 text-apple-tertiary" />
+                      Template
                     </button>
                   </HeaderDropdown>
                 </>
@@ -476,6 +487,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     <IconCheckCircle className="h-4 w-4 text-apple-green" />
                     Finalizados
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => go('/territories/template')}
+                    className={mobileNavClass({ isActive: templateCardActive })}
+                  >
+                    <IconImage className="h-4 w-4 opacity-70" />
+                    Template
                   </button>
                 </div>
               ) : null}

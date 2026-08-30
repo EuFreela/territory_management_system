@@ -10,6 +10,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const TerritoriesPage = lazy(() => import('./pages/TerritoriesPage'));
 const FinishedTerritoriesPage = lazy(() => import('./pages/FinishedTerritoriesPage'));
+const TemplateCardPage = lazy(() => import('./pages/TemplateCardPage'));
 const NewTerritoryPage = lazy(() => import('./pages/NewTerritoryPage'));
 const TerritoryDetailPage = lazy(() => import('./pages/TerritoryDetailPage'));
 const EditTerritoryPage = lazy(() => import('./pages/EditTerritoryPage'));
@@ -54,6 +55,14 @@ export default function App() {
             element={
               <RequirePermission scope="territory:read">
                 <FinishedTerritoriesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/territories/template"
+            element={
+              <RequirePermission scope="territory:read">
+                <TemplateCardPage />
               </RequirePermission>
             }
           />
