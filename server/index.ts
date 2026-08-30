@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { formatCep, onlyDigits, searchAddressNominatim } from './lib/cep.js';
 import { getUserFromRequest } from './lib/auth.js';
 import pool from './lib/db.js';
+import { hasPermission } from './lib/rbac.js';
 import {
   getCongregationName,
   listCongregationNames,
@@ -96,7 +97,8 @@ app.get('/api/config/cep', requireAuth, async (req, res) => {
     const working = resolveWorkingCep(user);
     const defaultCep = getDefaultCep();
     const location = await getMapConfig(working);
-    const regions = await listKnownRegions();
+    // Lista de congregações conhecidas: só quem pode trocar de região a enxerga
+    const regions = hasPermission(user, 'config:cep') ? await listKnownRegions() : [];
     const congregation_name = await getCongregationName(working);
     res.json({
       cep: working,

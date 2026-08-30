@@ -326,7 +326,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 ) : null}
               </HeaderDropdown>
 
-              <a href="/docs/tutorial.html" className={navClass({ isActive: false })}>
+              <a href="/docs/tutorial.html" target="_blank" rel="noopener noreferrer" className={navClass({ isActive: false })}>
                 <IconHelp className="h-3.5 w-3.5 opacity-80" />
                 Tutorial
               </a>
@@ -510,7 +510,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 ) : null}
               </div>
 
-              <a href="/docs/tutorial.html" className={mobileNavClass({ isActive: false })}>
+              <a href="/docs/tutorial.html" target="_blank" rel="noopener noreferrer" className={mobileNavClass({ isActive: false })}>
                 <IconHelp className="h-4 w-4 opacity-70" />
                 Tutorial
               </a>
