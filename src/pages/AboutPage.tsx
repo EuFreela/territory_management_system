@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Login com Google com menor privilégio (v0.0.34)',
+    items: [
+      'Nova conta criada ao entrar com Google passa a receber o papel de menor privilégio: Visualizador (somente leitura de territórios)',
+      'Antes, contas novas do Google entravam como Campo; agora o acesso deve ser elevado deliberadamente por um administrador na página Usuários',
+      'Contas que já existiam mantêm o papel atual — a mudança vale para novas contas criadas pelo Google',
+    ],
+  },
+  {
     title: 'Isolamento da congregação e destaque de seleção (v0.0.33)',
     items: [
       'Correção de sessão: definir uma congregação como ativa agora troca apenas a região de trabalho do administrador logado — os demais usuários permanecem vinculados à congregação definida no cadastro deles',
