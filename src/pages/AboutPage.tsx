@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Congregação do usuário na edição (v0.0.32)',
+    items: [
+      'Na edição de usuário, seletor para vincular/alterar a congregação: mostra as últimas 5 cadastradas e busca por nome ou CEP (aceita com ou sem o hífen)',
+      'Ao escolher a congregação, o usuário passa a pertencer ao CEP dela',
+      'A criação de usuário ficou mais simples: o campo "CEP (congregação)" foi removido — o novo usuário já entra na congregação do CEP atual',
+      'Seletor mais confiável: se a lista ainda não carregou ao abrir, recarrega na hora e mostra "Carregando…"; se der erro, aparece o botão "Tentar novamente"',
+    ],
+  },
+  {
     title: 'Tutorial: abas recapturadas (v0.0.31)',
     items: [
       'Capturas reais das abas (controle segmentado) do Cartão, Sobre e Finalizados atualizadas no tutorial A4',

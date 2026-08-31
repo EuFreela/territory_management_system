@@ -14,6 +14,41 @@ import { requirePermission } from '../middleware/requirePermission.js';
 const router = Router();
 const BCRYPT_ROUNDS = 12;
 
+/** Mapa CEP formatado → nome de congregação, priorizando a tabela congregations. */
+async function congregationNameByCep(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const [rows] = await pool.execute('SELECT cep, name FROM congregations');
+    for (const row of rows as Array<{ cep: string; name: string }>) {
+      const digits = onlyDigits(String(row.cep ?? ''));
+      if (digits.length !== 8) continue;
+      const name = String(row.name ?? '').trim();
+      if (!name) continue;
+      map.set(formatCep(digits), name);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/congregations|doesn't exist|Unknown table/i.test(msg)) return map;
+    throw err;
+  }
+  return map;
+}
+
+/** Resolve o CEP de uma congregação pelo id (null se não houver). */
+async function congregationCepById(id: number): Promise<string | null> {
+  try {
+    const [rows] = await pool.execute('SELECT cep FROM congregations WHERE id = ?', [id]);
+    const row = (rows as Array<{ cep: string }>)[0];
+    if (!row) return null;
+    const digits = onlyDigits(String(row.cep ?? ''));
+    return digits.length === 8 ? formatCep(digits) : null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/congregations|doesn't exist|Unknown table/i.test(msg)) return null;
+    throw err;
+  }
+}
+
 const createUserSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(150),
   email: z.string().email('Email inválido'),
@@ -22,12 +57,14 @@ const createUserSchema = z.object({
     if (err) ctx.addIssue({ code: 'custom', message: err });
   }),
   role_id: z.number().int().positive('Informe o papel (role)'),
+  congregation_id: z.number().int().positive().nullable().optional(),
 });
 
 const updateUserSchema = z.object({
   name: z.string().min(2).max(150).optional(),
   email: z.string().email().optional(),
   role_id: z.number().int().positive().nullable().optional(),
+  congregation_id: z.number().int().positive().nullable().optional(),
   password: z
     .string()
     .optional()
@@ -74,6 +111,59 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
   }
 });
 
+/**
+ * Lista congregações para o formulário de usuário.
+ * Sem ?q: retorna as últimas 5 cadastradas (para o select rápido).
+ * Com ?q: busca por nome ou CEP (resultados limitados).
+ */
+router.get('/congregations', requireAuth, requirePermission('user:manage'), async (req, res) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    let sql: string;
+    let params: Array<string | number> = [];
+    if (q) {
+      const like = `%${q}%`;
+      const digitsQ = onlyDigits(q);
+      // CEP pode estar armazenado com hífen ("37150-000") ou sem; busca cobre
+      // nome, forma exibida e só-membros (digitado pelo usuário sem hífen).
+      const cepMatch =
+        digitsQ.length > 0 ? ` OR REPLACE(c.cep, '-', '') LIKE ?` : '';
+      sql = `SELECT c.id, c.cep, c.name, c.address
+             FROM congregations c
+             WHERE c.name LIKE ? OR c.cep LIKE ?${cepMatch}
+             ORDER BY c.name ASC
+             LIMIT 50`;
+      params = [like, like];
+      if (digitsQ.length > 0) params.push(`%${digitsQ}%`);
+    } else {
+      sql = `SELECT c.id, c.cep, c.name, c.address
+             FROM congregations c
+             ORDER BY c.created_at DESC, c.id DESC
+             LIMIT 5`;
+    }
+    const [rows] = await pool.execute(sql, params);
+    const cong = (rows as Array<{ id: number; cep: string; name: string; address: string | null }>).map(
+      (c) => ({
+        id: c.id,
+        cep: onlyDigits(String(c.cep ?? '')).length === 8 ? formatCep(String(c.cep)) : c.cep,
+        name: String(c.name ?? '').trim(),
+        address: c.address,
+      }),
+    );
+    res.json({ congregations: cong });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (/congregations|doesn't exist|Unknown table/i.test(msg)) {
+      res.status(503).json({
+        error: 'Cadastro de congregações ainda não migrado. Rode: npm run migrate:congregations',
+      });
+      return;
+    }
+    console.error('[users/congregations]', error);
+    res.status(500).json({ error: 'Erro ao listar congregações.' });
+  }
+});
+
 /** Lista todos os usuários do sistema (admin vê todos, com ou sem congregação). */
 router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) => {
   try {
@@ -84,7 +174,11 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
        LEFT JOIN roles r ON r.id = u.role_id
        ORDER BY u.name ASC`,
     );
-    const names = await listCongregationNames();
+    const names = await congregationNameByCep();
+    const namesFallback = await listCongregationNames();
+    for (const [cep, name] of namesFallback) {
+      if (!names.has(cep)) names.set(cep, name);
+    }
     res.json(
       (rows as Array<Record<string, unknown>>).map((u) => {
         const rawCep =
@@ -149,9 +243,18 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
     }
 
     const creator = (req as AuthedRequest).user;
-    const activeCep = formatCep(resolveWorkingCep(creator));
-    const { name, email, password, role_id } = parsed.data;
+    const { name, email, password, role_id, congregation_id } = parsed.data;
     const emailNorm = email.toLowerCase();
+
+    let activeCep = formatCep(resolveWorkingCep(creator));
+    if (congregation_id != null) {
+      const cep = await congregationCepById(congregation_id);
+      if (!cep) {
+        res.status(400).json({ error: 'Congregação não encontrada.' });
+        return;
+      }
+      activeCep = cep;
+    }
 
     const [roleRows] = await pool.execute('SELECT id, slug FROM roles WHERE id = ?', [role_id]);
     if (!(roleRows as unknown[]).length) {
@@ -220,7 +323,7 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
       return;
     }
 
-    const { name, email, role_id, password } = parsed.data;
+    const { name, email, role_id, password, congregation_id } = parsed.data;
 
     // Não permite rebaixar o último admin
     if (role_id !== undefined && target.role_slug === ROLE_ADMIN) {
@@ -282,6 +385,20 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
     if (role_id !== undefined) {
       sets.push('role_id = ?');
       params.push(role_id);
+    }
+    if (congregation_id !== undefined) {
+      if (congregation_id == null) {
+        sets.push('active_cep = ?');
+        params.push(null);
+      } else {
+        const cep = await congregationCepById(congregation_id);
+        if (!cep) {
+          res.status(400).json({ error: 'Congregação não encontrada.' });
+          return;
+        }
+        sets.push('active_cep = ?');
+        params.push(cep);
+      }
     }
     if (password) {
       if (!isStrongPassword(password)) {
