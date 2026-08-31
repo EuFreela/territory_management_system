@@ -23,6 +23,7 @@ import {
   Key,
   LocateFixed,
   Lock,
+  LockOpen,
   LogIn,
   LogOut,
   Map,
@@ -65,6 +66,7 @@ function icon(Icon: LucideIcon) {
 }
 
 export const IconLock = icon(Lock);
+export const IconLockOpen = icon(LockOpen);
 export const IconPencil = icon(Pencil);
 export const IconCheck = icon(Check);
 export const IconUndo = icon(Undo2);

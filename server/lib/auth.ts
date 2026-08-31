@@ -91,7 +91,10 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
   try {
     const payload = await verifyToken(token);
     if (!payload.userId) return null;
-    return await loadRbacUserById(payload.userId);
+    const user = await loadRbacUserById(payload.userId);
+    // Usuário bloqueado: encerra a sessão ativa de imediato (não consegue mais acessar).
+    if (!user || user.blocked) return null;
+    return user;
   } catch {
     return null;
   }

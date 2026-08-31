@@ -21,15 +21,17 @@ type UserRow = {
   role_name: string | null;
   theme_preference?: string | null;
   active_cep?: string | null;
+  blocked?: boolean;
 };
 
 async function selectUserWithRbac(
   userId: number,
-  opts: { theme: boolean; cep: boolean },
+  opts: { theme: boolean; cep: boolean; blocked?: boolean },
 ): Promise<UserRow | null> {
   const extra = [
     opts.theme ? 'u.theme_preference' : null,
     opts.cep ? 'u.active_cep' : null,
+    opts.blocked ? 'u.blocked' : null,
   ]
     .filter(Boolean)
     .join(', ');
@@ -54,7 +56,7 @@ async function selectUserWithRbac(
  */
 export async function loadRbacUserById(userId: number): Promise<RbacUser | null> {
   try {
-    const row = await selectUserWithRbac(userId, { theme: true, cep: true });
+    const row = await selectUserWithRbac(userId, { theme: true, cep: true, blocked: true });
     if (!row) return null;
     return await buildRbacUser(row);
   } catch (err) {
@@ -62,8 +64,9 @@ export async function loadRbacUserById(userId: number): Promise<RbacUser | null>
 
     const missingCep = /active_cep/i.test(msg);
     const missingTheme = /theme_preference/i.test(msg);
+    const missingBlocked = /blocked/i.test(msg);
 
-    if (missingCep || missingTheme) {
+    if (missingCep || missingTheme || missingBlocked) {
       try {
         const row = await selectUserWithRbac(userId, {
           theme: !missingTheme,
@@ -74,6 +77,7 @@ export async function loadRbacUserById(userId: number): Promise<RbacUser | null>
           ...row,
           theme_preference: row.theme_preference ?? 'light',
           active_cep: row.active_cep ?? null,
+          blocked: missingBlocked ? false : row.blocked,
         });
       } catch (inner) {
         const innerMsg = inner instanceof Error ? inner.message : String(inner);
@@ -155,5 +159,6 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
     active_cep,
     working_cep,
     congregation_name,
+    blocked: Boolean(row.blocked),
   };
 }

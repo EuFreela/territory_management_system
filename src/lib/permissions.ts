@@ -37,6 +37,8 @@ export type AuthUserWithRbac = {
   working_cep?: string;
   /** Nome da congregação vinculado ao CEP */
   congregation_name?: string | null;
+  /** Conta bloqueada (não pode entrar) */
+  blocked?: boolean;
 };
 
 export function can(user: AuthUserWithRbac | null | undefined, scope: Scope): boolean {

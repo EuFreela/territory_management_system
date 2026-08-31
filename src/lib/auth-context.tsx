@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from './api';
+import { api, setUnauthorizedHandler } from './api';
 import { can, type AuthUserWithRbac, type Scope, type ThemePreference } from './permissions';
 
 export type AuthUser = AuthUserWithRbac;
@@ -35,6 +35,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Qualquer 401 (sessão caída / conta bloqueada) derruba a sessão na hora:
+  // o ProtectedRoute redireciona para o login e o chat é desmontado.
+  useEffect(() => {
+    setUnauthorizedHandler(() => setUser(null));
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   const logout = useCallback(async () => {
     // Sai do online do chat só nesta aba (best-effort) antes de encerrar a sessão
