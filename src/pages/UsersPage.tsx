@@ -1,7 +1,8 @@
-﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
+﻿import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
+  IconChevronDown,
   IconHelp,
   IconLock,
   IconLockOpen,
@@ -35,8 +36,13 @@ import { confirmToast } from '@/lib/confirm-toast';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
-type CreateErrors = { name?: string; email?: string; password?: string; role?: string };
-type EditErrors = { name?: string; email?: string; role?: string };
+type CreateErrors = {
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+};
+type EditErrors = { name?: string; email?: string; role?: string; congregation?: string };
 
 type Role = {
   id: number;
@@ -57,6 +63,263 @@ type ManagedUser = {
   blocked?: boolean;
   created_at?: string;
 };
+
+type Congregation = {
+  id: number;
+  cep: string;
+  name: string;
+  address?: string | null;
+};
+
+const normalize = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+function CongregationPicker({
+  value,
+  onValueChange,
+  initialCep,
+  label,
+  error,
+  errorId,
+  id,
+}: {
+  value: number | '' | null | undefined;
+  onValueChange: (id: number | '' | null) => void;
+  initialCep?: string | null;
+  label: string;
+  error?: string;
+  errorId?: string;
+  id?: string;
+}) {
+  const [recent, setRecent] = useState<Congregation[]>([]);
+  const [options, setOptions] = useState<Congregation[]>([]);
+  const [query, setQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [open, setOpen] = useState(false);
+  const mounted = useRef(true);
+
+  const loadRecent = useCallback(async () => {
+    setBusy(true);
+    setLoadError('');
+    try {
+      const r = await api<{ congregations: Congregation[] }>('/api/users/congregations');
+      if (!mounted.current) return;
+      setRecent(r.congregations);
+      setOptions(r.congregations);
+    } catch {
+      if (!mounted.current) return;
+      setLoadError('Não foi possível carregar as congregações.');
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    mounted.current = true;
+    void loadRecent();
+    return () => {
+      mounted.current = false;
+    };
+  }, [loadRecent]);
+
+  useEffect(() => {
+    let alive = true;
+    const q = query.trim();
+    if (!q) {
+      setOptions(recent);
+      setLoadError('');
+      return;
+    }
+    setBusy(true);
+    const t = window.setTimeout(() => {
+      api<{ congregations: Congregation[] }>(
+        `/api/users/congregations?q=${encodeURIComponent(q)}`,
+      )
+        .then((r) => {
+          if (!alive) return;
+          setOptions(r.congregations);
+          setLoadError('');
+        })
+        .catch(() => {
+          if (alive) setLoadError('Falha ao buscar congregações.');
+        })
+        .finally(() => {
+          if (alive) setBusy(false);
+        });
+    }, 250);
+    return () => {
+      alive = false;
+      window.clearTimeout(t);
+    };
+  }, [query, recent]);
+
+  useEffect(() => {
+    if (initialCep == null || !initialCep.trim()) return;
+    const cep = initialCep.trim().toLowerCase();
+    let alive = true;
+    const inList = recent.some((c) => c.cep.toLowerCase() === cep);
+    if (inList) {
+      const found = recent.find((c) => c.cep.toLowerCase() === cep);
+      if (found) onValueChange(found.id);
+      return;
+    }
+    api<{ congregations: Congregation[] }>(
+      `/api/users/congregations?q=${encodeURIComponent(initialCep.trim())}`,
+    )
+      .then((r) => {
+        if (!alive) return;
+        const found = r.congregations.find((c) => c.cep.toLowerCase() === cep);
+        if (found) {
+          onValueChange(found.id);
+          setRecent((prev) => (prev.some((c) => c.id === found.id) ? prev : [found, ...prev]));
+        }
+      })
+      .catch(() => {
+        /* ignora */
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCep, recent]);
+
+  const selected =
+    options.find((c) => c.id === Number(value)) ??
+    (value != null && value !== '' ? { id: Number(value), name: '', cep: '' } : null);
+
+  return (
+    <div className="grid gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <button
+          id={id}
+          type="button"
+          onClick={() => {
+            setQuery('');
+            if (!recent.length && !busy) void loadRecent();
+            setOptions(recent);
+            setOpen((o) => !o);
+            setTimeout(() => {
+              const el = document.getElementById(`${id ?? ''}-search`) as HTMLInputElement | null;
+              el?.focus();
+            }, 30);
+          }}
+          className={`flex h-9 w-full items-center justify-between rounded-lg border bg-transparent px-3 text-left text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
+            error ? 'border-destructive' : 'border-input focus-visible:border-ring'
+          }`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : undefined}
+        >
+          {selected?.name ? (
+            <span className="truncate">
+              <span className="text-foreground">{selected.name}</span>
+              {selected.cep ? <span className="ml-2 text-muted-foreground">CEP {selected.cep}</span> : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Selecionar congregação…</span>
+          )}
+          <IconChevronDown className="size-4 shrink-0 text-muted-foreground" />
+        </button>
+
+        {open ? (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+              aria-hidden
+            />
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
+            >
+              <div className="relative border-b border-border bg-muted/30">
+                <IconSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id={`${id ?? ''}-search`}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar por nome ou CEP…"
+                  className="border-0 pl-9 focus-visible:ring-0"
+                  autoComplete="off"
+                />
+              </div>
+              <ul className="max-h-56 overflow-y-auto p-1.5">
+                <li>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+                    onClick={() => {
+                      onValueChange(null);
+                      setOpen(false);
+                      setQuery('');
+                    }}
+                  >
+                    <span>Sem congregação</span>
+                    {value == null ? <span className="text-primary">✓</span> : null}
+                  </button>
+                </li>
+                {busy && !options.length ? (
+                  <li className="px-2.5 py-2 text-sm text-muted-foreground">
+                    Carregando congregações…
+                  </li>
+                ) : loadError && !options.length ? (
+                  <li className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-2 text-sm text-muted-foreground">
+                    <span>{loadError}</span>
+                    <button
+                      type="button"
+                      onClick={() => void loadRecent()}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Tentar novamente
+                    </button>
+                  </li>
+                ) : options.length === 0 ? (
+                  <li className="px-2.5 py-2 text-sm text-muted-foreground">
+                    Nenhuma congregação encontrada.
+                  </li>
+                ) : (
+                  options.map((c) => {
+                    const isSel = c.id === Number(value);
+                    return (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm hover:bg-muted ${
+                            isSel ? 'text-foreground' : 'text-foreground/90'
+                          }`}
+                          onClick={() => {
+                            onValueChange(c.id);
+                            setOpen(false);
+                            setQuery('');
+                          }}
+                        >
+                          <span className="truncate">
+                            {c.name}
+                            <span className="ml-2 text-muted-foreground">CEP {c.cep}</span>
+                          </span>
+                          {isSel ? <span className="shrink-0 text-primary">✓</span> : null}
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>
+          </>
+        ) : null}
+      </div>
+      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+    </div>
+  );
+}
 
 const SELECT_CLASS =
   'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
@@ -88,6 +351,7 @@ export default function UsersPage() {
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editRoleId, setEditRoleId] = useState<number | ''>('');
+  const [editCongregationId, setEditCongregationId] = useState<number | '' | null>('');
   const [editPassword, setEditPassword] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editErrors, setEditErrors] = useState<EditErrors>({});
@@ -169,21 +433,22 @@ export default function UsersPage() {
 
     setSaving(true);
     try {
+      const body: Record<string, unknown> = {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role_id: roleId,
+      };
       await api('/api/users', {
         method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          password,
-          role_id: roleId,
-        }),
+        body: JSON.stringify(body),
       });
       setName('');
       setEmail('');
       setPassword('');
       setCreateErrors({});
       await load();
-      toast.success('Usuário criado e vinculado à congregação do CEP definido nas Configurações.');
+      toast.success('Usuário criado.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao criar usuário.');
     } finally {
@@ -196,6 +461,7 @@ export default function UsersPage() {
     setEditName(u.name);
     setEditEmail(u.email);
     setEditRoleId(u.role_id ?? '');
+    setEditCongregationId('');
     setEditPassword('');
     setEditErrors({});
   }
@@ -237,6 +503,11 @@ export default function UsersPage() {
         role_id: editRoleId,
       };
       if (editPassword.trim()) body.password = editPassword;
+      if (editCongregationId === null) {
+        body.congregation_id = null;
+      } else if (editCongregationId !== '') {
+        body.congregation_id = editCongregationId;
+      }
 
       await api(`/api/users/${editing.id}`, {
         method: 'PUT',
@@ -404,17 +675,6 @@ export default function UsersPage() {
                 ))}
               </select>
               {createErrors.role ? <FieldError id="new-role-error">{createErrors.role}</FieldError> : null}
-            </div>
-            <div className="grid gap-1.5">
-              <span className="text-sm font-medium leading-none text-foreground">CEP (congregação)</span>
-              <p className="rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                {me?.working_cep ?? '—'}
-                {me?.congregation_name ? ` · ${me.congregation_name}` : ''}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Definido nas Configurações. O usuário fica vinculado à congregação deste CEP e só
-                verá os dados dela.
-              </p>
             </div>
             <div className="flex justify-end sm:col-span-2">
               <Button
@@ -631,15 +891,21 @@ export default function UsersPage() {
               {editErrors.role ? <FieldError id="edit-role-error">{editErrors.role}</FieldError> : null}
             </div>
 
-            <div className="grid gap-1.5">
-              <span className="text-sm font-medium leading-none text-foreground">CEP (congregação)</span>
-              <p className="rounded-lg border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                {editing?.active_cep ?? 'CEP padrão'}
-                {editing?.congregation_name ? ` · ${editing.congregation_name}` : ''}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                A congregação deste usuário é definida nas Configurações.
-              </p>
+            <div className="min-w-0">
+              <CongregationPicker
+                id="edit-congregation"
+                label="CEP (congregação)"
+                value={editCongregationId}
+                onValueChange={(v) => {
+                  setEditCongregationId(v);
+                  if (editErrors.congregation) {
+                    setEditErrors((prev) => ({ ...prev, congregation: undefined }));
+                  }
+                }}
+                initialCep={editing?.active_cep}
+                error={editErrors.congregation}
+                errorId="edit-congregation-error"
+              />
             </div>
 
             <PasswordField
