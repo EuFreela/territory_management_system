@@ -9,8 +9,9 @@ import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
 
-/** Papel padrão de contas criadas automaticamente ao entrar com Google */
-const DEFAULT_GOOGLE_ROLE = 'field';
+/** Papel padrão de contas criadas automaticamente ao entrar com Google
+ *  (visualizador = menor privilégio: apenas leitura de territórios). */
+const DEFAULT_GOOGLE_ROLE = 'viewer';
 
 const GOOGLE_CLIENT_ID = (process.env.GOOGLE_CLIENT_ID || '').trim();
 const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
