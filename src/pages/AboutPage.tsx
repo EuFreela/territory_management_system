@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Isolamento da congregação e destaque de seleção (v0.0.33)',
+    items: [
+      'Correção de sessão: definir uma congregação como ativa agora troca apenas a região de trabalho do administrador logado — os demais usuários permanecem vinculados à congregação definida no cadastro deles',
+      'Usuários comuns continuam vendo somente os dados da própria congregação; o admin pode alternar livremente entre congregações sem afetar ninguém',
+      'Na página Congregações, a congregação que é a sua região de trabalho fica destacada com o selo "Ativa (sua região)" e o botão de definir vira um check preenchido quando já é a atual',
+      'Na edição de usuário, a congregação selecionada ganha destaque (fundo, marca de seleção e confirmação) tanto no seletor quanto na lista de opções',
+    ],
+  },
+  {
     title: 'Congregação do usuário na edição (v0.0.32)',
     items: [
       'Na edição de usuário, seletor para vincular/alterar a congregação: mostra as últimas 5 cadastradas e busca por nome ou CEP (aceita com ou sem o hífen)',
@@ -68,7 +77,7 @@ const updates: { title: string; items: string[] }[] = [
     title: 'Pagina de congregações e região na Configuração (v0.0.29)',
     items: [
       'Nova página Congregações (somente admin): cadastre a congregação por CEP, nome e endereço — um CEP pode ter mais de uma congregação',
-      'Com o CEP definido como "ativa", a região de trabalho de todos os usuários passa a ser aquela, com o nome da congregação associado',
+      'Ao definir uma congregação como "ativa", apenas a região de trabalho do admin que acessa passa a ser aquela — os demais usuários permanecem na congregação definida no cadastro deles',
       'Contadores por linha: territórios e usuários vinculados àquele CEP',
       'Na Configuração, o cartão "Alterar região" foi removido — a região agora é definida pela congregação ativa; "Regiões já cadastradas" ficou somente leitura',
       'Tutorial A4: capítulo de Configuração atualizado e novo capítulo de Congregações',

@@ -138,7 +138,7 @@ export default function SettingsPage() {
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     {config?.is_default
                       ? 'Usando o CEP padrão do sistema (.env).'
-                      : 'Região de trabalho usada por todos os usuários do sistema.'}
+                      : 'Sua região de trabalho. Outros usuários permanecem na congregação definida no cadastro deles.'}
                   </p>
                   {config?.congregation_name ? (
                     <p className="mt-3 text-[15px] font-medium text-foreground">

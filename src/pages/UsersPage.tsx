@@ -2,6 +2,7 @@
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
+  IconCheck,
   IconChevronDown,
   IconHelp,
   IconLock,
@@ -209,8 +210,12 @@ function CongregationPicker({
               el?.focus();
             }, 30);
           }}
-          className={`flex h-9 w-full items-center justify-between rounded-lg border bg-transparent px-3 text-left text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
-            error ? 'border-destructive' : 'border-input focus-visible:border-ring'
+          className={`flex h-9 w-full items-center justify-between gap-2 rounded-lg border bg-transparent px-3 text-left text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
+            error
+              ? 'border-destructive'
+              : selected?.name
+                ? 'border-primary/40 bg-primary/5 focus-visible:border-primary'
+                : 'border-input focus-visible:border-ring'
           }`}
           aria-haspopup="listbox"
           aria-expanded={open}
@@ -218,9 +223,14 @@ function CongregationPicker({
           aria-describedby={error ? errorId : undefined}
         >
           {selected?.name ? (
-            <span className="truncate">
-              <span className="text-foreground">{selected.name}</span>
-              {selected.cep ? <span className="ml-2 text-muted-foreground">CEP {selected.cep}</span> : null}
+            <span className="flex min-w-0 items-center gap-2">
+              <IconCheck className="size-4 shrink-0 text-primary" aria-hidden />
+              <span className="truncate">
+                <span className="font-medium text-foreground">{selected.name}</span>
+                {selected.cep ? (
+                  <span className="ml-2 text-muted-foreground">CEP {selected.cep}</span>
+                ) : null}
+              </span>
             </span>
           ) : (
             <span className="text-muted-foreground">Selecionar congregação…</span>
@@ -292,8 +302,8 @@ function CongregationPicker({
                       <li key={c.id}>
                         <button
                           type="button"
-                          className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm hover:bg-muted ${
-                            isSel ? 'text-foreground' : 'text-foreground/90'
+                          className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm hover:bg-muted ${
+                            isSel ? 'bg-primary/10 font-medium text-foreground' : 'text-foreground/90'
                           }`}
                           onClick={() => {
                             onValueChange(c.id);
@@ -305,7 +315,12 @@ function CongregationPicker({
                             {c.name}
                             <span className="ml-2 text-muted-foreground">CEP {c.cep}</span>
                           </span>
-                          {isSel ? <span className="shrink-0 text-primary">✓</span> : null}
+                          {isSel ? (
+                            <span className="flex shrink-0 items-center gap-1 text-primary">
+                              <IconCheck className="size-4" aria-hidden />
+                              <span className="text-xs">Selecionada</span>
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     );

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import pool from '../lib/db.js';
 import { formatCep, onlyDigits } from '../lib/cep.js';
 import { upsertCongregationName } from '../lib/cep-region.js';
-import { requireAuth } from '../middleware/requireAuth.js';
+import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 import { requirePermission } from '../middleware/requirePermission.js';
 
 const router = Router();
@@ -206,8 +206,10 @@ router.put('/:id', requireAuth, requirePermission('congregation:manage'), async 
   }
 });
 
-/** Define esta congregação como a da região de trabalho: vincula o CEP a
- *  todos os usuários do sistema e associa o nome da congregação ao CEP. */
+/** Define esta congregação como a região de trabalho apenas do próprio usuário
+ *  (admin/logado com permissão). Usuários comuns permanecem vinculados à sua
+ *  congregação definida no cadastro — a troca nunca é aplicada a todos.
+ *  Também associa o nome da congregação ao CEP para exibição. */
 router.post(
   '/:id/set-active',
   requireAuth,
@@ -219,6 +221,7 @@ router.post(
       return;
     }
     try {
+      const user = (req as AuthedRequest).user;
       const [rows] = await pool.execute(
         'SELECT c.id, c.cep, c.name FROM congregations c WHERE c.id = ?',
         [id],
@@ -235,7 +238,7 @@ router.post(
       }
       const cep = formatCep(digits);
 
-      await pool.execute('UPDATE users SET active_cep = ?', [cep]);
+      await pool.execute('UPDATE users SET active_cep = ? WHERE id = ?', [cep, user.id]);
       await upsertCongregationName(cep, cong.name);
 
       res.json({ ok: true, cep, congregation_name: cong.name });
