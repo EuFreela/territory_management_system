@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import pool from '../lib/db.js';
 import { formatCep, onlyDigits } from '../lib/cep.js';
+import { upsertCongregationName } from '../lib/cep-region.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { requirePermission } from '../middleware/requirePermission.js';
 
@@ -58,7 +59,32 @@ router.get('/', requireAuth, requirePermission('congregation:manage'), async (_r
        FROM congregations c
        ORDER BY c.name ASC, c.cep ASC`,
     );
-    res.json({ congregations: rows });
+    const [congCountRows] = await pool.execute(
+      'SELECT cep, COUNT(*) AS cnt FROM territories WHERE cep IS NOT NULL AND TRIM(cep) <> \'\' GROUP BY cep',
+    );
+    const [userCountRows] = await pool.execute(
+      `SELECT active_cep, COUNT(*) AS cnt FROM users
+       WHERE active_cep IS NOT NULL AND TRIM(active_cep) <> '' GROUP BY active_cep`,
+    );
+    const congCounts = new Map<string, number>();
+    for (const r of congCountRows as Array<{ cep: string; cnt: number }>) {
+      const digits = onlyDigits(r.cep);
+      if (digits.length === 8) congCounts.set(formatCep(digits), Number(r.cnt));
+    }
+    const userCounts = new Map<string, number>();
+    for (const r of userCountRows as Array<{ active_cep: string; cnt: number }>) {
+      const digits = onlyDigits(String(r.active_cep));
+      if (digits.length === 8) userCounts.set(formatCep(digits), Number(r.cnt));
+    }
+    const congregations = (rows as Array<{ cep: string }>).map((c) => {
+      const key = onlyDigits(c.cep).length === 8 ? formatCep(c.cep) : c.cep;
+      return {
+        ...c,
+        record_count: congCounts.get(key) ?? 0,
+        user_count: userCounts.get(key) ?? 0,
+      };
+    });
+    res.json({ congregations });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/congregations|doesn't exist|Unknown table/i.test(message)) {
@@ -179,6 +205,54 @@ router.put('/:id', requireAuth, requirePermission('congregation:manage'), async 
     res.status(500).json({ error: 'Erro ao atualizar congregação.' });
   }
 });
+
+/** Define esta congregação como a da região de trabalho: vincula o CEP a
+ *  todos os usuários do sistema e associa o nome da congregação ao CEP. */
+router.post(
+  '/:id/set-active',
+  requireAuth,
+  requirePermission('congregation:manage'),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: 'Identificador inválido.' });
+      return;
+    }
+    try {
+      const [rows] = await pool.execute(
+        'SELECT c.id, c.cep, c.name FROM congregations c WHERE c.id = ?',
+        [id],
+      );
+      const cong = (rows as Array<{ id: number; cep: string; name: string }>)[0];
+      if (!cong) {
+        res.status(404).json({ error: 'Congregação não encontrada.' });
+        return;
+      }
+      const digits = onlyDigits(cong.cep);
+      if (digits.length !== 8) {
+        res.status(400).json({ error: 'CEP da congregação inválido.' });
+        return;
+      }
+      const cep = formatCep(digits);
+
+      await pool.execute('UPDATE users SET active_cep = ?', [cep]);
+      await upsertCongregationName(cep, cong.name);
+
+      res.json({ ok: true, cep, congregation_name: cong.name });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/congregations|cep_regions|doesn't exist|Unknown table/i.test(message)) {
+        res.status(503).json({
+          error:
+            'Cadastro de congregações ainda não migrado. Rode: npm run migrate:congregations',
+        });
+        return;
+      }
+      console.error('[congregations] set-active', error);
+      res.status(500).json({ error: 'Erro ao definir a congregação como ativa.' });
+    }
+  },
+);
 
 /** Remove uma congregação. */
 router.delete('/:id', requireAuth, requirePermission('congregation:manage'), async (req, res) => {

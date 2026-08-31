@@ -245,30 +245,44 @@ async function main() {
     );
     await waitSettled(page);
     await shotPage(page, 'configuracao.webp');
-    await shotByText(
-      page,
-      () =>
-        [...document.querySelectorAll('[data-slot="card"]')].find((c) =>
-          c.textContent?.includes('Região atual'),
-        ) || null,
-      'configuracao-atual.webp',
-    );
-    await shotByText(
-      page,
-      () =>
-        [...document.querySelectorAll('[data-slot="card"]')].find((c) =>
-          c.textContent?.includes('Alterar região'),
-        ) || null,
-      'configuracao-alterar.webp',
-    );
-    await shotByText(
-      page,
-      () =>
-        [...document.querySelectorAll('[data-slot="card"]')].find((c) =>
-          c.textContent?.includes('Regiões já cadastradas'),
-        ) || null,
-      'configuracao-regioes.webp',
-    );
+
+    // ——— Congregações ———
+    console.log('Congregações…');
+    await gotoApp(page, '/congregacoes');
+    await shotPage(page, 'congregacoes.webp');
+
+    const congNew = await page.$('button[aria-label="Nova congregação"]');
+    if (congNew) {
+      await congNew.click();
+      await page.waitForSelector('[role="dialog"]', { timeout: 8000 });
+      await sleep(300);
+      await shotSel(page, '[role="dialog"]', 'congregacoes-novo.webp');
+      await page.keyboard.press('Escape');
+      await sleep(300);
+    }
+
+    const congSet = await page.$('button[aria-label="Definir como congregação ativa"]');
+    if (congSet) {
+      await congSet.click();
+      await sleep(500);
+      await page
+        .waitForFunction(() => document.querySelectorAll('[data-sonner-toaster] .sonner-toast').length > 0, {
+          timeout: 8000,
+        })
+        .catch(() => {});
+      await shotSel(page, '[data-sonner-toaster] .sonner-toast', 'congregacoes-definir.webp');
+      const cancel = await page.evaluate(() => {
+        const btns = [...document.querySelectorAll('button')];
+        const c = btns.find((b) => b.textContent?.trim() === 'Cancelar');
+        if (c) {
+          c.click();
+          return true;
+        }
+        return false;
+      });
+      if (!cancel) await page.keyboard.press('Escape');
+      await sleep(400);
+    }
 
     // ——— Finalizados ———
     console.log('Finalizados…');

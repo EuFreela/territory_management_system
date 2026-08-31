@@ -40,6 +40,16 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Pagina de congregações e região na Configuração (v0.0.29)',
+    items: [
+      'Nova página Congregações (somente admin): cadastre a congregação por CEP, nome e endereço — um CEP pode ter mais de uma congregação',
+      'Com o CEP definido como "ativa", a região de trabalho de todos os usuários passa a ser aquela, com o nome da congregação associado',
+      'Contadores por linha: territórios e usuários vinculados àquele CEP',
+      'Na Configuração, o cartão "Alterar região" foi removido — a região agora é definida pela congregação ativa; "Regiões já cadastradas" ficou somente leitura',
+      'Tutorial A4: capítulo de Configuração atualizado e novo capítulo de Congregações',
+    ],
+  },
+  {
     title: 'Usuários vinculados à congregação (v0.0.27)',
     items: [
       'Ao criar usuário, o CEP da congregação já aparece definido (somente leitura), vindo das Configurações',
