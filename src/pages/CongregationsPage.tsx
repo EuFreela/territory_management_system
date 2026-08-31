@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   IconBuilding2,
+  IconLocate,
   IconPencil,
   IconPlus,
   IconSave,
@@ -25,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { confirmToast } from '@/lib/confirm-toast';
+import { useAuth } from '@/lib/auth-context';
 import { maskCepInput } from '@/lib/cep';
 
 type Congregation = {
@@ -32,6 +34,8 @@ type Congregation = {
   cep: string;
   name: string;
   address: string | null;
+  record_count?: number;
+  user_count?: number;
   created_at?: string;
   updated_at?: string;
 };
@@ -41,6 +45,7 @@ type FormErrors = { cep?: string; name?: string };
 const EMPTY_FORM = { cep: '', name: '', address: '' };
 
 export default function CongregationsPage() {
+  const { refresh: refreshAuth } = useAuth();
   const [congregations, setCongregations] = useState<Congregation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -171,6 +176,24 @@ export default function CongregationsPage() {
     });
   }
 
+  function onSetActive(c: Congregation) {
+    confirmToast({
+      title: 'Definir como congregação ativa?',
+      description: `O CEP ${c.cep} será definido como a região de trabalho de todos os usuários e ${c.name} será o nome da congregação deste CEP.`,
+      confirmLabel: 'Definir',
+      onConfirm: async () => {
+        try {
+          await api(`/api/congregations/${c.id}/set-active`, { method: 'POST' });
+          await refreshAuth();
+          await load();
+          toast.success('Congregação definida como ativa.');
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao definir congregação.');
+        }
+      },
+    });
+  }
+
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="mb-8">
@@ -191,9 +214,14 @@ export default function CongregationsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Congregações cadastradas</h2>
-            <Button type="button" onClick={openCreate} data-tooltip="Nova congregação">
+            <Button
+              type="button"
+              size="icon"
+              onClick={openCreate}
+              data-tooltip="Nova congregação"
+              aria-label="Nova congregação"
+            >
               <IconPlus />
-              Nova congregação
             </Button>
           </div>
 
@@ -231,12 +259,31 @@ export default function CongregationsPage() {
                   >
                     <div className="min-w-0">
                       <p className="font-semibold">{c.name}</p>
-                      <p className="text-sm text-muted-foreground">CEP {c.cep}</p>
+                      <p className="text-sm text-muted-foreground">
+                        CEP {c.cep}
+                        {c.record_count !== undefined ? (
+                          <span className="text-muted-foreground/70">
+                            {' '}
+                            · {c.record_count} território(s)
+                            {c.user_count !== undefined ? ` · ${c.user_count} usuário(s)` : ''}
+                          </span>
+                        ) : null}
+                      </p>
                       {c.address ? (
                         <p className="text-xs text-muted-foreground/80">{c.address}</p>
                       ) : null}
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        data-tooltip="Definir como congregação ativa"
+                        aria-label="Definir como congregação ativa"
+                        onClick={() => onSetActive(c)}
+                      >
+                        <IconLocate />
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"

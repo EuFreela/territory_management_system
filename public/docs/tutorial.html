@@ -713,7 +713,12 @@
             <li>
               <a href="#configuracao">Configuração</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">32–33</span>
+              <span class="n">32</span>
+            </li>
+            <li>
+              <a href="#congregacoes">Congregações</a>
+              <span class="dots" aria-hidden="true"></span>
+              <span class="n">33</span>
             </li>
             <li>
               <a href="#finalizados">Finalizados</a>
@@ -2301,18 +2306,18 @@
       <article class="page" id="configuracao" aria-label="Configuração — a tela">
         <div class="page-inner">
           <p class="eyebrow">09 · Configuração</p>
-          <h2>A região de trabalho</h2>
+          <h2>A região atual</h2>
           <p>
-            No ícone da conta, <strong>Configuração</strong> (não está no menu de cima). O CEP
-            define quais territórios, mapas, dirigentes e histórico você vê. Congregações
-            diferentes usam o mesmo sistema sem misturar os cartões.
+            No ícone da conta, <strong>Configuração</strong> (não está no menu de cima) mostra a
+            região de trabalho e a congregação ativa do sistema. Quem pode mudar isso faz na
+            página <strong>Congregações</strong> (próxima folha).
           </p>
           <figure class="shot">
             <img
               src="tutorial/configuracao.webp"
-              alt="Página Configuração: região atual, alterar CEP e nome da congregação"
+              alt="Página Configuração: região atual e congregação do sistema"
             />
-            <figcaption>Configuração — captura real. O CEP fica gravado na sua conta.</figcaption>
+            <figcaption>Configuração — captura real. A região e a congregação ativa aparecem aqui.</figcaption>
           </figure>
         </div>
         <div class="page-foot">
@@ -2328,38 +2333,43 @@
         </div>
       </article>
 
-      <!-- 33 CONFIGURAÇÃO — ALTERAR -->
-      <article class="page" id="configuracao-alterar" aria-label="Configuração — alterar região">
+      <!-- 33 CONGREGAÇÕES — CADASTRO -->
+      <article class="page" id="congregacoes" aria-label="Congregações — cadastro">
         <div class="page-inner">
-          <p class="eyebrow">09 · Configuração</p>
-          <h2>Alterar CEP e congregação</h2>
-          <figure class="shot block">
+          <p class="eyebrow">10 · Congregações</p>
+          <h2>Cadastro de congregações</h2>
+          <p>
+            No menu, <strong>Congregações</strong>. Só o administrador vê esta página. Cada
+            linha é uma congregação, com o CEP, o número de territórios daquela região e o
+            número de usuários vinculados.
+          </p>
+          <figure class="shot">
             <img
-              src="tutorial/configuracao-alterar.webp"
-              alt="Formulário Alterar região: nome da congregação, CEP, consultar e Salvar região"
+              src="tutorial/congregacoes.webp"
+              alt="Página Congregações: lista com nome, CEP, territórios, usuários e botões"
             />
-            <figcaption>Nome da congregação, CEP, lupa para consultar e Salvar região.</figcaption>
-          </figure>
-          <figure class="shot block">
-            <img
-              src="tutorial/configuracao-regioes.webp"
-              alt="Atalhos das regiões já cadastradas no sistema"
-            />
-            <figcaption>Atalhos das regiões que já têm territórios neste sistema.</figcaption>
+            <figcaption>Congregações — captura real. Registro por CEP com contadores.</figcaption>
           </figure>
 
           <div class="parts" style="margin-top: 3mm">
             <div class="part">
-              <strong class="label">Lupa e Salvar região</strong>
+              <strong class="label">Contadores</strong>
               <span>
-                A lupa consulta o CEP e mostra cidade e bairro. Salvar pede confirmação se o CEP
-                for outro — os dados da região anterior continuam no banco.
+                Ao lado do CEP, o número de territórios daquela região e o de usuários vinculados.
               </span>
             </div>
             <div class="part">
-              <strong class="label">Usar CEP padrão</strong>
+              <strong class="label">Definir como ativa</strong>
               <span>
-                Volta ao CEP do servidor (.env), se a conta estiver num CEP gravado.
+                O botão de pino define esta congregação como a ativa: o CEP vira a região de
+                trabalho de todos e o nome passa a ser o da congregação. Pedi confirmação antes.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">+ · lápis · lixeira</strong>
+              <span>
+                O botão + (canto superior) cria outra congregação — um CEP pode ter várias. O
+                lápis edita e a lixeira exclui, com confirmação.
               </span>
             </div>
           </div>
@@ -2371,7 +2381,7 @@
                 <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
               </svg>
             </a>
-            <span>CAMPO · Tutorial · Configuração</span>
+            <span>CAMPO · Tutorial · Congregações</span>
           </span>
           <span class="page-num">33</span>
         </div>
