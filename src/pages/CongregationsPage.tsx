@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   IconBuilding2,
+  IconCheck,
   IconLocate,
   IconPencil,
   IconPlus,
@@ -27,7 +28,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { confirmToast } from '@/lib/confirm-toast';
 import { useAuth } from '@/lib/auth-context';
-import { maskCepInput } from '@/lib/cep';
+import { maskCepInput, onlyDigits } from '@/lib/cep';
 
 type Congregation = {
   id: number;
@@ -45,7 +46,7 @@ type FormErrors = { cep?: string; name?: string };
 const EMPTY_FORM = { cep: '', name: '', address: '' };
 
 export default function CongregationsPage() {
-  const { refresh: refreshAuth } = useAuth();
+  const { user, refresh: refreshAuth } = useAuth();
   const [congregations, setCongregations] = useState<Congregation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -179,7 +180,7 @@ export default function CongregationsPage() {
   function onSetActive(c: Congregation) {
     confirmToast({
       title: 'Definir como congregação ativa?',
-      description: `O CEP ${c.cep} será definido como a região de trabalho de todos os usuários e ${c.name} será o nome da congregação deste CEP.`,
+      description: `O CEP ${c.cep} será definido como a sua região de trabalho (apenas para você). ${c.name} será o nome da congregação deste CEP. Os demais usuários permanecem na congregação definida no cadastro.`,
       confirmLabel: 'Definir',
       onConfirm: async () => {
         try {
@@ -252,62 +253,86 @@ export default function CongregationsPage() {
                 {filtered.length} de {congregations.length} congregação(ões)
               </p>
               <ul className="divide-y divide-border">
-                {filtered.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-semibold">{c.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        CEP {c.cep}
-                        {c.record_count !== undefined ? (
-                          <span className="text-muted-foreground/70">
-                            {' '}
-                            · {c.record_count} território(s)
-                            {c.user_count !== undefined ? ` · ${c.user_count} usuário(s)` : ''}
-                          </span>
+                {filtered.map((c) => {
+                  const isActive =
+                    !!user?.working_cep &&
+                    onlyDigits(c.cep) === onlyDigits(user.working_cep);
+                  return (
+                    <li
+                      key={c.id}
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-lg py-3 first:pt-0 last:pb-0 ${
+                        isActive ? 'bg-primary/5 px-3 ring-1 ring-primary/20' : ''
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 font-semibold">
+                          {c.name}
+                          {isActive ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                              <IconCheck className="size-3" aria-hidden />
+                              Ativa (sua região)
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          CEP {c.cep}
+                          {c.record_count !== undefined ? (
+                            <span className="text-muted-foreground/70">
+                              {' '}
+                              · {c.record_count} território(s)
+                              {c.user_count !== undefined ? ` · ${c.user_count} usuário(s)` : ''}
+                            </span>
+                          ) : null}
+                        </p>
+                        {c.address ? (
+                          <p className="text-xs text-muted-foreground/80">{c.address}</p>
                         ) : null}
-                      </p>
-                      {c.address ? (
-                        <p className="text-xs text-muted-foreground/80">{c.address}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        data-tooltip="Definir como congregação ativa"
-                        aria-label="Definir como congregação ativa"
-                        onClick={() => onSetActive(c)}
-                      >
-                        <IconLocate />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        data-tooltip="Editar"
-                        aria-label="Editar"
-                        onClick={() => openEdit(c)}
-                      >
-                        <IconPencil />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        data-tooltip="Excluir"
-                        aria-label="Excluir"
-                        onClick={() => onDelete(c)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <IconTrash />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={isActive ? 'default' : 'outline'}
+                          size="icon"
+                          data-tooltip={
+                            isActive
+                              ? 'Esta já é a sua região de trabalho'
+                              : 'Definir como minha congregação ativa'
+                          }
+                          aria-label={
+                            isActive
+                              ? 'Congregação ativa (sua região)'
+                              : 'Definir como minha congregação ativa'
+                          }
+                          disabled={isActive}
+                          onClick={() => onSetActive(c)}
+                        >
+                          {isActive ? <IconCheck /> : <IconLocate />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          data-tooltip="Editar"
+                          aria-label="Editar"
+                          onClick={() => openEdit(c)}
+                        >
+                          <IconPencil />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          data-tooltip="Excluir"
+                          aria-label="Excluir"
+                          onClick={() => onDelete(c)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <IconTrash />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </>
           )}
