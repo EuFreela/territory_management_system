@@ -40,6 +40,13 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Tutorial: abas recapturadas (v0.0.31)',
+    items: [
+      'Capturas reais das abas (controle segmentado) do Cartão, Sobre e Finalizados atualizadas no tutorial A4',
+      'Aba Atualizações da Sobre mostra esta versão no tutorial',
+    ],
+  },
+  {
     title: 'Bloqueio e lista completa de usuários (v0.0.30)',
     items: [
       'Na página Usuários, o administrador vê todos os usuários do sistema, com ou sem congregação',
