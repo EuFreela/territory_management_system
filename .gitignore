@@ -69,3 +69,7 @@ verify-admin-result.json
 *.sql.bak
 relatorio-seguranca.html
 security-report-harness/
+
+# Scripts e capturas ad-hoc de teste
+test-*.mjs
+shot-*.png
