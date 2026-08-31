@@ -21,6 +21,7 @@
     "migrate:territory-image-url": "node scripts/migrate-territory-image-url.js",
     "migrate:cep-congregation": "node scripts/migrate-cep-congregation.js",
     "migrate:congregations": "node scripts/migrate-congregations.js",
+    "migrate:user-blocked": "node scripts/migrate-user-blocked.js",
     "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {

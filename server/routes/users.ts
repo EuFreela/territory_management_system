@@ -7,6 +7,7 @@ import { listCongregationNames } from '../lib/cep-region.js';
 import { resolveWorkingCep } from '../lib/map-config.js';
 import { ROLE_ADMIN, SCOPES } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
+import { removeGpsPresence, removeSessionPresence } from '../lib/presence.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
 import { requirePermission } from '../middleware/requirePermission.js';
 
@@ -73,19 +74,15 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
   }
 });
 
-/** Lista usuários da mesma congregação (CEP de trabalho de quem consulta) */
+/** Lista todos os usuários do sistema (admin vê todos, com ou sem congregação). */
 router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) => {
   try {
-    const user = (req as AuthedRequest).user;
-    const activeCep = formatCep(resolveWorkingCep(user));
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.role_id, u.active_cep, u.created_at,
+      `SELECT u.id, u.name, u.email, u.role_id, u.active_cep, u.blocked, u.created_at,
               r.slug AS role_slug, r.name AS role_name
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
-       WHERE u.active_cep = ?
        ORDER BY u.name ASC`,
-      [activeCep],
     );
     const names = await listCongregationNames();
     res.json(
@@ -104,6 +101,7 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
             : null,
           active_cep: cepKey,
           congregation_name: cepKey ? (names.get(cepKey) ?? null) : null,
+          blocked: Boolean(u.blocked),
           created_at: u.created_at,
         };
       }),
@@ -113,7 +111,7 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
     if (/active_cep|Unknown column/i.test(msg)) {
       // Banco ainda sem a migração active_cep: lista sem o vínculo de congregação.
       const [rows] = await pool.execute(
-        `SELECT u.id, u.name, u.email, u.role_id, u.created_at,
+        `SELECT u.id, u.name, u.email, u.role_id, u.blocked, u.created_at,
                 r.slug AS role_slug, r.name AS role_name
          FROM users u
          LEFT JOIN roles r ON r.id = u.role_id
@@ -130,6 +128,7 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
             : null,
           active_cep: null,
           congregation_name: null,
+          blocked: Boolean(u.blocked),
           created_at: u.created_at,
         })),
       );
@@ -305,6 +304,52 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
   } catch (error) {
     console.error('[users/update]', error);
     res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+  }
+});
+
+/** Bloqueia ou desbloqueia um usuário (bloqueado não consegue entrar). */
+router.put('/:id/block-status', requireAuth, requirePermission('user:manage'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'ID inválido.' });
+      return;
+    }
+    const authUser = (req as AuthedRequest).user;
+    const blocked = req.body?.blocked === true || req.body?.blocked === 'true';
+
+    if (authUser.id === id) {
+      res.status(400).json({ error: 'Você não pode bloquear a própria conta.' });
+      return;
+    }
+
+    const [rows] = await pool.execute('SELECT id FROM users WHERE id = ?', [id]);
+    if (!(rows as unknown[]).length) {
+      res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    try {
+      await pool.execute('UPDATE users SET blocked = ? WHERE id = ?', [blocked ? 1 : 0, id]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/blocked|Unknown column/i.test(msg)) throw err;
+      res.status(503).json({
+        error: 'Bloqueio de usuário ainda não migrado. Rode: npm run migrate:user-blocked',
+      });
+      return;
+    }
+
+    // Usuário bloqueado: remove a presença online/GPS na hora — sai do chat e do mapa já.
+    if (blocked) {
+      removeSessionPresence(id);
+      removeGpsPresence(id);
+    }
+
+    res.json({ message: blocked ? 'Usuário bloqueado.' : 'Usuário desbloqueado.', blocked });
+  } catch (error) {
+    console.error('[users/block-status]', error);
+    res.status(500).json({ error: 'Erro ao atualizar o bloqueio do usuário.' });
   }
 });
 

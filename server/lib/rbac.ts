@@ -68,6 +68,8 @@ export type RbacUser = {
   working_cep: string;
   /** Nome da congregação vinculado ao CEP de trabalho */
   congregation_name: string | null;
+  /** Usuário bloqueado (não pode entrar no sistema) */
+  blocked: boolean;
 };
 
 export function normalizeThemePreference(value: unknown): ThemePreference {

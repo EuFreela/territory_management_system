@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   IconHelp,
+  IconLock,
+  IconLockOpen,
   IconPencil,
   IconPlus,
   IconSave,
@@ -52,6 +54,7 @@ type ManagedUser = {
   role: { id: number; slug: string; name: string } | null;
   active_cep?: string | null;
   congregation_name?: string | null;
+  blocked?: boolean;
   created_at?: string;
 };
 
@@ -270,6 +273,30 @@ export default function UsersPage() {
     });
   }
 
+  function toggleBlock(u: ManagedUser) {
+    const willBlock = !u.blocked;
+    confirmToast({
+      title: willBlock ? 'Bloquear usuário?' : 'Desbloquear usuário?',
+      description: willBlock
+        ? `${u.name} não conseguirá mais entrar no sistema.`
+        : `${u.name} voltará a ter acesso ao sistema.`,
+      confirmLabel: willBlock ? 'Bloquear' : 'Desbloquear',
+      tone: willBlock ? 'danger' : 'default',
+      onConfirm: async () => {
+        try {
+          await api(`/api/users/${u.id}/block-status`, {
+            method: 'PUT',
+            body: JSON.stringify({ blocked: willBlock }),
+          });
+          await load();
+          toast.success(willBlock ? 'Usuário bloqueado.' : 'Usuário desbloqueado.');
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao atualizar o bloqueio.');
+        }
+      },
+    });
+  }
+
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="mb-8">
@@ -463,6 +490,27 @@ export default function UsersPage() {
                         <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                         {u.role?.name ?? 'sem papel'}
                       </span>
+                      {!u.congregation_name ? (
+                        <span
+                          className="inline-flex items-center rounded-full border border-red-600/30 bg-red-600/10 px-2.5 py-0.5 text-xs font-semibold text-red-600 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-400"
+                          data-tooltip="Sem congregação"
+                          aria-label="Sem congregação"
+                        >
+                          SC
+                        </span>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        data-tooltip={u.blocked ? 'Desbloquear' : 'Bloquear'}
+                        aria-label={u.blocked ? 'Desbloquear' : 'Bloquear'}
+                        disabled={me?.id === u.id}
+                        onClick={() => toggleBlock(u)}
+                        className={u.blocked ? 'text-destructive hover:text-destructive' : ''}
+                      >
+                        {u.blocked ? <IconLockOpen /> : <IconLock />}
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"

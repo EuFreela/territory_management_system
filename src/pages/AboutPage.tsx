@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Bloqueio e lista completa de usuários (v0.0.30)',
+    items: [
+      'Na página Usuários, o administrador vê todos os usuários do sistema, com ou sem congregação',
+      'Usuário sem congregação ganha a marca vermelha "SC" (sem congregação)',
+      'Novo botão por linha para bloquear/desbloquear: usuário bloqueado não consegue entrar no sistema',
+      'Ao bloquear, o usuário é desconectado automaticamente: sai do online/do mapa na hora e, na próxima atividade, é redirecionado para o login',
+    ],
+  },
+  {
     title: 'Pagina de congregações e região na Configuração (v0.0.29)',
     items: [
       'Nova página Congregações (somente admin): cadastre a congregação por CEP, nome e endereço — um CEP pode ter mais de uma congregação',

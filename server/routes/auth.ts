@@ -68,6 +68,11 @@ router.post('/login', loginLimiter, async (req, res) => {
       return;
     }
 
+    if ((user as { blocked?: boolean }).blocked) {
+      res.status(403).json({ error: 'Sua conta está bloqueada pelo administrador.' });
+      return;
+    }
+
     const token = await signToken({ id: user.id, email: user.email, name: user.name });
     res.cookie('auth_token', token, cookieOptions);
 
@@ -83,6 +88,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       active_cep: null,
       working_cep: '',
       congregation_name: null,
+      blocked: false,
     };
 
     res.json({
