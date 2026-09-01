@@ -22,6 +22,7 @@
     "migrate:cep-congregation": "node scripts/migrate-cep-congregation.js",
     "migrate:congregations": "node scripts/migrate-congregations.js",
     "migrate:user-blocked": "node scripts/migrate-user-blocked.js",
+    "migrate:user-permissions": "node scripts/migrate-user-permissions.js",
     "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {

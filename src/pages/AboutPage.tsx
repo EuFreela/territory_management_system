@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Permissões exclusivas por usuário (v0.0.35)',
+    items: [
+      'Na página Usuários, um novo ícone de chave abre as permissões exclusivas de cada usuário, somadas às do papel',
+      'Essas permissões adicionais são aditivas: o usuário ganha os escopos marcados sem perder os do seu papel (que não podem ser removidos ali)',
+      'Com isso, um Visualizador (só leitura) pode receber, por exemplo, a permissão de editar ou criar territórios de forma individual, sem mudar de papel',
+      'O acesso é aplicado no servidor a cada requisição — ao recarregar a página, os botões e menus refletem as novas permissões',
+    ],
+  },
+  {
     title: 'Login com Google com menor privilégio (v0.0.34)',
     items: [
       'Nova conta criada ao entrar com Google passa a receber o papel de menor privilégio: Visualizador (somente leitura de territórios)',

@@ -5,7 +5,7 @@ import pool from '../lib/db.js';
 import { formatCep, onlyDigits } from '../lib/cep.js';
 import { listCongregationNames } from '../lib/cep-region.js';
 import { resolveWorkingCep } from '../lib/map-config.js';
-import { ROLE_ADMIN, SCOPES } from '../lib/rbac.js';
+import { ROLE_ADMIN, SCOPES, isScope, type Scope } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
 import { removeGpsPresence, removeSessionPresence } from '../lib/presence.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -467,6 +467,121 @@ router.put('/:id/block-status', requireAuth, requirePermission('user:manage'), a
   } catch (error) {
     console.error('[users/block-status]', error);
     res.status(500).json({ error: 'Erro ao atualizar o bloqueio do usuário.' });
+  }
+});
+
+/** Lista as permissões exclusivas (além do papel) de um usuário. */
+router.get('/permissions/:id', requireAuth, requirePermission('user:manage'), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'ID inválido.' });
+    return;
+  }
+  try {
+    const [users] = await pool.execute(
+      'SELECT u.id, u.role_id FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = ?',
+      [id],
+    );
+    const target = (users as Array<{ id: number; role_id: number | null }>)[0];
+    if (!target) {
+      res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    let rolePermissions: string[] = [];
+    if (target.role_id != null) {
+      try {
+        const [permRows] = await pool.execute(
+          'SELECT permission FROM role_permissions WHERE role_id = ?',
+          [target.role_id],
+        );
+        rolePermissions = (permRows as Array<{ permission: string }>)
+          .map((p) => p.permission)
+          .filter(isScope);
+      } catch {
+        rolePermissions = [];
+      }
+    }
+
+    let extraPermissions: string[] = [];
+    try {
+      const [extraRows] = await pool.execute(
+        'SELECT permission FROM user_permissions WHERE user_id = ? ORDER BY permission',
+        [id],
+      );
+      extraPermissions = (extraRows as Array<{ permission: string }>)
+        .map((p) => p.permission)
+        .filter(isScope);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const code = (err as { code?: string })?.code;
+      if (/user_permissions|Unknown table|doesn't exist|não existe/i.test(msg) || code === 'ER_NO_SUCH_TABLE') {
+        res.status(503).json({
+          error:
+            'Permissões exclusivas por usuário ainda não migradas. Rode: npm run migrate:user-permissions',
+        });
+        return;
+      }
+      console.error('[users/permissions] get', err);
+      throw err;
+    }
+
+    res.json({ scopes: [...SCOPES], role_permissions: rolePermissions, extra_permissions: extraPermissions });
+  } catch (error) {
+    console.error('[users/permissions] get', error);
+    res.status(500).json({ error: 'Erro ao carregar permissões do usuário.' });
+  }
+});
+
+/** Define as permissões exclusivas (além do papel) de um usuário.
+ *  Body: { permissions: string[] } — substitui o conjunto extra atual. */
+router.put('/permissions/:id', requireAuth, requirePermission('user:manage'), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'ID inválido.' });
+    return;
+  }
+  try {
+    const [users] = await pool.execute('SELECT id FROM users WHERE id = ?', [id]);
+    if (!(users as unknown[]).length) {
+      res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    const raw = (req.body as { permissions?: unknown })?.permissions;
+    if (!Array.isArray(raw)) {
+      res.status(400).json({ error: 'Informe a lista de permissões.' });
+      return;
+    }
+    const permissions = raw.filter((p): p is Scope => typeof p === 'string' && isScope(p));
+    const unique = [...new Set(permissions)];
+
+    try {
+      await pool.execute('DELETE FROM user_permissions WHERE user_id = ?', [id]);
+      for (const permission of unique) {
+        await pool.execute(
+          'INSERT INTO user_permissions (user_id, permission) VALUES (?, ?)',
+          [id, permission],
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const code = (err as { code?: string })?.code;
+      if (/user_permissions|Unknown table|doesn't exist|não existe/i.test(msg) || code === 'ER_NO_SUCH_TABLE') {
+        res.status(503).json({
+          error:
+            'Permissões exclusivas por usuário ainda não migradas. Rode: npm run migrate:user-permissions',
+        });
+        return;
+      }
+      console.error('[users/permissions] put', err);
+      throw err;
+    }
+
+    res.json({ extra_permissions: unique });
+  } catch (error) {
+    console.error('[users/permissions] put', error);
+    res.status(500).json({ error: 'Erro ao salvar permissões do usuário.' });
   }
 });
 

@@ -5,6 +5,7 @@ import {
   IconCheck,
   IconChevronDown,
   IconHelp,
+  IconKey,
   IconLock,
   IconLockOpen,
   IconPencil,
@@ -30,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PasswordField from '@/components/ui/PasswordField';
 import RolesModal from '@/components/ui/RolesModal';
+import UserPermissionsModal from '@/components/ui/UserPermissionsModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -372,6 +374,7 @@ export default function UsersPage() {
   const [editErrors, setEditErrors] = useState<EditErrors>({});
 
   const [showRoles, setShowRoles] = useState(false);
+  const [permissionsUser, setPermissionsUser] = useState<ManagedUser | null>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -790,6 +793,16 @@ export default function UsersPage() {
                         type="button"
                         variant="outline"
                         size="icon"
+                        data-tooltip="Permissões exclusivas"
+                        aria-label="Permissões exclusivas"
+                        onClick={() => setPermissionsUser(u)}
+                      >
+                        <IconKey />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
                         data-tooltip="Editar"
                         aria-label="Editar"
                         onClick={() => openEdit(u)}
@@ -956,6 +969,13 @@ export default function UsersPage() {
       </Dialog>
 
       {showRoles ? <RolesModal roles={roles} onClose={() => setShowRoles(false)} /> : null}
+      {permissionsUser ? (
+        <UserPermissionsModal
+          userId={permissionsUser.id}
+          userName={permissionsUser.name}
+          onClose={() => setPermissionsUser(null)}
+        />
+      ) : null}
     </main>
   );
 }
