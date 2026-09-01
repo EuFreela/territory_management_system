@@ -139,6 +139,26 @@ async function buildRbacUser(row: UserRow): Promise<RbacUser> {
     }
   }
 
+  // Permissões exclusivas por usuário (além do papel): aditivas.
+  try {
+    const [extraRows] = await pool.execute(
+      'SELECT permission FROM user_permissions WHERE user_id = ?',
+      [row.id],
+    );
+    const extras = (extraRows as Array<{ permission: string }>)
+      .map((p) => p.permission)
+      .filter(isScope);
+    if (extras.length) {
+      permissions = [...new Set([...permissions, ...extras])];
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const code = (err as { code?: string })?.code;
+    if (!/user_permissions|Unknown table|doesn't exist|não existe/i.test(msg) && code !== 'ER_NO_SUCH_TABLE') {
+      throw err;
+    }
+  }
+
   const active_cep = normalizeStoredCep(row.active_cep);
   const working_cep = workingCepFor(active_cep);
   let congregation_name: string | null = null;
