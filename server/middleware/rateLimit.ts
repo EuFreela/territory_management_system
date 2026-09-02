@@ -15,11 +15,21 @@ function gc(now: number) {
   }
 }
 
+/**
+ * IP real do cliente.
+ * Só confia em cabeçalhos de proxy (cf-connecting-ip / x-forwarded-for) quando
+ * express está atrás de um proxy de confiança (app.set('trust proxy', ...)).
+ * Caso contrário (acesso direto), esses cabeçalhos são spoofáveis e podem
+ * zerar/espalhar o bucket de rate limit — por isso usa-se o socket como base.
+ */
 function clientIp(req: Request) {
-  const cf = req.headers['cf-connecting-ip'];
-  if (typeof cf === 'string' && cf.trim()) return cf.trim();
-  const xff = req.headers['x-forwarded-for'];
-  if (typeof xff === 'string' && xff.length > 0) return xff.split(',')[0]!.trim();
+  const trustProxy = (req.app.get('trust proxy') as unknown) ?? false;
+  if (trustProxy) {
+    const cf = req.headers['cf-connecting-ip'];
+    if (typeof cf === 'string' && cf.trim()) return cf.trim();
+    const xff = req.headers['x-forwarded-for'];
+    if (typeof xff === 'string' && xff.length > 0) return xff.split(',')[0]!.trim();
+  }
   return req.socket.remoteAddress || 'unknown';
 }
 

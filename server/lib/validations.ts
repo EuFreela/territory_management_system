@@ -62,8 +62,9 @@ export const blockSchema = z.object({
     }),
   house_numbers: z
     .array(z.union([z.string(), z.number()]))
-    .min(1, 'Informe ao menos um número de casa (não em casa)'),
-  sort_order: z.number().int().optional(),
+    .min(1, 'Informe ao menos um número de casa (não em casa)')
+    .max(500, 'Limite de 500 números de casa por registro'),
+  sort_order: z.number().int().min(0).max(1_000_000).optional(),
 });
 
 // Marcar / desmarcar casa já visitada (checklist)
