@@ -362,10 +362,16 @@ export default function TerritoriesPage() {
                       <Button
                         asChild
                         size="icon"
-                        data-tooltip="Editar área"
-                        aria-label="Editar área"
+                        data-tooltip={can('territory:update') ? 'Editar área' : 'Gerenciar não em casa'}
+                        aria-label={can('territory:update') ? 'Editar área' : 'Gerenciar não em casa'}
                       >
-                        <Link to={`/territories/${territory.id}/edit`}>
+                        <Link
+                          to={
+                            can('territory:update')
+                              ? `/territories/${territory.id}/edit`
+                              : `/territories/${territory.id}/edit#nao-em-casa`
+                          }
+                        >
                           <IconPencil />
                         </Link>
                       </Button>

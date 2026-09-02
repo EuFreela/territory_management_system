@@ -56,7 +56,7 @@ export default function App() {
           <Route
             path="/territories/finalizados"
             element={
-              <RequirePermission scope="territory:read">
+              <RequirePermission scope="territory:update">
                 <FinishedTerritoriesPage />
               </RequirePermission>
             }
@@ -64,7 +64,7 @@ export default function App() {
           <Route
             path="/territories/template"
             element={
-              <RequirePermission scope="territory:read">
+              <RequirePermission scope="territory:update">
                 <TemplateCardPage />
               </RequirePermission>
             }

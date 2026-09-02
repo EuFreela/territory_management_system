@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Não em casa na hora, voltar no fim e acesso por perfil (v0.0.38)',
+    items: [
+      'Editar o mapa e gerenciar o não em casa agora são coisas separadas: quem gerencia não em casa não altera as áreas do mapa (que ficam visíveis, só de leitura)',
+      'Quadras e ruas do não em casa são gravadas na hora pelo próprio botão do formulário, com o aviso "Não em casa salvo." no topo',
+      'Botão "Voltar" no fim da página de edição, abaixo do não em casa, para quem não é editor voltar ao território; para o editor, o retorno continua no card "Salvar alterações"',
+      'Os itens "Finalizados" e "Template" do menu Territórios passam a ser exibidos — e acessíveis — apenas para quem tem permissão de editar território',
+    ],
+  },
+  {
     title: 'Papéis e permissões administráveis (v0.0.37)',
     items: [
       'Nova página Permissões no submenu Usuários — visível somente para administradores',

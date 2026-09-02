@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import ImageUrlField from '@/components/territory/ImageUrlField';
+import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
 import { sanitizeImageUrl } from '@/lib/image-url';
 import { hasTerritoryCardImage } from '@/lib/territory-map-image';
@@ -46,6 +47,9 @@ const STREET_HINT_CLASS = 'mt-1.5 text-xs text-muted-foreground';
 export default function EditTerritoryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canEditMap = can('territory:update');
+  const canManageBlocks = can('block:manage');
   const [localidade, setLocalidade] = useState('');
   const [number, setNumber] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -70,6 +74,7 @@ export default function EditTerritoryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingBlock, setAddingBlock] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
   /** Destaque mapa ↔ card de não em casa */
   const [mapSelectedKey, setMapSelectedKey] = useState<string | null>(null);
   const [mapFocusToken, setMapFocusToken] = useState(0);
@@ -79,7 +84,6 @@ export default function EditTerritoryPage() {
   const [splitResizeToken, setSplitResizeToken] = useState(0);
   /** IDs selecionados para exclusão em massa */
   const [bulkSelectedIds, setBulkSelectedIds] = useState<number[]>([]);
-  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -90,7 +94,8 @@ export default function EditTerritoryPage() {
         setNumber(territory.number ?? '');
         setImageUrl(territory.image_url ?? '');
         setGeojson(territory.geojson ?? null);
-        setBlocks(territory.blocks ?? []);
+        const initial = territory.blocks ?? [];
+        setBlocks(initial);
         setMapConfig(config);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar.'))
@@ -150,6 +155,23 @@ export default function EditTerritoryPage() {
     }
     return [...map.entries()];
   }, [blocks]);
+
+  /** Nomes de quadras com todas as ruas finalizadas (cor/balão no mapa) */
+  const completedQuadraKeys = useMemo(
+    () =>
+      blocksByQuadra
+        .filter(([, streetBlocks]) =>
+          streetBlocks.every((b) => {
+            const total = b.house_numbers.length;
+            const done = (b.completed_houses ?? []).filter((h) =>
+              b.house_numbers.includes(h),
+            ).length;
+            return total > 0 && done >= total;
+          }),
+        )
+        .map(([quadraName]) => quadraName),
+    [blocksByQuadra],
+  );
 
   async function saveTerritory(event: FormEvent) {
     event.preventDefault();
@@ -305,10 +327,10 @@ export default function EditTerritoryPage() {
     setAddingBlock(true);
     setBlockError('');
 
-    try {
-      if (editingBlockId != null) {
-        // edição de uma rua existente
-        const row = rowsParsed[0];
+    if (editingBlockId != null) {
+      // edição de uma rua existente
+      const row = rowsParsed[0];
+      try {
         await api(`/api/territories/${id}/blocks/${editingBlockId}`, {
           method: 'PUT',
           body: JSON.stringify({
@@ -318,8 +340,18 @@ export default function EditTerritoryPage() {
             description: row.description,
           }),
         });
-      } else {
-        // várias ruas na mesma quadra = vários registros com o mesmo name
+        const refreshed = await api<Territory>(`/api/territories/${id}`);
+        setBlocks(refreshed.blocks ?? []);
+        clearBlockForm();
+        toast.success('Não em casa salvo.');
+      } catch (err) {
+        setBlockError(err instanceof Error ? err.message : 'Erro ao atualizar não em casa.');
+      } finally {
+        setAddingBlock(false);
+      }
+    } else {
+      // várias ruas na mesma quadra = vários registros com o mesmo name
+      try {
         for (const row of rowsParsed) {
           await api(`/api/territories/${id}/blocks`, {
             method: 'POST',
@@ -331,20 +363,15 @@ export default function EditTerritoryPage() {
             }),
           });
         }
+        const refreshed = await api<Territory>(`/api/territories/${id}`);
+        setBlocks(refreshed.blocks ?? []);
+        clearBlockForm();
+        toast.success('Não em casa salvo.');
+      } catch (err) {
+        setBlockError(err instanceof Error ? err.message : 'Erro ao adicionar não em casa.');
+      } finally {
+        setAddingBlock(false);
       }
-      const refreshed = await api<Territory>(`/api/territories/${id}`);
-      setBlocks(refreshed.blocks ?? []);
-      clearBlockForm();
-    } catch (err) {
-      setBlockError(
-        err instanceof Error
-          ? err.message
-          : editingBlockId != null
-            ? 'Erro ao atualizar não em casa.'
-            : 'Erro ao adicionar não em casa.',
-      );
-    } finally {
-      setAddingBlock(false);
     }
   }
 
@@ -467,29 +494,27 @@ export default function EditTerritoryPage() {
     <>
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <div className="space-y-6">
-        {/* 1. Localidade + mapa */}
-        <Card>
-          <CardContent className="pt-6">
-            <Button
-              asChild
-              variant="outline"
-              size="icon"
-              data-tooltip="Voltar"
-              aria-label="Voltar"
-            >
-              <Link to={`/territories/${id}`}>
-                <IconArrowLeft />
-              </Link>
-            </Button>
-            <h1 className="mt-4 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
-              Editar território
+        {/* Cabeçalho */}
+        <div className="flex items-start gap-3">
+          <div>
+            <h1 className="mt-0.5 text-[1.75rem] font-semibold tracking-tight sm:text-[2rem]">
+              {canEditMap ? 'Editar território' : 'Gerenciar não em casa'}
             </h1>
-            <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-              Ajuste localidade e áreas no mapa. Em seguida gerencie o{' '}
-              <strong className="font-semibold text-foreground">não em casa</strong>.
+            <p className="mt-0.5 text-[15px] leading-relaxed text-muted-foreground">
+              {canEditMap && canManageBlocks
+                ? 'Ajuste localidade e áreas no mapa. Em seguida gerencie o não em casa.'
+                : canEditMap
+                  ? 'Ajuste localidade e áreas no mapa.'
+                  : 'Edite as quadras, ruas e casas do checklist. As áreas do mapa são editadas por quem tem a permissão de editar território.'}
             </p>
+          </div>
+        </div>
 
-            <form id="territory-form" onSubmit={saveTerritory} noValidate className="mt-6 space-y-5">
+        {/* 1. Localidade + mapa (somente com permissão de editar território) */}
+        {canEditMap ? (
+          <Card>
+            <CardContent className="pt-6">
+            <form id="territory-form" onSubmit={saveTerritory} noValidate className="mt-2 space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-1.5">
                   <Label htmlFor="localidade-input">Localidade</Label>
@@ -594,27 +619,19 @@ export default function EditTerritoryPage() {
                       setMapSelectedKey(null);
                       setMapFocusToken(0);
                     }}
-                    finishedKeys={blocksByQuadra
-                      .filter(([, streetBlocks]) =>
-                        streetBlocks.every((b) => {
-                          const total = b.house_numbers.length;
-                          const done = (b.completed_houses ?? []).filter((h) =>
-                            b.house_numbers.includes(h),
-                          ).length;
-                          return total > 0 && done >= total;
-                        }),
-                      )
-                      .map(([quadraName]) => quadraName)}
+                    finishedKeys={completedQuadraKeys}
                   />
                 </div>
               </div>
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : null}
 
-        {/* 2. Não em casa */}
+        {/* 2. Não em casa (somente com permissão de gerir não em casa) */}
+        {canManageBlocks ? (
         <section id="nao-em-casa" className="scroll-mt-6">
           <Card>
             <CardContent className="pt-6">
@@ -626,10 +643,50 @@ export default function EditTerritoryPage() {
                 </p>
               </div>
 
+              {!canEditMap ? (
+                <div className="mb-6">
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-muted-foreground">Área no mapa</p>
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+                      As quadras ficam ligadas às áreas do mapa · toque na área para escolher a
+                      quadra · somente leitura
+                    </p>
+                  </div>
+                  {mapConfig ? (
+                    <div className="mb-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300">
+                      <span className="font-medium">CEP base:</span> {mapConfig.cep} —{' '}
+                      {mapConfig.label}
+                    </div>
+                  ) : null}
+                  {geojson && hasValidMapArea(geojson) ? (
+                    <TerritoryMap
+                      value={geojson}
+                      centerLat={mapConfig?.lat ?? null}
+                      centerLng={mapConfig?.lng ?? null}
+                      cepLabel={mapConfig ? `${mapConfig.cep} — ${mapConfig.label}` : null}
+                      editable={false}
+                      selectedKey={mapSelectedKey}
+                      focusToken={mapFocusToken}
+                      onAreaSelect={onMapAreaSelect}
+                      onClearSelection={() => {
+                        setMapSelectedKey(null);
+                        setMapFocusToken(0);
+                      }}
+                      finishedKeys={completedQuadraKeys}
+                    />
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-border bg-muted px-4 py-6 text-center text-[13px] text-muted-foreground">
+                      Ainda não há área desenhada no mapa deste território.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
               {mapQuadraOptions.length === 0 ? (
                 <div className="mb-5 rounded-xl border border-dashed border-border bg-muted px-4 py-3 text-[13px] text-muted-foreground">
-                  Nenhuma área no mapa ainda. Desenhe as quadras acima, salve, e depois cadastre
-                  aqui.
+                  {canEditMap
+                    ? 'Nenhuma área no mapa ainda. Desenhe as quadras acima, salve, e depois cadastre aqui.'
+                    : 'Nenhuma área desenhada no mapa deste território ainda. Peça a quem edita o território para desenhá-la.'}
                 </div>
               ) : null}
 
@@ -1059,16 +1116,33 @@ export default function EditTerritoryPage() {
             </CardContent>
           </Card>
         </section>
+        ) : null}
 
-        {/* 3. Salvar por último (localidade + áreas do mapa) */}
+        {!canEditMap ? (
+          <div className="flex justify-end">
+            <Button
+              asChild
+              variant="outline"
+              data-tooltip="Voltar para o território"
+            >
+              <Link to={`/territories/${id}`}>
+                <IconArrowLeft />
+                Voltar
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+
+        {/* 3. Salvar por último — só com permissão de editar território */}
+        {canEditMap ? (
         <Card>
           <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold">Salvar alterações</p>
               <p className="mt-0.5 text-xs text-muted-foreground sm:max-w-md">
-                Grava localidade, Terr. N.º e áreas do mapa. Os registros de não em casa já são
-                salvos ao adicionar/editar cada quadra.
-              </p>
+                  Grava localidade, Terr. N.º e áreas do mapa. Os registros de não em casa já são
+                  salvos ao adicionar/editar cada quadra.
+                </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
               <Button
@@ -1094,11 +1168,12 @@ export default function EditTerritoryPage() {
             </div>
           </CardContent>
         </Card>
+        ) : null}
       </div>
     </main>
 
     {/* Modal de comparação Mapa & Imagem — tela cheia, dois quadros em paralelo */}
-    {splitOpen ? (
+    {canEditMap && splitOpen ? (
       <div
         role="dialog"
         aria-modal="true"

@@ -262,6 +262,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <IconMap className="h-4 w-4 shrink-0 text-apple-tertiary" />
                       Lista de territórios
                     </button>
+                    {can('territory:update') ? (
                     <button
                       type="button"
                       role="menuitem"
@@ -271,6 +272,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <IconCheckCircle className="h-4 w-4 shrink-0 text-apple-green" />
                       Finalizados
                     </button>
+                    ) : null}
+                    {can('territory:update') ? (
                     <button
                       type="button"
                       role="menuitem"
@@ -280,6 +283,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <IconImage className="h-4 w-4 shrink-0 text-apple-tertiary" />
                       Template
                     </button>
+                    ) : null}
                   </HeaderDropdown>
                 </>
               ) : null}
@@ -502,6 +506,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <IconMap className="h-4 w-4 opacity-70" />
                     Lista de territórios
                   </button>
+                  {can('territory:update') ? (
                   <button
                     type="button"
                     onClick={() => go('/territories/finalizados')}
@@ -510,6 +515,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <IconCheckCircle className="h-4 w-4 text-apple-green" />
                     Finalizados
                   </button>
+                  ) : null}
+                  {can('territory:update') ? (
                   <button
                     type="button"
                     onClick={() => go('/territories/template')}
@@ -518,6 +525,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <IconImage className="h-4 w-4 opacity-70" />
                     Template
                   </button>
+                  ) : null}
                 </div>
               ) : null}
 
