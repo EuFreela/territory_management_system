@@ -453,7 +453,7 @@ export default function TerritoryDetailPage() {
                       <IconUnlink />
                     </Button>
                   ) : null}
-                  {can('territory:update') || can('block:manage') ? (
+                  {can('territory:update') ? (
                     <Button asChild data-tooltip="Editar área" aria-label="Editar área">
                       <Link to={`/territories/${id}/edit`}>
                         <IconPencil />
@@ -603,7 +603,7 @@ export default function TerritoryDetailPage() {
                       void downloadMapCard(viewport);
                     }}
                   />
-                  {!hasArea ? (
+                  {!hasArea && can('territory:update') ? (
                     <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
                       Ainda não há polígono salvo.{' '}
                       <Link to={`/territories/${id}/edit`} className={LINK_CLASS}>
