@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Reforço de segurança no servidor (v0.0.39)',
+    items: [
+      'Dependências atualizadas: auditoria do npm sem vulnerabilidades conhecidas',
+      'Limite de tentativas (rate limit) passa a considerar o IP real conforme a confiança em proxy reverso, evitando que cabeçalhos falsos contornem o bloqueio',
+      'Rotas que alteram dados (criar/editar/apagar) passam a validar a origem da requisição, reforçando a proteção contra ataques entre sites (CSRF)',
+      'Validações mais rígidas: até 500 números de casa por registro e faixa segura para a ordem de exibição',
+    ],
+  },
+  {
     title: 'Não em casa na hora, voltar no fim e acesso por perfil (v0.0.38)',
     items: [
       'Editar o mapa e gerenciar o não em casa agora são coisas separadas: quem gerencia não em casa não altera as áreas do mapa (que ficam visíveis, só de leitura)',
