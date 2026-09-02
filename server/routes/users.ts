@@ -9,7 +9,7 @@ import { ROLE_ADMIN, SCOPES, isScope, type Scope } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
 import { removeGpsPresence, removeSessionPresence } from '../lib/presence.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import { requireAdmin, requirePermission } from '../middleware/requirePermission.js';
 
 const router = Router();
 const BCRYPT_ROUNDS = 12;
@@ -112,6 +112,36 @@ async function roleSlugById(roleId: number): Promise<string | null> {
   }
 }
 
+/** Slug para papel: minúsculo, sem acentos, hífens (ex.: "Editor de mapa" → editor-de-mapa). */
+function slugifyRoleName(name: string): string {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug;
+}
+
+const upsertRoleSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Nome do papel deve ter pelo menos 2 caracteres')
+    .max(100)
+    .transform((v) => v.trim())
+    .refine((v) => v.length >= 2, 'Nome do papel deve ter pelo menos 2 caracteres'),
+  description: z
+    .string()
+    .max(255, 'Descrição deve ter no máximo 255 caracteres')
+    .optional()
+    .nullable()
+    .transform((v) => (v == null ? null : v.trim() || null)),
+  permissions: z
+    .array(z.string())
+    .min(1, 'Selecione ao menos uma permissão para o papel')
+    .refine((arr) => arr.every(isScope), 'Permissão inválida.'),
+});
+
 const createUserSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(150),
   email: z.string().email('Email inválido'),
@@ -142,7 +172,7 @@ const updateUserSchema = z.object({
 router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req, res) => {
   try {
     const [rows] = await pool.execute(
-      `SELECT r.id, r.slug, r.name, r.description,
+      `SELECT r.id, r.slug, r.name, r.description, r.is_system,
               (SELECT COUNT(*) FROM role_permissions rp WHERE rp.role_id = r.id) AS permission_count
        FROM roles r
        ORDER BY r.id ASC`,
@@ -152,6 +182,7 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
       slug: string;
       name: string;
       description: string | null;
+      is_system: number;
       permission_count: number;
     }>;
 
@@ -163,6 +194,7 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
       );
       withPerms.push({
         ...role,
+        is_system: Boolean(role.is_system),
         permissions: (perms as Array<{ permission: string }>).map((p) => p.permission),
       });
     }
@@ -171,6 +203,152 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
   } catch (error) {
     console.error('[users/roles]', error);
     res.status(500).json({ error: 'Erro ao listar papéis. Rode a migração RBAC.' });
+  }
+});
+
+/** Cria papel customizado (slugs únicos; somente admin). */
+router.post('/roles', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const parsed = upsertRoleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
+
+    const { name, description, permissions } = parsed.data;
+    const slug = slugifyRoleName(name);
+    if (!slug) {
+      res.status(400).json({ error: 'O nome informado gera um identificador inválido.' });
+      return;
+    }
+
+    const [dup] = await pool.execute('SELECT id FROM roles WHERE slug = ?', [slug]);
+    if ((dup as unknown[]).length) {
+      res.status(409).json({ error: 'Já existe um papel com esse nome.' });
+      return;
+    }
+
+    const [ins] = await pool.execute(
+      'INSERT INTO roles (slug, name, description, is_system) VALUES (?, ?, ?, 0)',
+      [slug, name, description],
+    );
+    const roleId = (ins as { insertId: number }).insertId;
+    const unique = [...new Set(permissions)];
+    for (const permission of unique) {
+      await pool.execute(
+        'INSERT INTO role_permissions (role_id, permission) VALUES (?, ?)',
+        [roleId, permission],
+      );
+    }
+
+    res.status(201).json({
+      role: { id: roleId, slug, name, description, is_system: false, permissions: unique },
+    });
+  } catch (error) {
+    console.error('[users/roles] create', error);
+    res.status(500).json({ error: 'Erro ao criar papel.' });
+  }
+});
+
+/** Edita nome, descrição e permissões de um papel (o papel admin é protegido). */
+router.put('/roles/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'ID inválido.' });
+      return;
+    }
+
+    const [rows] = await pool.execute('SELECT id, slug, name, description, is_system FROM roles WHERE id = ?', [id]);
+    const role = (rows as Array<{ id: number; slug: string; name: string; description: string | null; is_system: number }>)[0];
+    if (!role) {
+      res.status(404).json({ error: 'Papel não encontrado.' });
+      return;
+    }
+    if (role.slug === ROLE_ADMIN) {
+      res.status(400).json({ error: 'O papel administrador não pode ser alterado.' });
+      return;
+    }
+
+    const parsed = upsertRoleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
+      return;
+    }
+
+    const { name, description, permissions } = parsed.data;
+    const slug = slugifyRoleName(name);
+    if (slug && slug !== role.slug) {
+      const [dup] = await pool.execute('SELECT id FROM roles WHERE slug = ? AND id <> ?', [slug, id]);
+      if ((dup as unknown[]).length) {
+        res.status(409).json({ error: 'Já existe um papel com esse nome.' });
+        return;
+      }
+    }
+
+    await pool.execute('UPDATE roles SET name = ?, description = ?, slug = ? WHERE id = ?', [
+      name,
+      description,
+      slug || role.slug,
+      id,
+    ]);
+
+    const unique = [...new Set(permissions)];
+    await pool.execute('DELETE FROM role_permissions WHERE role_id = ?', [id]);
+    for (const permission of unique) {
+      await pool.execute(
+        'INSERT INTO role_permissions (role_id, permission) VALUES (?, ?)',
+        [id, permission],
+      );
+    }
+
+    res.json({
+      role: { id, slug: slug || role.slug, name, description, is_system: Boolean(role.is_system), permissions: unique },
+    });
+  } catch (error) {
+    console.error('[users/roles] update', error);
+    res.status(500).json({ error: 'Erro ao atualizar papel.' });
+  }
+});
+
+/** Exclui papel customizado (somente admin; papel de sistema e admin são protegidos). */
+router.delete('/roles/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'ID inválido.' });
+      return;
+    }
+
+    const [rows] = await pool.execute('SELECT id, slug, is_system FROM roles WHERE id = ?', [id]);
+    const role = (rows as Array<{ id: number; slug: string; is_system: number }>)[0];
+    if (!role) {
+      res.status(404).json({ error: 'Papel não encontrado.' });
+      return;
+    }
+    if (role.slug === ROLE_ADMIN) {
+      res.status(400).json({ error: 'O papel administrador não pode ser excluído.' });
+      return;
+    }
+    if (role.is_system) {
+      res.status(403).json({ error: 'Papéis de sistema não podem ser excluídos.' });
+      return;
+    }
+
+    const [inUse] = await pool.execute(
+      'SELECT COUNT(*) AS c FROM users WHERE role_id = ?',
+      [id],
+    );
+    if (Number((inUse as Array<{ c: number }>)[0]?.c ?? 0) > 0) {
+      res.status(400).json({ error: 'Este papel está em uso por usuário(s). Reatribua-os antes de excluir.' });
+      return;
+    }
+
+    await pool.execute('DELETE FROM roles WHERE id = ?', [id]);
+    res.json({ message: 'Papel excluído com sucesso.' });
+  } catch (error) {
+    console.error('[users/roles] delete', error);
+    res.status(500).json({ error: 'Erro ao excluir papel.' });
   }
 });
 

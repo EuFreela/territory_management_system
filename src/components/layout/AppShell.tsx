@@ -17,6 +17,7 @@ import {
   IconUser,
   IconUsers,
   IconX,
+  IconKey,
 } from '@/components/Map/mapIcons';
 import FloatingChat from '@/components/chat/FloatingChat';
 import { useAuth } from '@/lib/auth-context';
@@ -111,7 +112,7 @@ function menuItemClass(active: boolean) {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, logout, can } = useAuth();
+  const { user, logout, can, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -131,7 +132,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const territoriesMenuActive = territoriesActive || finishedActive || templateCardActive;
   const profileActive = location.pathname === '/perfil';
   const usersActive = location.pathname === '/usuarios';
-  const usersMenuActive = profileActive || usersActive;
+  const permissionsActive = location.pathname === '/permissoes';
+  const usersMenuActive = profileActive || usersActive || permissionsActive;
   const congregationsActive = location.pathname === '/congregacoes';
 
   useEffect(() => {
@@ -344,6 +346,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     Criar usuários
                   </button>
                 ) : null}
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => go('/permissoes')}
+                    className={menuItemClass(permissionsActive)}
+                  >
+                    <IconKey className="h-4 w-4 shrink-0 text-apple-tertiary" />
+                    Permissões
+                  </button>
+                ) : null}
               </HeaderDropdown>
 
               <a href="/docs/tutorial.html" target="_blank" rel="noopener noreferrer" className={navClass({ isActive: false })}>
@@ -541,6 +554,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   >
                     <IconUsers className="h-4 w-4 opacity-70" />
                     Criar usuários
+                  </button>
+                ) : null}
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => go('/permissoes')}
+                    className={mobileNavClass({ isActive: permissionsActive })}
+                  >
+                    <IconKey className="h-4 w-4 opacity-70" />
+                    Permissões
                   </button>
                 ) : null}
               </div>

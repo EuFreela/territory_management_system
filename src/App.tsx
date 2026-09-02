@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import RequireAdmin from './components/RequireAdmin';
 import RequirePermission from './components/RequirePermission';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { LoadingScreen } from './components/ui/Spinner';
@@ -17,6 +18,7 @@ const EditTerritoryPage = lazy(() => import('./pages/EditTerritoryPage'));
 const FieldLeadersPage = lazy(() => import('./pages/FieldLeadersPage'));
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
+const PermissionsPage = lazy(() => import('./pages/PermissionsPage'));
 const CongregationsPage = lazy(() => import('./pages/CongregationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
@@ -88,6 +90,14 @@ export default function App() {
               <RequirePermission scope="user:manage">
                 <UsersPage />
               </RequirePermission>
+            }
+          />
+          <Route
+            path="/permissoes"
+            element={
+              <RequireAdmin>
+                <PermissionsPage />
+              </RequireAdmin>
             }
           />
           <Route

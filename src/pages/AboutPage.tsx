@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Papéis e permissões administráveis (v0.0.37)',
+    items: [
+      'Nova página Permissões no submenu Usuários — visível somente para administradores',
+      'Crie papéis personalizados dando um nome ao papel e marcando com checkboxes as permissões que irão compô-lo; edite nome, descrição e permissões quando quiser',
+      'O papel administrador é protegido (sempre com todas as permissões); papéis de sistema não podem ser excluídos, e um papel em uso por usuários bloqueia a exclusão até ser reatribuído',
+      'O acesso às novas opções é validado no servidor: criar, editar e excluir papéis só funcionam para o administrador',
+    ],
+  },
+  {
     title: 'Gerir Usuários restrito à congregação (v0.0.36)',
     items: [
       'Quem recebe a permissão exclusiva "Gerir usuários" passa a gerenciar, listar, ver, bloquear e excluir apenas os usuários comuns da própria congregação (mesmo CEP de trabalho)',
