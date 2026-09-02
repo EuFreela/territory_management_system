@@ -351,8 +351,9 @@ const ROLE_BADGE: Record<string, string> = {
 const ROLE_BADGE_FALLBACK = 'border-border bg-muted text-muted-foreground';
 
 export default function UsersPage() {
-  const { user: me, refresh: refreshAuth } = useAuth();
+  const { user: me, refresh: refreshAuth, isAdmin, can } = useAuth();
   const location = useLocation();
+  const restrictedManager = can('user:manage') && !isAdmin;
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -412,8 +413,9 @@ export default function UsersPage() {
       setUsers(list);
       setRoles(rolesRes.roles);
       if (roleId === '' && rolesRes.roles.length) {
-        const field = rolesRes.roles.find((r) => r.slug === 'field');
-        setRoleId(field?.id ?? rolesRes.roles[0].id);
+        const eligible = rolesRes.roles.filter((r) => !restrictedManager || r.slug !== 'admin');
+        const field = eligible.find((r) => r.slug === 'field');
+        setRoleId(field?.id ?? eligible[0]?.id ?? '');
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao carregar usuários.');
@@ -597,8 +599,9 @@ export default function UsersPage() {
           </h1>
         </div>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-          Controle de acesso baseado em papéis (RBAC). O administrador tem todos os escopos; demais
-          papéis recebem permissões delegadas.
+          {restrictedManager
+            ? 'Você gerencia apenas os usuários comuns da sua congregação.'
+            : 'Controle de acesso baseado em papéis (RBAC). O administrador tem todos os escopos; demais papéis recebem permissões delegadas.'}
         </p>
       </div>
 
@@ -686,11 +689,13 @@ export default function UsersPage() {
                 aria-invalid={Boolean(createErrors.role)}
                 aria-describedby={createErrors.role ? 'new-role-error' : undefined}
               >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} ({r.slug})
-                  </option>
-                ))}
+                {roles
+                  .filter((r) => !restrictedManager || r.slug !== 'admin')
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} ({r.slug})
+                    </option>
+                  ))}
               </select>
               {createErrors.role ? <FieldError id="new-role-error">{createErrors.role}</FieldError> : null}
             </div>
@@ -739,7 +744,11 @@ export default function UsersPage() {
                 {filteredUsers.length} de {users.length} usuário(s)
               </p>
               <ul className="divide-y divide-border">
-                {filteredUsers.map((u) => (
+                {filteredUsers.map((u) => {
+                  const isAdminTarget = u.role?.slug === 'admin';
+                  const cannotAct =
+                    me?.id === u.id || (restrictedManager && isAdminTarget);
+                  return (
                   <li
                     key={u.id}
                     className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
@@ -783,28 +792,35 @@ export default function UsersPage() {
                         size="icon"
                         data-tooltip={u.blocked ? 'Desbloquear' : 'Bloquear'}
                         aria-label={u.blocked ? 'Desbloquear' : 'Bloquear'}
-                        disabled={me?.id === u.id}
+                        disabled={cannotAct}
                         onClick={() => toggleBlock(u)}
                         className={u.blocked ? 'text-destructive hover:text-destructive' : ''}
                       >
                         {u.blocked ? <IconLockOpen /> : <IconLock />}
                       </Button>
+                      {restrictedManager ? null : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          data-tooltip="Permissões exclusivas"
+                          aria-label="Permissões exclusivas"
+                          onClick={() => setPermissionsUser(u)}
+                        >
+                          <IconKey />
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
-                        data-tooltip="Permissões exclusivas"
-                        aria-label="Permissões exclusivas"
-                        onClick={() => setPermissionsUser(u)}
-                      >
-                        <IconKey />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        data-tooltip="Editar"
-                        aria-label="Editar"
+                        data-tooltip={
+                          restrictedManager && isAdminTarget
+                            ? 'Somente o administrador pode editar administradores'
+                            : 'Editar'
+                        }
+                        aria-label={restrictedManager && isAdminTarget ? 'Somente o administrador edita administradores' : 'Editar'}
+                        disabled={restrictedManager && isAdminTarget}
                         onClick={() => openEdit(u)}
                       >
                         <IconPencil />
@@ -815,7 +831,7 @@ export default function UsersPage() {
                         size="icon"
                         data-tooltip="Excluir"
                         aria-label="Excluir"
-                        disabled={me?.id === u.id}
+                        disabled={cannotAct}
                         onClick={() => onDelete(u)}
                         className="text-destructive hover:text-destructive"
                       >
@@ -823,7 +839,8 @@ export default function UsersPage() {
                       </Button>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </>
           )}
@@ -910,31 +927,35 @@ export default function UsersPage() {
                 aria-invalid={Boolean(editErrors.role)}
                 aria-describedby={editErrors.role ? 'edit-role-error' : undefined}
               >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} ({r.slug})
-                  </option>
-                ))}
+                {roles
+                  .filter((r) => !restrictedManager || r.slug !== 'admin')
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} ({r.slug})
+                    </option>
+                  ))}
               </select>
               {editErrors.role ? <FieldError id="edit-role-error">{editErrors.role}</FieldError> : null}
             </div>
 
-            <div className="min-w-0">
-              <CongregationPicker
-                id="edit-congregation"
-                label="CEP (congregação)"
-                value={editCongregationId}
-                onValueChange={(v) => {
-                  setEditCongregationId(v);
-                  if (editErrors.congregation) {
-                    setEditErrors((prev) => ({ ...prev, congregation: undefined }));
-                  }
-                }}
-                initialCep={editing?.active_cep}
-                error={editErrors.congregation}
-                errorId="edit-congregation-error"
-              />
-            </div>
+            {restrictedManager ? null : (
+              <div className="min-w-0">
+                <CongregationPicker
+                  id="edit-congregation"
+                  label="CEP (congregação)"
+                  value={editCongregationId}
+                  onValueChange={(v) => {
+                    setEditCongregationId(v);
+                    if (editErrors.congregation) {
+                      setEditErrors((prev) => ({ ...prev, congregation: undefined }));
+                    }
+                  }}
+                  initialCep={editing?.active_cep}
+                  error={editErrors.congregation}
+                  errorId="edit-congregation-error"
+                />
+              </div>
+            )}
 
             <PasswordField
               label="Nova senha"

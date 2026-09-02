@@ -49,6 +49,69 @@ async function congregationCepById(id: number): Promise<string | null> {
   }
 }
 
+/** Escopos que elevam o alcance de um usuário (não são "usuário comum"). */
+const ELEVATED_USER_SCOPES: Scope[] = ['user:manage', 'config:cep', 'congregation:manage'];
+
+/** Gestor restrito = tem user:manage mas não é admin → gerencia só a própria congregação. */
+function isRestrictedManager(authUser: AuthedRequest['user']): boolean {
+  return !authUser.isAdmin;
+}
+
+/** CEP efetivo da congregação do usuário (null/ausente cai no CEP padrão do sistema). */
+function congregationCepOf(activeCep: string | null | undefined): string {
+  try {
+    return resolveWorkingCep({ active_cep: activeCep ?? null });
+  } catch {
+    return formatCep(onlyDigits(activeCep ?? ''));
+  }
+}
+
+function inSameCongregation(
+  authUser: AuthedRequest['user'],
+  activeCep: string | null | undefined,
+): boolean {
+  const own = onlyDigits(congregationCepOf(authUser.active_cep));
+  const other = onlyDigits(congregationCepOf(activeCep));
+  return own.length === 8 && own === other;
+}
+
+/** Verdadeiro se o usuário alvo for admin ou tiver escopo elevado (não é usuário comum). */
+async function targetIsPrivileged(userId: number): Promise<boolean> {
+  const elevPlaceholders = ELEVATED_USER_SCOPES.map(() => '?').join(', ');
+  const sql = `SELECT
+      (SELECT COUNT(*) FROM roles r WHERE r.id = u.role_id AND r.slug = ?) AS is_admin,
+      (SELECT COUNT(*) FROM role_permissions rp
+         INNER JOIN roles r ON r.id = rp.role_id AND r.id = u.role_id
+         WHERE rp.permission IN (${elevPlaceholders})) AS from_role,
+      (SELECT COUNT(*) FROM user_permissions up
+         WHERE up.user_id = u.id AND up.permission IN (${elevPlaceholders})) AS from_extra
+    FROM users u
+    WHERE u.id = ?
+    LIMIT 1`;
+  try {
+    const [rows] = await pool.execute(sql, [
+      ROLE_ADMIN,
+      ...ELEVATED_USER_SCOPES,
+      ...ELEVATED_USER_SCOPES,
+      userId,
+    ]);
+    const row = (rows as Array<{ is_admin: number; from_role: number; from_extra: number }>)[0];
+    if (!row) return true;
+    return Number(row.is_admin) > 0 || Number(row.from_role) > 0 || Number(row.from_extra) > 0;
+  } catch {
+    return true;
+  }
+}
+
+async function roleSlugById(roleId: number): Promise<string | null> {
+  try {
+    const [rows] = await pool.execute('SELECT slug FROM roles WHERE id = ?', [roleId]);
+    return (rows as Array<{ slug: string }>)[0]?.slug ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const createUserSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(150),
   email: z.string().email('Email inválido'),
@@ -118,10 +181,21 @@ router.get('/roles', requireAuth, requirePermission('user:manage'), async (_req,
  */
 router.get('/congregations', requireAuth, requirePermission('user:manage'), async (req, res) => {
   try {
+    const authUser = (req as AuthedRequest).user;
+    const restricted = isRestrictedManager(authUser);
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     let sql: string;
     let params: Array<string | number> = [];
-    if (q) {
+    if (restricted) {
+      // Gestor restrito só vê a própria congregação (CEP do usuário logado).
+      const digits = onlyDigits(congregationCepOf(authUser.active_cep));
+      sql = `SELECT c.id, c.cep, c.name, c.address
+             FROM congregations c
+             WHERE REPLACE(REPLACE(COALESCE(c.cep, ''), '-', ''), ' ', '') = ?
+             ORDER BY c.name ASC
+             LIMIT 50`;
+      params = [digits];
+    } else if (q) {
       const like = `%${q}%`;
       const digitsQ = onlyDigits(q);
       // CEP pode estar armazenado com hífen ("37150-000") ou sem; busca cobre
@@ -166,6 +240,8 @@ router.get('/congregations', requireAuth, requirePermission('user:manage'), asyn
 
 /** Lista todos os usuários do sistema (admin vê todos, com ou sem congregação). */
 router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) => {
+  const authUser = (req as AuthedRequest).user;
+  const restricted = isRestrictedManager(authUser);
   try {
     const [rows] = await pool.execute(
       `SELECT u.id, u.name, u.email, u.role_id, u.active_cep, u.blocked, u.created_at,
@@ -179,27 +255,27 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
     for (const [cep, name] of namesFallback) {
       if (!names.has(cep)) names.set(cep, name);
     }
-    res.json(
-      (rows as Array<Record<string, unknown>>).map((u) => {
-        const rawCep =
-          typeof u.active_cep === 'string' && u.active_cep.trim() ? u.active_cep.trim() : null;
-        const cepKey =
-          rawCep && onlyDigits(rawCep).length === 8 ? formatCep(onlyDigits(rawCep)) : null;
-        return {
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role_id: u.role_id,
-          role: u.role_id
-            ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
-            : null,
-          active_cep: cepKey,
-          congregation_name: cepKey ? (names.get(cepKey) ?? null) : null,
-          blocked: Boolean(u.blocked),
-          created_at: u.created_at,
-        };
-      }),
-    );
+    const list = (rows as Array<Record<string, unknown>>).map((u) => {
+      const rawCep =
+        typeof u.active_cep === 'string' && u.active_cep.trim() ? u.active_cep.trim() : null;
+      const cepKey =
+        rawCep && onlyDigits(rawCep).length === 8 ? formatCep(onlyDigits(rawCep)) : null;
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role_id: u.role_id,
+        role: u.role_id
+          ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
+          : null,
+        active_cep: cepKey,
+        congregation_name: cepKey ? (names.get(cepKey) ?? null) : null,
+        blocked: Boolean(u.blocked),
+        created_at: u.created_at,
+      };
+    });
+    // Gestor restrito vê apenas os usuários da própria congregação.
+    res.json(restricted ? list.filter((u) => inSameCongregation(authUser, u.active_cep)) : list);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (/active_cep|Unknown column/i.test(msg)) {
@@ -211,21 +287,20 @@ router.get('/', requireAuth, requirePermission('user:manage'), async (req, res) 
          LEFT JOIN roles r ON r.id = u.role_id
          ORDER BY u.name ASC`,
       );
-      res.json(
-        (rows as Array<Record<string, unknown>>).map((u) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role_id: u.role_id,
-          role: u.role_id
-            ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
-            : null,
-          active_cep: null,
-          congregation_name: null,
-          blocked: Boolean(u.blocked),
-          created_at: u.created_at,
-        })),
-      );
+      const list = (rows as Array<Record<string, unknown>>).map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role_id: u.role_id,
+        role: u.role_id
+          ? { id: u.role_id, slug: u.role_slug, name: u.role_name }
+          : null,
+        active_cep: null,
+        congregation_name: null,
+        blocked: Boolean(u.blocked),
+        created_at: u.created_at,
+      }));
+      res.json(restricted ? list.filter((u) => inSameCongregation(authUser, u.active_cep)) : list);
       return;
     }
     console.error('[users/list]', error);
@@ -243,14 +318,27 @@ router.post('/', requireAuth, requirePermission('user:manage'), async (req, res)
     }
 
     const creator = (req as AuthedRequest).user;
+    const restricted = isRestrictedManager(creator);
     const { name, email, password, role_id, congregation_id } = parsed.data;
     const emailNorm = email.toLowerCase();
+
+    if (restricted) {
+      // Gestor restrito não cria administradores nem usuários de outras congregações.
+      if (role_id != null && (await roleSlugById(role_id)) === ROLE_ADMIN) {
+        res.status(403).json({ error: 'Você não pode criar usuários com papel administrador.' });
+        return;
+      }
+    }
 
     let activeCep = formatCep(resolveWorkingCep(creator));
     if (congregation_id != null) {
       const cep = await congregationCepById(congregation_id);
       if (!cep) {
         res.status(400).json({ error: 'Congregação não encontrada.' });
+        return;
+      }
+      if (restricted && !inSameCongregation(creator, cep)) {
+        res.status(403).json({ error: 'Você só pode criar usuários na sua própria congregação.' });
         return;
       }
       activeCep = cep;
@@ -311,19 +399,47 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, u.role_id, r.slug AS role_slug
+      `SELECT u.id, u.role_id, u.active_cep, r.slug AS role_slug
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE u.id = ?`,
       [id],
     );
-    const target = (rows as Array<{ id: number; role_id: number | null; role_slug: string | null }>)[0];
+    const target = (rows as Array<{
+      id: number;
+      role_id: number | null;
+      active_cep: string | null;
+      role_slug: string | null;
+    }>)[0];
     if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
       return;
     }
 
+    const authUser = (req as AuthedRequest).user;
+    const restricted = isRestrictedManager(authUser);
+    if (restricted) {
+      // Somente o administrador edita administradores ou usuários com escopo elevado;
+      // gestores restritos só mexem em usuários comuns da própria congregação.
+      const isAdminTarget = target.role_slug === ROLE_ADMIN;
+      if (
+        isAdminTarget ||
+        (id !== authUser.id && (await targetIsPrivileged(id))) ||
+        !inSameCongregation(authUser, target.active_cep)
+      ) {
+        res.status(403).json({
+          error: 'Você só pode gerenciar usuários comuns da sua própria congregação.',
+        });
+        return;
+      }
+    }
+
     const { name, email, role_id, password, congregation_id } = parsed.data;
+
+    if (restricted && role_id != null && (await roleSlugById(role_id)) === ROLE_ADMIN) {
+      res.status(403).json({ error: 'Você não pode definir o papel administrador.' });
+      return;
+    }
 
     // Não permite rebaixar o último admin
     if (role_id !== undefined && target.role_slug === ROLE_ADMIN) {
@@ -388,12 +504,20 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
     }
     if (congregation_id !== undefined) {
       if (congregation_id == null) {
+        if (restricted && !inSameCongregation(authUser, null)) {
+          res.status(403).json({ error: 'Você só pode manter usuários na sua congregação.' });
+          return;
+        }
         sets.push('active_cep = ?');
         params.push(null);
       } else {
         const cep = await congregationCepById(congregation_id);
         if (!cep) {
           res.status(400).json({ error: 'Congregação não encontrada.' });
+          return;
+        }
+        if (restricted && !inSameCongregation(authUser, cep)) {
+          res.status(403).json({ error: 'Você só pode manter usuários na sua congregação.' });
           return;
         }
         sets.push('active_cep = ?');
@@ -440,10 +564,34 @@ router.put('/:id/block-status', requireAuth, requirePermission('user:manage'), a
       return;
     }
 
-    const [rows] = await pool.execute('SELECT id FROM users WHERE id = ?', [id]);
-    if (!(rows as unknown[]).length) {
+    const [rows] = await pool.execute(
+      `SELECT u.id, u.active_cep, r.slug AS role_slug
+       FROM users u
+       LEFT JOIN roles r ON r.id = u.role_id
+       WHERE u.id = ?`,
+      [id],
+    );
+    const target = (rows as Array<{ id: number; active_cep: string | null; role_slug: string | null }>)[0];
+    if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
       return;
+    }
+
+    // Gestor restrito: só bloqueia/desbloqueia usuários comuns da própria congregação.
+    // Somente o administrador bloqueia administradores.
+    if (isRestrictedManager(authUser) && target.role_slug === ROLE_ADMIN) {
+      res.status(403).json({
+        error: 'Somente o administrador pode bloquear um administrador.',
+      });
+      return;
+    }
+    if (isRestrictedManager(authUser)) {
+      if ((await targetIsPrivileged(id)) || !inSameCongregation(authUser, target.active_cep)) {
+        res.status(403).json({
+          error: 'Você só pode bloquear usuários comuns da sua própria congregação.',
+        });
+        return;
+      }
     }
 
     try {
@@ -478,6 +626,16 @@ router.get('/permissions/:id', requireAuth, requirePermission('user:manage'), as
     return;
   }
   try {
+    const authUser = (req as AuthedRequest).user;
+    const restricted = isRestrictedManager(authUser);
+    if (restricted) {
+      // Permissões exclusivas: restrito ao administrador.
+      res.status(403).json({
+        error: 'Permissões exclusivas são restritas ao administrador.',
+      });
+      return;
+    }
+
     const [users] = await pool.execute(
       'SELECT u.id, u.role_id FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = ?',
       [id],
@@ -542,6 +700,16 @@ router.put('/permissions/:id', requireAuth, requirePermission('user:manage'), as
     return;
   }
   try {
+    const authUser = (req as AuthedRequest).user;
+    const restricted = isRestrictedManager(authUser);
+    if (restricted) {
+      // Editar permissões exclusivas: restrito ao administrador.
+      res.status(403).json({
+        error: 'Permissões exclusivas são restritas ao administrador.',
+      });
+      return;
+    }
+
     const [users] = await pool.execute('SELECT id FROM users WHERE id = ?', [id]);
     if (!(users as unknown[]).length) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
@@ -597,16 +765,33 @@ router.delete('/:id', requireAuth, requirePermission('user:manage'), async (req,
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, r.slug AS role_slug
+      `SELECT u.id, u.active_cep, r.slug AS role_slug
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE u.id = ?`,
       [id],
     );
-    const target = (rows as Array<{ id: number; role_slug: string | null }>)[0];
+    const target = (rows as Array<{ id: number; active_cep: string | null; role_slug: string | null }>)[0];
     if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
       return;
+    }
+
+    // Gestor restrito: só exclui usuários comuns da própria congregação.
+    // Somente o administrador exclui administradores.
+    if (isRestrictedManager(authUser) && target.role_slug === ROLE_ADMIN) {
+      res.status(403).json({
+        error: 'Somente o administrador pode excluir um administrador.',
+      });
+      return;
+    }
+    if (isRestrictedManager(authUser)) {
+      if ((await targetIsPrivileged(id)) || !inSameCongregation(authUser, target.active_cep)) {
+        res.status(403).json({
+          error: 'Você só pode excluir usuários comuns da sua própria congregação.',
+        });
+        return;
+      }
     }
 
     if (target.role_slug === ROLE_ADMIN) {

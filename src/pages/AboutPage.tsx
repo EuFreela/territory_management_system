@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Gerir Usuários restrito à congregação (v0.0.36)',
+    items: [
+      'Quem recebe a permissão exclusiva "Gerir usuários" passa a gerenciar, listar, ver, bloquear e excluir apenas os usuários comuns da própria congregação (mesmo CEP de trabalho)',
+      'O administrador continua com acesso total; o gestor restrito não bloqueia, exclui nem edita administradores ou outros usuários com escopos elevados',
+      'Editar permissões exclusivas agora é função somente do administrador — o ícone de chave fica oculto para o gestor restrito e o servidor nega a operação',
+      'Um gestor de congregação não cria usuários com papel administrador nem move usuários para outra congregação; no seletor de congregações, só enxerga a própria',
+    ],
+  },
+  {
     title: 'Permissões exclusivas por usuário (v0.0.35)',
     items: [
       'Na página Usuários, um novo ícone de chave abre as permissões exclusivas de cada usuário, somadas às do papel',
