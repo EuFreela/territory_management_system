@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import pool from '../lib/db.js';
-import { cookieOptions, getUserFromRequest, signToken } from '../lib/auth.js';
+import { cookieOptions, getUserFromRequest, revokeTokenJti, signToken, verifyToken } from '../lib/auth.js';
 import { loadRbacUserById } from '../lib/load-user.js';
 import { isStrongPassword } from '../lib/password.js';
 import { normalizeThemePreference } from '../lib/rbac.js';
@@ -102,7 +102,19 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-router.post('/logout', (_req, res) => {
+router.post('/logout', async (req, res) => {
+  // Revoga o JWT atual (por jti) para que um token já emitido deixe de valer
+  // imediatamente, mesmo que roubado antes do logout. Fica na denylist até a
+  // expiração natural do token.
+  const token = req.cookies?.auth_token as string | undefined;
+  if (token) {
+    try {
+      const payload = await verifyToken(token);
+      if (payload?.jti) revokeTokenJti(payload.jti);
+    } catch {
+      // token inválido — não bloqueia o logout
+    }
+  }
   res.clearCookie('auth_token', { ...cookieOptions, maxAge: 0 });
   res.json({ message: 'Logout realizado com sucesso.' });
 });

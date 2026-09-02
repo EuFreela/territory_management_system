@@ -15,7 +15,9 @@ const DEFAULT_GOOGLE_ROLE = 'viewer';
 
 const GOOGLE_CLIENT_ID = (process.env.GOOGLE_CLIENT_ID || '').trim();
 const GOOGLE_CLIENT_SECRET = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
-/** Opcional: lista de e-mails permitidos (separados por vírgula). Vazio = qualquer e-mail verificado. */
+/** Opcional: lista de e-mails permitidos (separados por vírgula). Quando vazia,
+ *  o Google só permite o login de contas que JÁ existem no sistema (não cria
+ *  usuários novos automaticamente), evitando "registro aberto". */
 const GOOGLE_ALLOWED_EMAILS = (process.env.GOOGLE_ALLOWED_EMAILS || '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
@@ -206,10 +208,8 @@ router.get('/google/callback', callbackLimiter, async (req, res) => {
 
     const email = claims.email.trim().toLowerCase();
 
-    if (
-      GOOGLE_ALLOWED_EMAILS.length > 0 &&
-      !GOOGLE_ALLOWED_EMAILS.includes(email)
-    ) {
+    const allowlistActive = GOOGLE_ALLOWED_EMAILS.length > 0;
+    if (allowlistActive && !GOOGLE_ALLOWED_EMAILS.includes(email)) {
       redirectToLogin(res, 'Este e-mail não está autorizado a entrar no CAMPO.');
       return;
     }
@@ -224,6 +224,14 @@ router.get('/google/callback', callbackLimiter, async (req, res) => {
     let userId = existing?.id;
 
     if (!userId) {
+      // Sem allowlist configurada, não criamos contas novas por conta própria —
+      // evita o "registro aberto por Google" (qualquer e-mail verificado entra).
+      // O administrador deve adicionar o e-mail a GOOGLE_ALLOWED_EMAILS ou criar
+      // o usuário para que o acesso por Google funcione.
+      if (!allowlistActive) {
+        redirectToLogin(res, 'Conta não encontrada. Fale com o administrador para obter acesso.');
+        return;
+      }
       const name = (claims.name || claims.given_name || email.split('@')[0] || 'Usuário').trim().slice(
         0,
         150,

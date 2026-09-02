@@ -41,6 +41,29 @@ export const JWT_SECRET = resolveJwtSecret();
 /** Duração da sessão (cookie + JWT). Padrão 12h; override com JWT_EXPIRES (ex.: 7d, 1h). */
 export const JWT_EXPIRES = process.env.JWT_EXPIRES?.trim() || '12h';
 
+/**
+ * Denylist de sessões revogadas (por jti do JWT), em memória, por processo.
+ * Somada ao TTL do token, permite invalidar um token roubado sem esperar a
+ * expiração natural — por exemplo no logout. O apagamento expira junto com o token.
+ */
+const revokedJtis = new Map<string, number>();
+
+/** Revoga um token pelo seu jti. Opcional: ttlMs para expirar antes do token. */
+export function revokeTokenJti(jti: string) {
+  revokedJtis.set(jti, Date.now() + sessionMaxAgeMs());
+}
+
+/** Expulsa os jtis já revogados (evita o map crescer sem limite). */
+export function isTokenRevoked(jti: string) {
+  const until = revokedJtis.get(jti);
+  if (until === undefined) return false;
+  if (Date.now() > until) {
+    revokedJtis.delete(jti);
+    return false;
+  }
+  return true;
+}
+
 function getSecretKey() {
   return new TextEncoder().encode(JWT_SECRET);
 }
@@ -78,7 +101,8 @@ export async function verifyToken(token: string) {
     userId: Number(payload.userId),
     email: String(payload.email ?? ''),
     name: String(payload.name ?? ''),
-  } satisfies TokenPayload;
+    jti: typeof payload.jti === 'string' ? payload.jti : '',
+  } satisfies TokenPayload & { jti: string };
 }
 
 /**
@@ -91,6 +115,7 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
   try {
     const payload = await verifyToken(token);
     if (!payload.userId) return null;
+    if (payload.jti && isTokenRevoked(payload.jti)) return null;
     const user = await loadRbacUserById(payload.userId);
     // Usuário bloqueado: encerra a sessão ativa de imediato (não consegue mais acessar).
     if (!user || user.blocked) return null;
