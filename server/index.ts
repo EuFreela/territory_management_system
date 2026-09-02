@@ -35,6 +35,11 @@ const isProd = process.env.NODE_ENV === 'production';
 
 app.disable('x-powered-by');
 
+// Confia nos cabeçalhos de proxy (x-forwarded-*, cf-connecting-ip) somente quando
+// o app roda atrás de um proxy reverso. Assim req.protocol/req.secure ficam
+// corretos atrás de proxy E o rate limit só aceita IP de cabeçalho nesse caso.
+app.set('trust proxy', isProd ? 1 : false);
+
 app.use(
   cors({
     origin: process.env.VITE_APP_URL || 'http://localhost:3000',
@@ -45,6 +50,40 @@ app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(compression());
 app.use(securityHeaders);
+
+// Proteção anti-CSRF de primeira linha: rotas com efeito (POST/PUT/PATCH/DELETE)
+// no /api exigem que o Origin (ou Referer) seja a própria aplicação. Como os
+// cookies usam SameSite=Lax (bloqueia envio em POST cross-site), isso reforça a
+// barreira. O Origin é confiável por vir do navegador, não de cabeçalhos de proxy.
+const allowedOrigins = new Set(
+  (process.env.VITE_APP_URL || 'http://localhost:3000')
+    .split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean),
+);
+app.use('/api', (req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    next();
+    return;
+  }
+  const source = req.headers.origin || req.headers.referer;
+  if (typeof source !== 'string' || !source) {
+    res.status(403).json({ error: 'Origem não verificada.' });
+    return;
+  }
+  let origin: string;
+  try {
+    origin = new URL(source).origin.replace(/\/$/, '');
+  } catch {
+    res.status(403).json({ error: 'Origem não permitida.' });
+    return;
+  }
+  if (allowedOrigins.has(origin)) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: 'Origem não permitida.' });
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
