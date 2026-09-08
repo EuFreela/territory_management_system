@@ -30,13 +30,14 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import DailyTerritoryModal from '@/components/territory/DailyTerritoryModal';
+import BackupLeadersModal from '@/components/territory/BackupLeadersModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { renderMapCanvas } from '@/lib/map-card-image';
 import { hasTerritoryCardImage } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
 import { cn } from '@/lib/utils';
-import type { Block, CepLocation, FieldLeadersToday, Territory } from '@/lib/types';
+import type { Block, CepLocation, FieldAssignment, Territory } from '@/lib/types';
 
 type MapViewTab = 'mapa' | 'imagem' | 'mapa-imagem';
 
@@ -73,6 +74,8 @@ export default function TerritoryDetailPage() {
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
   /** Backup de não em casa em .txt sendo gerado */
   const [backingUp, setBackingUp] = useState(false);
+  /** Popup para escolher o dirigente antes de gerar o backup */
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
   /** Ref do toggle em andamento — o poll em tempo real ignora o estado otimista */
   const togglingKeyRef = useRef<string | null>(null);
 
@@ -164,24 +167,14 @@ export default function TerritoryDetailPage() {
 
   /**
    * Backup dos não em casa em .txt: território, quadras/ruas/casas,
-   * dirigente do dia e o horário de início dele na escala de hoje.
+   * dirigente do dia (escolhido no popup) e o horário de início dele.
    */
-  async function downloadBackup() {
+  async function downloadBackup(leader: FieldAssignment | null) {
     if (!territory) return;
     setBackingUp(true);
     try {
-      // Horário de início do dirigente na escala de hoje (datado ou fixo)
-      let leaderTime = '';
-      try {
-        const today = await api<FieldLeadersToday>('/api/field-assignments/today');
-        const leaders = [...(today.dated ?? []), ...(today.fixed ?? [])];
-        const leader =
-          leaders.find((a) => a.id === territory.daily_assignment_id) ??
-          leaders.find((a) => a.assignee_name === territory.daily_leader_name);
-        leaderTime = String(leader?.fixed_time ?? '').trim();
-      } catch {
-        // horário é opcional — segue o backup mesmo se a escala falhar
-      }
+      const leaderName = leader?.assignee_name.trim() ?? '';
+      const leaderTime = String(leader?.fixed_time ?? '').trim();
 
       const numberLabel =
         territory.number != null && String(territory.number).trim() !== ''
@@ -192,7 +185,7 @@ export default function TerritoryDetailPage() {
       lines.push('='.repeat(34));
       lines.push('');
       lines.push(`Território: ${numberLabel}${territory.name}`);
-      lines.push(`Dirigente do dia: ${territory.daily_leader_name?.trim() || '—'}`);
+      lines.push(`Dirigente do dia: ${leaderName || '—'}`);
       lines.push(`Horário de início: ${leaderTime || '—'}`);
       lines.push(`Gerado em: ${new Date().toLocaleString('pt-BR')}`);
       lines.push('');
@@ -794,7 +787,7 @@ export default function TerritoryDetailPage() {
                   size="icon"
                   variant="ghost"
                   disabled={backingUp}
-                  onClick={() => void downloadBackup()}
+                  onClick={() => setBackupModalOpen(true)}
                   data-tooltip={
                     backingUp ? 'Gerando backup…' : 'Backup dos não em casa (.txt)'
                   }
@@ -1080,6 +1073,16 @@ export default function TerritoryDetailPage() {
           territoryId={Number(id)}
           onClose={() => setDailyModalOpen(false)}
           onDone={loadTerritory}
+        />
+      ) : null}
+
+      {backupModalOpen ? (
+        <BackupLeadersModal
+          onClose={() => setBackupModalOpen(false)}
+          onConfirm={(leader) => {
+            setBackupModalOpen(false);
+            void downloadBackup(leader);
+          }}
         />
       ) : null}
     </>
