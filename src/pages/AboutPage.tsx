@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Dirigente escolhido no backup (v0.0.42)',
+    items: [
+      'Ao clicar no botão de backup dos não em casa, abre uma janela para escolher o dirigente responsável pelo campo naquele dia',
+      'A lista mostra os dirigentes da escala com o horário de início e o tipo (fixo ou designado); o nome e o horário escolhidos entram no arquivo',
+      'Dá até para gerar o backup sem dirigente, caso a escala do dia não tenha tido um',
+    ],
+  },
+  {
     title: 'Backup dos não em casa em .txt (v0.0.41)',
     items: [
       'Novo botão de backup ao lado de "Gerenciar" na seção Não em casa: baixa um .txt com o território, o dirigente do dia, o horário de início e todas as quadras/ruas/casas do checklist',
