@@ -6,6 +6,7 @@ import {
   IconCheck,
   IconCheckCircle,
   IconColumns,
+  IconDownload,
   IconHome,
   IconImage,
   IconMap,
@@ -35,7 +36,7 @@ import { renderMapCanvas } from '@/lib/map-card-image';
 import { hasTerritoryCardImage } from '@/lib/territory-map-image';
 import { tooltipText } from '@/lib/tooltip';
 import { cn } from '@/lib/utils';
-import type { Block, CepLocation, Territory } from '@/lib/types';
+import type { Block, CepLocation, FieldLeadersToday, Territory } from '@/lib/types';
 
 type MapViewTab = 'mapa' | 'imagem' | 'mapa-imagem';
 
@@ -70,6 +71,8 @@ export default function TerritoryDetailPage() {
   const [imagePanelReady, setImagePanelReady] = useState(false);
   /** Modal: escolher dirigente ao marcar/trocar o território do dia */
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
+  /** Backup de não em casa em .txt sendo gerado */
+  const [backingUp, setBackingUp] = useState(false);
   /** Ref do toggle em andamento — o poll em tempo real ignora o estado otimista */
   const togglingKeyRef = useRef<string | null>(null);
 
@@ -145,6 +148,95 @@ export default function TerritoryDetailPage() {
       setTimeout(() => URL.revokeObjectURL(link.href), 4000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Não foi possível gerar a imagem.');
+    }
+  }
+
+  /** Baixa um arquivo de texto direto no navegador (backup de não em casa). */
+  function downloadTextFile(filename: string, content: string) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /**
+   * Backup dos não em casa em .txt: território, quadras/ruas/casas,
+   * dirigente do dia e o horário de início dele na escala de hoje.
+   */
+  async function downloadBackup() {
+    if (!territory) return;
+    setBackingUp(true);
+    try {
+      // Horário de início do dirigente na escala de hoje (datado ou fixo)
+      let leaderTime = '';
+      try {
+        const today = await api<FieldLeadersToday>('/api/field-assignments/today');
+        const leaders = [...(today.dated ?? []), ...(today.fixed ?? [])];
+        const leader =
+          leaders.find((a) => a.id === territory.daily_assignment_id) ??
+          leaders.find((a) => a.assignee_name === territory.daily_leader_name);
+        leaderTime = String(leader?.fixed_time ?? '').trim();
+      } catch {
+        // horário é opcional — segue o backup mesmo se a escala falhar
+      }
+
+      const numberLabel =
+        territory.number != null && String(territory.number).trim() !== ''
+          ? `${String(territory.number).trim()} — `
+          : '';
+      const lines: string[] = [];
+      lines.push('BACKUP — NÃO EM CASA');
+      lines.push('='.repeat(34));
+      lines.push('');
+      lines.push(`Território: ${numberLabel}${territory.name}`);
+      lines.push(`Dirigente do dia: ${territory.daily_leader_name?.trim() || '—'}`);
+      lines.push(`Horário de início: ${leaderTime || '—'}`);
+      lines.push(`Gerado em: ${new Date().toLocaleString('pt-BR')}`);
+      lines.push('');
+      lines.push('-'.repeat(34));
+      lines.push('');
+
+      let streetTotal = 0;
+      let houseTotal = 0;
+      let doneTotal = 0;
+
+      for (const [quadraName, streetBlocks] of blocksByQuadra) {
+        lines.push(`QUADRA: ${quadraName}`);
+        streetTotal += streetBlocks.length;
+        for (const block of streetBlocks) {
+          lines.push(`  RUA: ${block.street_name?.trim() || 'Sem rua'}`);
+          const houses = (block.house_numbers ?? []).map((h) => String(h).trim());
+          const completed = (block.completed_houses ?? []).map((h) => String(h).trim());
+          houseTotal += houses.length;
+          for (const house of houses) {
+            const checked = completed.some((h) => houseEquals(h, house));
+            if (checked) doneTotal += 1;
+            lines.push(`    [${checked ? 'x' : ' '}] ${house}`);
+          }
+        }
+        lines.push('');
+      }
+
+      if (streetTotal === 0) {
+        lines.push('Nenhum registro de não em casa cadastrado.');
+        lines.push('');
+      } else {
+        lines.push('='.repeat(34));
+        lines.push(
+          `Resumo: ${blocksByQuadra.length} quadra(s) · ${streetTotal} rua(s) · ` +
+            `${houseTotal} casa(s) (${doneTotal} marcada(s))`,
+        );
+        lines.push('');
+      }
+
+      const numberSafe =
+        String(territory.number ?? '').trim().replace(/[^\w\d-]+/g, '-') || 'sem-numero';
+      downloadTextFile(`nao-em-casa-territorio-${numberSafe}.txt`, lines.join('\n'));
+    } finally {
+      setBackingUp(false);
     }
   }
 
@@ -689,13 +781,28 @@ export default function TerritoryDetailPage() {
                   quadra
                 </p>
               </div>
-              {can('block:manage') ? (
-                <Button asChild size="icon" variant="ghost" data-tooltip="Gerenciar">
-                  <Link to={`/territories/${id}/edit#nao-em-casa`}>
-                    <IconPencil />
-                  </Link>
+              <div className="flex items-center gap-1">
+                {can('block:manage') ? (
+                  <Button asChild size="icon" variant="ghost" data-tooltip="Gerenciar">
+                    <Link to={`/territories/${id}/edit#nao-em-casa`}>
+                      <IconPencil />
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={backingUp}
+                  onClick={() => void downloadBackup()}
+                  data-tooltip={
+                    backingUp ? 'Gerando backup…' : 'Backup dos não em casa (.txt)'
+                  }
+                  aria-label="Backup dos não em casa"
+                >
+                  {backingUp ? <Spinner size="sm" /> : <IconDownload className="size-4" />}
                 </Button>
-              ) : null}
+              </div>
             </div>
 
             {blocksByQuadra.length > 0 ? (

@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Backup dos não em casa em .txt (v0.0.41)',
+    items: [
+      'Novo botão de backup ao lado de "Gerenciar" na seção Não em casa: baixa um .txt com o território, o dirigente do dia, o horário de início e todas as quadras/ruas/casas do checklist',
+      'As casas já marcadas aparecem com [x] e as pendentes com [ ], além de um resumo com quadras, ruas e casas ao final',
+      'O arquivo sai com o nome nao-em-casa-territorio-N.txt para facilitar guardar e consultar depois',
+    ],
+  },
+  {
     title: 'Não em casa em tempo real (v0.0.40)',
     items: [
       'Enquanto a página do território está aberta, o checklist de não em casa é atualizado sozinho a cada poucos segundos — sem precisar recarregar',
