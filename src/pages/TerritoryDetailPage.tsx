@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -70,6 +70,11 @@ export default function TerritoryDetailPage() {
   const [imagePanelReady, setImagePanelReady] = useState(false);
   /** Modal: escolher dirigente ao marcar/trocar o território do dia */
   const [dailyModalOpen, setDailyModalOpen] = useState(false);
+  /** Ref do toggle em andamento — o poll em tempo real ignora o estado otimista */
+  const togglingKeyRef = useRef<string | null>(null);
+
+  /** Intervalo de atualização automática do checklist (várias pessoas na mesma rua). */
+  const AUTO_REFRESH_MS = 5_000;
 
   const splitAreas = useMemo(() => parseGeoJsonToAreas(territory?.geojson), [territory?.geojson]);
   const splitNotes = useMemo(() => parseGeoJsonToNotes(territory?.geojson), [territory?.geojson]);
@@ -179,6 +184,35 @@ export default function TerritoryDetailPage() {
         setMapConfig(config);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar.'));
+  }, [id]);
+
+  /**
+   * Atualização automática: enquanto a página está aberta, busca o território
+   * de novo a cada poucos segundos. Assim, mudanças de "não em casa" feitas
+   * por outra pessoa na mesma rua aparecem sem precisar de refresh manual.
+   * Erros do poll são silenciosos para não derrubar a tela em falha transitória.
+   */
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+
+    async function refresh() {
+      try {
+        const t = await api<Territory>(`/api/territories/${id}`);
+        if (cancelled) return;
+        // Não sobrescreve um toggle em andamento nesta aba (estado otimista)
+        if (togglingKeyRef.current) return;
+        setTerritory(t);
+      } catch {
+        /* silencioso no poll */
+      }
+    }
+
+    const timer = window.setInterval(() => void refresh(), AUTO_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [id]);
 
   function onDelete() {
@@ -326,6 +360,7 @@ export default function TerritoryDetailPage() {
     if (!id) return;
     const key = `${block.id}:${house}`;
     setTogglingKey(key);
+    togglingKeyRef.current = key;
 
     // otimista
     setTerritory((prev) => {
@@ -374,6 +409,7 @@ export default function TerritoryDetailPage() {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar checklist.');
     } finally {
       setTogglingKey(null);
+      togglingKeyRef.current = null;
     }
   }
 

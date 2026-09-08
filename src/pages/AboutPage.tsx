@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Não em casa em tempo real (v0.0.40)',
+    items: [
+      'Enquanto a página do território está aberta, o checklist de não em casa é atualizado sozinho a cada poucos segundos — sem precisar recarregar',
+      'Duas ou mais pessoas na mesma rua passam a ver as marcações uma das outras na hora: marcar uma casa aparece para todos que estiverem vendo aquele território',
+      'A atualização automática não atrapalha quem está marcando: o envio local continua otimista e os erros do refresh são silenciosos, sem derrubar a tela',
+    ],
+  },
+  {
     title: 'Reforço de segurança no servidor (v0.0.39)',
     items: [
       'Dependências atualizadas: auditoria do npm sem vulnerabilidades conhecidas',
