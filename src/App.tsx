@@ -47,7 +47,7 @@ export default function App() {
           <Route
             path="/dirigentes"
             element={
-              <RequirePermission scope="block:manage">
+              <RequirePermission scope="schedule:manage">
                 <FieldLeadersPage />
               </RequirePermission>
             }

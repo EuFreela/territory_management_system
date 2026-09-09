@@ -196,7 +196,7 @@ function matchesQuery(row: FieldAssignment, q: string) {
 
 export default function FieldLeadersPage() {
   const { can, user } = useAuth();
-  const canManage = can('block:manage');
+  const canManage = can('schedule:manage');
   const [rows, setRows] = useState<FieldAssignment[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);

@@ -288,7 +288,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </>
               ) : null}
 
-              {can('block:manage') ? (
+              {can('schedule:manage') ? (
                 <NavLink to="/dirigentes" className={navClass}>
                   Dirigentes
                 </NavLink>
@@ -529,7 +529,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               ) : null}
 
-              {can('block:manage') ? (
+              {can('schedule:manage') ? (
                 <NavLink to="/dirigentes" className={mobileNavClass}>
                   Dirigentes
                 </NavLink>

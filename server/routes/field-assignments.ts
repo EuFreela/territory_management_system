@@ -69,7 +69,7 @@ function workingDigits(req: AuthedRequest): string {
 }
 
 /** Lista completa (tabela de designações) — restrita a quem gerencia a escala */
-router.get('/', requireAuth, requirePermission('block:manage'), async (req, res) => {
+router.get('/', requireAuth, requirePermission('schedule:manage'), async (req, res) => {
   const digits = workingDigits(req as AuthedRequest);
   const [rows] = await pool.execute(
     `SELECT * FROM field_assignments
@@ -145,7 +145,7 @@ router.get('/leaders', requireAuth, requirePermission('territory:read'), async (
 router.post(
   '/import',
   requireAuth,
-  requirePermission('block:manage'),
+  requirePermission('schedule:manage'),
   importLimiter,
   async (req, res) => {
     const parsedBody = importSchema.safeParse(req.body);
@@ -261,7 +261,7 @@ router.post(
   },
 );
 
-router.post('/', requireAuth, requirePermission('block:manage'), async (req, res) => {
+router.post('/', requireAuth, requirePermission('schedule:manage'), async (req, res) => {
   const parsed = assignmentSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' });
@@ -294,7 +294,7 @@ router.post('/', requireAuth, requirePermission('block:manage'), async (req, res
   res.status(201).json({ id: insertResult.insertId, message: 'Designação criada.' });
 });
 
-router.put('/:id', requireAuth, requirePermission('block:manage'), async (req, res) => {
+router.put('/:id', requireAuth, requirePermission('schedule:manage'), async (req, res) => {
   const { id } = req.params;
   const digits = workingDigits(req as AuthedRequest);
 
@@ -373,7 +373,7 @@ router.put('/:id', requireAuth, requirePermission('block:manage'), async (req, r
 router.delete(
   '/program',
   requireAuth,
-  requirePermission('block:manage'),
+  requirePermission('schedule:manage'),
   clearProgramLimiter,
   async (req, res) => {
     const digits = workingDigits(req as AuthedRequest);
@@ -386,7 +386,7 @@ router.delete(
   },
 );
 
-router.delete('/:id', requireAuth, requirePermission('block:manage'), async (req, res) => {
+router.delete('/:id', requireAuth, requirePermission('schedule:manage'), async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(String(id))) {
     res.status(400).json({ error: 'Identificador inválido.' });

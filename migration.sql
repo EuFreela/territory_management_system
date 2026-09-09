@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS field_assignments (
 -- Papéis (RBAC)
 INSERT INTO roles (slug, name, description, is_system) VALUES
   ('admin', 'Administrador', 'Acesso total ao sistema', 1),
-  ('editor', 'Editor', 'Cria e edita territórios e não em casa', 1),
+  ('editor', 'Editor', 'Cria e edita territórios, não em casa e a escala de dirigentes', 1),
   ('field', 'Campo', 'Consulta, território do dia e checklist', 1),
   ('viewer', 'Visualizador', 'Somente leitura de territórios', 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description);
@@ -122,6 +122,7 @@ CROSS JOIN (
   SELECT 'territory:set_daily' UNION ALL
   SELECT 'block:manage' UNION ALL
   SELECT 'block:check' UNION ALL
+  SELECT 'schedule:manage' UNION ALL
   SELECT 'user:manage'
 ) p
 WHERE r.slug = 'admin';
@@ -134,7 +135,8 @@ CROSS JOIN (
   SELECT 'territory:update' UNION ALL
   SELECT 'territory:set_daily' UNION ALL
   SELECT 'block:manage' UNION ALL
-  SELECT 'block:check'
+  SELECT 'block:check' UNION ALL
+  SELECT 'schedule:manage'
 ) p
 WHERE r.slug = 'editor';
 

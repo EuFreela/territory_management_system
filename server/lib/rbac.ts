@@ -11,6 +11,8 @@ export const SCOPES = [
   'territory:set_daily',
   'block:manage',
   'block:check',
+  // A escala de dirigentes é gerida à parte do não em casa (editor e admin).
+  'schedule:manage',
   'user:manage',
   // Trocar a região de trabalho (CEP) redireciona o acesso a dados de outra
   // congregação — escopo restrito a papéis privilegiados (padrão: admin).
@@ -40,6 +42,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Scope[]> = {
     'territory:set_daily',
     'block:manage',
     'block:check',
+    'schedule:manage',
   ],
   [ROLE_FIELD]: ['territory:read', 'block:check'],
   [ROLE_VIEWER]: ['territory:read'],
