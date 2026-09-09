@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Backup com escolha do dirigente e datas padronizadas (v0.0.43)',
+    items: [
+      'O popup do backup traz a lista completa de dirigentes da escala (a mesma da página Dirigentes) num seletor, com nome, dia, horário e tipo (Fixo/Designado)',
+      'O nome e o horário do escolhido entram no arquivo — assim o backup registra quem dirigiu o campo naquele dia',
+      'Correção nas datas em todo o sistema: agora saem sempre como DD/MM/AAAA em pt-BR, sem misturar o formato ISO',
+    ],
+  },
+  {
     title: 'Dirigente escolhido no backup (v0.0.42)',
     items: [
       'Ao clicar no botão de backup dos não em casa, abre uma janela para escolher o dirigente responsável pelo campo naquele dia',

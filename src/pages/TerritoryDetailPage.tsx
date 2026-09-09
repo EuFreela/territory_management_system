@@ -43,6 +43,19 @@ type MapViewTab = 'mapa' | 'imagem' | 'mapa-imagem';
 
 const LINK_CLASS = 'font-medium text-primary underline underline-offset-4';
 
+/** Data e hora em pt-BR: dd/mm/aaaa hh:mm */
+function fmtDateTime(date: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
 export default function TerritoryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -187,7 +200,7 @@ export default function TerritoryDetailPage() {
       lines.push(`Território: ${numberLabel}${territory.name}`);
       lines.push(`Dirigente do dia: ${leaderName || '—'}`);
       lines.push(`Horário de início: ${leaderTime || '—'}`);
-      lines.push(`Gerado em: ${new Date().toLocaleString('pt-BR')}`);
+      lines.push(`Gerado em: ${fmtDateTime(new Date())}`);
       lines.push('');
       lines.push('-'.repeat(34));
       lines.push('');
