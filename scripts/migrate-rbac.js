@@ -13,6 +13,7 @@ const SCOPES = [
   'territory:set_daily',
   'block:manage',
   'block:check',
+  'schedule:manage',
   'user:manage',
   'config:cep',
   'congregation:manage',
@@ -28,7 +29,7 @@ const ROLES = [
   {
     slug: 'editor',
     name: 'Editor',
-    description: 'Cria e edita territórios e não em casa; sem excluir nem gerir usuários',
+    description: 'Cria e edita territórios, não em casa e a escala de dirigentes; sem excluir nem gerir usuários',
     permissions: [
       'territory:create',
       'territory:read',
@@ -36,6 +37,7 @@ const ROLES = [
       'territory:set_daily',
       'block:manage',
       'block:check',
+      'schedule:manage',
     ],
   },
   {

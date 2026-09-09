@@ -656,7 +656,7 @@
             </p>
             <div class="meta">
               <span>Guia do usuário</span>
-              <span>v0.0.44</span>
+              <span>v0.0.45</span>
               <span>Setembro 2026</span>
             </div>
           </div>
@@ -2274,16 +2274,17 @@
               <span>
                 O interrogação ao lado abre a janela <strong>Papéis e permissões</strong>: cada
                 papel lista as suas permissões. O resumo: admin gerencia tudo; editor cria e edita
-                territórios, define o do dia e gerencia o não em casa; campo vê cartões e marca
-                casas; visualizador só vê.
+                territórios, define o do dia, gerencia o não em casa e a escala de dirigentes;
+                campo vê cartões e marca casas; visualizador só vê.
               </span>
             </div>
             <div class="part">
               <strong class="label">O que o papel define</strong>
               <span>
-                Campo não edita o não em casa, não marca território do dia e não acessa a escala
-                de dirigentes. Se um botão não aparece, é porque o papel não tem essa
-                permissão.
+                Criar e editar dirigentes (a escala) é exclusivo de editor e admin — quem não
+                gerencia nem entra na página Dirigentes; campo e visualizador não editam o não em
+                casa, não marcam território do dia e não acessam a escala. Se um botão não
+                aparece, é porque o papel não tem essa permissão.
               </span>
             </div>
             <div class="part">
@@ -2339,8 +2340,10 @@
               <strong class="label">Novo papel</strong>
               <span>
                 Dê um nome, uma descrição opcional e marque as permissões. Cada uma mostra o nome
-                em português e o código (ex.: Gerir territórios · territory:update). As
-                permissões valem para quem receber aquele papel.
+                em português e o código (ex.: Gerir territórios · territory:update). A escala de
+                dirigentes é a permissão “Gerir escala de dirigentes” (schedule:manage) — por
+                padrão, só editor e admin a têm. As permissões valem para quem receber aquele
+                papel.
               </span>
             </div>
             <div class="part">

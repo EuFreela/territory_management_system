@@ -272,7 +272,7 @@ export default function DashboardPage() {
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className={sectionTitle}>Dirigente do serviço de campo</h2>
-          {can('block:manage') ? (
+          {can('schedule:manage') ? (
             <Link
               to="/dirigentes"
               className="text-sm font-medium text-primary underline-offset-4 hover:underline"
@@ -336,12 +336,12 @@ export default function DashboardPage() {
                           <p className="text-base font-semibold tracking-tight">
                             {row.assignee_name}
                           </p>
-                          {can('block:manage') ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => startEditLeader(row)}
+{can('schedule:manage') ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => startEditLeader(row)}
                               aria-label="Editar dirigente"
                             >
                               <IconPencil />
@@ -396,12 +396,12 @@ export default function DashboardPage() {
                           <p className="text-base font-semibold tracking-tight">
                             {row.assignee_name}
                           </p>
-                          {can('block:manage') ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => startEditLeader(row)}
+{can('schedule:manage') ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => startEditLeader(row)}
                               aria-label="Editar dirigente"
                             >
                               <IconPencil />

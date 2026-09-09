@@ -40,6 +40,15 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Permissão própria para dirigentes (v0.0.45)',
+    items: [
+      'Nova permissão "Gerir escala de dirigentes" (schedule:manage), separada da de não em casa: por padrão, só editor e admin criam e editam dirigentes',
+      'A página Dirigentes, o "Ver escala" e o botão de editar o dirigente do dia no Início passam a exigir essa permissão — campo e visualizador não entram na escala',
+      'Ela aparece na lista de permissões (permissões exclusivas e criação de papéis) e pode ser concedida a papéis personalizados',
+      'Banco já existente: rode npm run migrate:schedule-manage para liberar o escopo para admin e editor',
+    ],
+  },
+  {
     title: 'Tutorial: seção Usuários e permissões revisada (v0.0.44)',
     items: [
       'Tutorial alinhado à tela atual de Usuários: menu com Minha conta, Criar usuários e Permissões; busca, selo do papel, "SC" (sem congregação), bloquear/desbloquear e permissões exclusivas',

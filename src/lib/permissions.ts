@@ -7,6 +7,7 @@ export const SCOPES = [
   'territory:set_daily',
   'block:manage',
   'block:check',
+  'schedule:manage',
   'user:manage',
   'config:cep',
   'congregation:manage',
