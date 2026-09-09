@@ -15,6 +15,13 @@ export const SCOPES = [
 
 export type Scope = (typeof SCOPES)[number];
 
+/** Email do administrador de sistema — conta única, imutável e protegida. */
+export const SYSTEM_ADMIN_EMAIL = 'admin@campo.local';
+
+export function isSystemAdminEmail(email: string | null | undefined): boolean {
+  return email != null && email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
+}
+
 export type RoleInfo = {
   id: number;
   slug: string;

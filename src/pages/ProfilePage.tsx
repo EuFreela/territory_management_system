@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { SYSTEM_ADMIN_EMAIL } from '@/lib/permissions';
 
 export default function ProfilePage() {
   const { user, refresh } = useAuth();
+  const systemAdmin = user != null && user.email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
@@ -22,6 +24,7 @@ export default function ProfilePage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (systemAdmin) return;
     const trimmed = name.trim();
     if (trimmed === '') {
       setNameError('Preencha este campo.');
@@ -60,7 +63,9 @@ export default function ProfilePage() {
           Minha conta
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-          Edite seu nome e troque sua senha. Email e papel são definidos pelo administrador.
+          {systemAdmin
+            ? 'Conta de sistema fixa: somente a senha pode ser alterada.'
+            : 'Edite seu nome e troque sua senha. Email e papel são definidos pelo administrador.'}
         </p>
 
         <Card className="mt-6">
@@ -81,11 +86,17 @@ export default function ProfilePage() {
                     if (nameError) setNameError('');
                   }}
                   maxLength={150}
+                  disabled={systemAdmin}
                   autoComplete="name"
                   aria-invalid={Boolean(nameError)}
                   aria-describedby={nameError ? 'profile-name-error' : undefined}
                 />
                 {nameError ? <FieldError id="profile-name-error">{nameError}</FieldError> : null}
+                {systemAdmin ? (
+                  <p className="text-xs text-muted-foreground">
+                    O nome da conta de sistema é fixo e não pode ser alterado.
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid gap-1.5">
@@ -130,10 +141,12 @@ export default function ProfilePage() {
                     <IconArrowLeft />
                   </Link>
                 </Button>
-                <Button type="submit" disabled={saving}>
-                  <IconSave />
-                  {saving ? 'Salvando…' : 'Salvar'}
-                </Button>
+                {systemAdmin ? null : (
+                  <Button type="submit" disabled={saving}>
+                    <IconSave />
+                    {saving ? 'Salvando…' : 'Salvar'}
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>

@@ -35,6 +35,7 @@ import UserPermissionsModal from '@/components/ui/UserPermissionsModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { SYSTEM_ADMIN_EMAIL } from '@/lib/permissions';
 import { confirmToast } from '@/lib/confirm-toast';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
@@ -377,6 +378,8 @@ export default function UsersPage() {
   const [showRoles, setShowRoles] = useState(false);
   const [permissionsUser, setPermissionsUser] = useState<ManagedUser | null>(null);
   const [search, setSearch] = useState('');
+  const editingIsSystemAdmin =
+    editing != null && editing.email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
 
   useEffect(() => {
     if (location.hash !== '#novo-usuario') return;
@@ -496,38 +499,43 @@ export default function UsersPage() {
     e.preventDefault();
     if (!editing) return;
 
+    const systemAdmin = editing.email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
+
     const errors: EditErrors = {};
-    if (editName.trim() === '') {
-      errors.name = 'Preencha este campo.';
-    } else if (editName.trim().length < 2) {
-      errors.name = 'Use pelo menos 2 caracteres.';
-    } else if (editName.trim().length > 150) {
-      errors.name = 'Use no máximo 150 caracteres.';
-    }
-    if (editEmail.trim() === '') {
-      errors.email = 'Preencha este campo.';
-    } else if (!EMAIL_RE.test(editEmail.trim())) {
-      errors.email = 'Informe um e-mail válido.';
-    }
-    if (editRoleId === '') {
-      errors.role = 'Selecione um papel.';
+    if (!systemAdmin) {
+      if (editName.trim() === '') {
+        errors.name = 'Preencha este campo.';
+      } else if (editName.trim().length < 2) {
+        errors.name = 'Use pelo menos 2 caracteres.';
+      } else if (editName.trim().length > 150) {
+        errors.name = 'Use no máximo 150 caracteres.';
+      }
+      if (editEmail.trim() === '') {
+        errors.email = 'Preencha este campo.';
+      } else if (!EMAIL_RE.test(editEmail.trim())) {
+        errors.email = 'Informe um e-mail válido.';
+      }
+      if (editRoleId === '') {
+        errors.role = 'Selecione um papel.';
+      }
     }
     setEditErrors(errors);
     if (errors.name || errors.email || errors.role) return;
 
     setEditSaving(true);
     try {
-      const body: Record<string, unknown> = {
-        name: editName.trim(),
-        email: editEmail.trim(),
-        role_id: editRoleId,
-      };
-      if (editPassword.trim()) body.password = editPassword;
-      if (editCongregationId === null) {
-        body.congregation_id = null;
-      } else if (editCongregationId !== '') {
-        body.congregation_id = editCongregationId;
+      const body: Record<string, unknown> = {};
+      if (!systemAdmin) {
+        body.name = editName.trim();
+        body.email = editEmail.trim();
+        body.role_id = editRoleId;
+        if (editCongregationId === null) {
+          body.congregation_id = null;
+        } else if (editCongregationId !== '') {
+          body.congregation_id = editCongregationId;
+        }
       }
+      if (editPassword.trim()) body.password = editPassword;
 
       await api(`/api/users/${editing.id}`, {
         method: 'PUT',
@@ -746,8 +754,9 @@ export default function UsersPage() {
               <ul className="divide-y divide-border">
                 {filteredUsers.map((u) => {
                   const isAdminTarget = u.role?.slug === 'admin';
+                  const isSystemAdmin = u.email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
                   const cannotAct =
-                    me?.id === u.id || (restrictedManager && isAdminTarget);
+                    me?.id === u.id || (restrictedManager && isAdminTarget) || isSystemAdmin;
                   return (
                   <li
                     key={u.id}
@@ -777,6 +786,15 @@ export default function UsersPage() {
                         <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
                         {u.role?.name ?? 'sem papel'}
                       </span>
+                      {isSystemAdmin ? (
+                        <span
+                          className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+                          data-tooltip="Conta de sistema fixa — somente a senha pode ser alterada"
+                          aria-label="Conta de sistema"
+                        >
+                          Sistema
+                        </span>
+                      ) : null}
                       {!u.congregation_name ? (
                         <span
                           className="inline-flex items-center rounded-full border border-red-600/30 bg-red-600/10 px-2.5 py-0.5 text-xs font-semibold text-red-600 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-400"
@@ -798,7 +816,7 @@ export default function UsersPage() {
                       >
                         {u.blocked ? <IconLockOpen /> : <IconLock />}
                       </Button>
-                      {restrictedManager ? null : (
+                      {restrictedManager || isSystemAdmin ? null : (
                         <Button
                           type="button"
                           variant="outline"
@@ -815,11 +833,19 @@ export default function UsersPage() {
                         variant="outline"
                         size="icon"
                         data-tooltip={
-                          restrictedManager && isAdminTarget
-                            ? 'Somente o administrador pode editar administradores'
-                            : 'Editar'
+                          isSystemAdmin
+                            ? 'Conta de sistema — apenas a senha pode ser alterada'
+                            : restrictedManager && isAdminTarget
+                              ? 'Somente o administrador pode editar administradores'
+                              : 'Editar'
                         }
-                        aria-label={restrictedManager && isAdminTarget ? 'Somente o administrador edita administradores' : 'Editar'}
+                        aria-label={
+                          isSystemAdmin
+                            ? 'Conta de sistema — apenas a senha pode ser alterada'
+                            : restrictedManager && isAdminTarget
+                              ? 'Somente o administrador edita administradores'
+                              : 'Editar'
+                        }
                         disabled={restrictedManager && isAdminTarget}
                         onClick={() => openEdit(u)}
                       >
@@ -852,8 +878,18 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle>Editar usuário</DialogTitle>
             <DialogDescription>
-              Atualize os dados de <span className="font-medium text-foreground">{editing?.name}</span>
-              . Deixe a senha em branco para manter a atual.
+              {editingIsSystemAdmin ? (
+                <>
+                  <span className="font-medium text-foreground">{editing?.name}</span> é a conta de
+                  sistema fixa. Apenas a senha pode ser alterada.
+                </>
+              ) : (
+                <>
+                  Atualize os dados de{' '}
+                  <span className="font-medium text-foreground">{editing?.name}</span>. Deixe a
+                  senha em branco para manter a atual.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -873,6 +909,7 @@ export default function UsersPage() {
                     setEditErrors((prev) => ({ ...prev, name: undefined }));
                   }
                 }}
+                disabled={editingIsSystemAdmin}
                 aria-invalid={Boolean(editErrors.name)}
                 aria-describedby={editErrors.name ? 'edit-name-error' : undefined}
               />
@@ -891,6 +928,7 @@ export default function UsersPage() {
                     setEditErrors((prev) => ({ ...prev, email: undefined }));
                   }
                 }}
+                disabled={editingIsSystemAdmin}
                 aria-invalid={Boolean(editErrors.email)}
                 aria-describedby={editErrors.email ? 'edit-email-error' : undefined}
               />
@@ -923,7 +961,10 @@ export default function UsersPage() {
                   }
                 }}
                 className={SELECT_CLASS}
-                disabled={me?.id === editing?.id && editing?.role?.slug === 'admin'}
+                disabled={
+                  editingIsSystemAdmin ||
+                  (me?.id === editing?.id && editing?.role?.slug === 'admin')
+                }
                 aria-invalid={Boolean(editErrors.role)}
                 aria-describedby={editErrors.role ? 'edit-role-error' : undefined}
               >
@@ -938,7 +979,7 @@ export default function UsersPage() {
               {editErrors.role ? <FieldError id="edit-role-error">{editErrors.role}</FieldError> : null}
             </div>
 
-            {restrictedManager ? null : (
+            {restrictedManager || editingIsSystemAdmin ? null : (
               <div className="min-w-0">
                 <CongregationPicker
                   id="edit-congregation"
@@ -965,6 +1006,12 @@ export default function UsersPage() {
               autoComplete="new-password"
               placeholder="••••••••••"
             />
+            {editingIsSystemAdmin ? (
+              <p className="-mt-1 text-xs text-muted-foreground">
+                Conta de sistema: nome, email, papel e congregação são fixos. Apenas a senha pode
+                ser alterada.
+              </p>
+            ) : null}
 
             <DialogFooter>
               <Button

@@ -32,6 +32,14 @@ export const ROLE_EDITOR = 'editor';
 export const ROLE_FIELD = 'field';
 export const ROLE_VIEWER = 'viewer';
 
+/** Email do administrador de sistema — conta única, imutável e protegida. */
+export const SYSTEM_ADMIN_EMAIL = 'admin@campo.local';
+
+/** Verdadeiro para o email reservado ao administrador de sistema. */
+export function isSystemAdminEmail(email: string | null | undefined): boolean {
+  return email != null && email.trim().toLowerCase() === SYSTEM_ADMIN_EMAIL;
+}
+
 /** Permissões padrão por papel (seed / referência) */
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, Scope[]> = {
   [ROLE_ADMIN]: [...SCOPES],

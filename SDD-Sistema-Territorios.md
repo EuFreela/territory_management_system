@@ -204,6 +204,14 @@ Admin (`slug = admin` ou `isAdmin`) tem **todos** os escopos implicitamente.
 | `field` | Campo | read, block:check |
 | `viewer` | Visualizador | read |
 
+> **Downloads/exportação em territórios** (imagem do mapa e backup .txt do não em casa) exigem
+> quem trabalha com o cartão — escopos `territory:update`, `block:manage` ou `block:check`
+> (campo, editor e admin). O `viewer` (somente `territory:read`) não baixa.
+
+> **Conta de sistema:** `admin@campo.local` é única e fixa. Não pode ser excluída, bloqueada,
+> ter papel/congregação/permissões alterados — somente a senha. O login ignora a flag `blocked`
+> dessa conta.
+
 ### 4.3 Enforcement
 
 - **API:** `requirePermission(scope)` / `requireAdmin` / `requireAuth`

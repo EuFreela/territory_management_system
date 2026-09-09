@@ -1966,6 +1966,13 @@
               </span>
             </div>
             <div class="part">
+              <strong class="label">Só quem trabalha com o cartão baixa</strong>
+              <span>
+                O backup e a imagem do mapa são para quem age no território (campo, editor ou
+                admin) — o visualizador não vê o botão de download.
+              </span>
+            </div>
+            <div class="part">
               <strong class="label">Escolher o dirigente</strong>
               <span>
                 Na janela que abre, selecione na lista quem foi o dirigente responsável pelo
@@ -2220,6 +2227,14 @@
               </span>
             </div>
             <div class="part">
+              <strong class="label">Conta de sistema (selo Sistema)</strong>
+              <span>
+                A conta admin@campo.local traz o selo <strong>Sistema</strong>: é a conta fixa do
+                sistema. Ela não tem cadeado (nunca é bloqueada), não tem chave (permissões
+                exclusivas) nem lixeira — só o lápis, para trocar a senha.
+              </span>
+            </div>
+            <div class="part">
               <strong class="label">Bloqueio e permissões exclusivas</strong>
               <span>
                 O cadeado bloqueia o login do usuário (e desbloqueia em seguida). A chave abre as
@@ -2230,7 +2245,8 @@
               <strong class="label">Lápis e lixeira</strong>
               <span>
                 O lápis edita a conta; a lixeira exclui, com confirmação. Você não bloqueia nem
-                exclui a própria conta.
+                exclui a própria conta, e a conta de sistema nunca é excluída — nela o lápis só
+                troca a senha.
               </span>
             </div>
           </div>
@@ -2283,8 +2299,9 @@
               <span>
                 Criar e editar dirigentes (a escala) é exclusivo de editor e admin — quem não
                 gerencia nem entra na página Dirigentes; campo e visualizador não editam o não em
-                casa, não marcam território do dia e não acessam a escala. Se um botão não
-                aparece, é porque o papel não tem essa permissão.
+                casa, não marcam território do dia e não acessam a escala. Baixar o backup (.txt)
+                e a imagem do mapa é de quem trabalha com o cartão — o visualizador não baixa. Se
+                um botão não aparece, é porque o papel não tem essa permissão.
               </span>
             </div>
             <div class="part">
@@ -2299,7 +2316,9 @@
               <strong class="label">Lápis e lixeira</strong>
               <span>
                 O lápis edita nome, email, papel, senha (em branco = não muda) e a congregação. A
-                lixeira exclui, com confirmação — você não pode excluir a própria conta.
+                lixeira exclui, com confirmação — você não pode excluir a própria conta. Na conta
+                de sistema (admin@campo.local) o lápis só troca a senha: nome, email, papel e
+                congregação ficam fixos.
               </span>
             </div>
           </div>
@@ -2390,7 +2409,10 @@
           <div class="parts" style="margin-top: 3mm">
             <div class="part">
               <strong class="label">Nome e Salvar</strong>
-              <span>O nome é o que os outros veem no mapa. Salvar grava só o nome.</span>
+              <span>
+                O nome é o que os outros veem no mapa. Salvar grava só o nome. Na conta de
+                sistema o nome é fixo — só a senha abaixo pode ser alterada.
+              </span>
             </div>
             <div class="part">
               <strong class="label">Trocar Senha</strong>

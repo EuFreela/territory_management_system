@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Request } from 'express';
 import { loadRbacUserById } from './load-user.js';
-import type { RbacUser } from './rbac.js';
+import { isSystemAdminEmail, type RbacUser } from './rbac.js';
 
 export type AuthUser = RbacUser;
 
@@ -118,7 +118,8 @@ export async function getUserFromRequest(req: Request): Promise<AuthUser | null>
     if (payload.jti && isTokenRevoked(payload.jti)) return null;
     const user = await loadRbacUserById(payload.userId);
     // Usuário bloqueado: encerra a sessão ativa de imediato (não consegue mais acessar).
-    if (!user || user.blocked) return null;
+    // A conta de sistema fica isenta do bloqueio — nunca pode ser bloqueada de logar.
+    if (!user || (user.blocked && !isSystemAdminEmail(user.email))) return null;
     return user;
   } catch {
     return null;

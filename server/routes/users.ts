@@ -5,7 +5,7 @@ import pool from '../lib/db.js';
 import { formatCep, onlyDigits } from '../lib/cep.js';
 import { listCongregationNames } from '../lib/cep-region.js';
 import { resolveWorkingCep } from '../lib/map-config.js';
-import { ROLE_ADMIN, SCOPES, isScope, type Scope } from '../lib/rbac.js';
+import { ROLE_ADMIN, SCOPES, isScope, isSystemAdminEmail, type Scope } from '../lib/rbac.js';
 import { isStrongPassword, validateStrongPassword } from '../lib/password.js';
 import { removeGpsPresence, removeSessionPresence } from '../lib/presence.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -577,7 +577,7 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, u.role_id, u.active_cep, r.slug AS role_slug
+      `SELECT u.id, u.email, u.role_id, u.active_cep, r.slug AS role_slug
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE u.id = ?`,
@@ -585,12 +585,45 @@ router.put('/:id', requireAuth, requirePermission('user:manage'), async (req, re
     );
     const target = (rows as Array<{
       id: number;
+      email: string;
       role_id: number | null;
       active_cep: string | null;
       role_slug: string | null;
     }>)[0];
     if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    // Conta de sistema (admin@campo.local): imutável — somente a senha pode ser trocada.
+    if (isSystemAdminEmail(target.email)) {
+      const actor = (req as AuthedRequest).user;
+      if (isRestrictedManager(actor)) {
+        res.status(403).json({
+          error: 'Somente o administrador pode editar a conta de sistema.',
+        });
+        return;
+      }
+      const { name, email, role_id, congregation_id, password } = parsed.data;
+      if (
+        name !== undefined ||
+        email !== undefined ||
+        role_id !== undefined ||
+        congregation_id !== undefined
+      ) {
+        res.status(403).json({
+          error:
+            'A conta de sistema é fixa. Nenhum dado pode ser alterado além da senha.',
+        });
+        return;
+      }
+      if (!password) {
+        res.status(400).json({ error: 'Nada para atualizar.' });
+        return;
+      }
+      const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      await pool.execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, id]);
+      res.json({ message: 'Senha da conta de sistema atualizada com sucesso.' });
       return;
     }
 
@@ -743,15 +776,23 @@ router.put('/:id/block-status', requireAuth, requirePermission('user:manage'), a
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, u.active_cep, r.slug AS role_slug
+      `SELECT u.id, u.email, u.active_cep, r.slug AS role_slug
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE u.id = ?`,
       [id],
     );
-    const target = (rows as Array<{ id: number; active_cep: string | null; role_slug: string | null }>)[0];
+    const target = (rows as Array<{ id: number; email: string; active_cep: string | null; role_slug: string | null }>)[0];
     if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    // Conta de sistema não pode ser bloqueada nem desbloqueada.
+    if (isSystemAdminEmail(target.email)) {
+      res.status(403).json({
+        error: 'A conta de sistema é fixa e nunca pode ser bloqueada.',
+      });
       return;
     }
 
@@ -888,9 +929,18 @@ router.put('/permissions/:id', requireAuth, requirePermission('user:manage'), as
       return;
     }
 
-    const [users] = await pool.execute('SELECT id FROM users WHERE id = ?', [id]);
-    if (!(users as unknown[]).length) {
+    const [users] = await pool.execute('SELECT id, email FROM users WHERE id = ?', [id]);
+    const target = (users as Array<{ id: number; email: string }>)[0];
+    if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    // Conta de sistema já tem acesso a tudo — permissões próprias são imutáveis.
+    if (isSystemAdminEmail(target.email)) {
+      res.status(403).json({
+        error: 'A conta de sistema já tem todas as permissões e não pode ser alterada.',
+      });
       return;
     }
 
@@ -943,15 +993,23 @@ router.delete('/:id', requireAuth, requirePermission('user:manage'), async (req,
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, u.active_cep, r.slug AS role_slug
+      `SELECT u.id, u.email, u.active_cep, r.slug AS role_slug
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE u.id = ?`,
       [id],
     );
-    const target = (rows as Array<{ id: number; active_cep: string | null; role_slug: string | null }>)[0];
+    const target = (rows as Array<{ id: number; email: string; active_cep: string | null; role_slug: string | null }>)[0];
     if (!target) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    // Conta de sistema nunca pode ser excluída — independente do número de admins.
+    if (isSystemAdminEmail(target.email)) {
+      res.status(403).json({
+        error: 'A conta de sistema é fixa e não pode ser excluída.',
+      });
       return;
     }
 

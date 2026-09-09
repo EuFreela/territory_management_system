@@ -5,7 +5,7 @@ import pool from '../lib/db.js';
 import { cookieOptions, getUserFromRequest, revokeTokenJti, signToken, verifyToken } from '../lib/auth.js';
 import { loadRbacUserById } from '../lib/load-user.js';
 import { isStrongPassword } from '../lib/password.js';
-import { normalizeThemePreference } from '../lib/rbac.js';
+import { normalizeThemePreference, isSystemAdminEmail } from '../lib/rbac.js';
 import { changePasswordSchema, loginSchema } from '../lib/validations.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { requireAuth, type AuthedRequest } from '../middleware/requireAuth.js';
@@ -68,7 +68,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       return;
     }
 
-    if ((user as { blocked?: boolean }).blocked) {
+    // A conta de sistema nunca pode ser bloqueada de entrar, mesmo com flag setada.
+    if ((user as { blocked?: boolean }).blocked && !isSystemAdminEmail(user.email)) {
       res.status(403).json({ error: 'Sua conta está bloqueada pelo administrador.' });
       return;
     }
@@ -189,6 +190,15 @@ router.put('/profile', requireAuth, async (req, res) => {
     }
 
     const authUser = (req as AuthedRequest).user;
+
+    // Conta de sistema: somente a senha é editável.
+    if (isSystemAdminEmail(authUser.email)) {
+      res.status(403).json({
+        error: 'A conta de sistema é fixa. Apenas a senha pode ser alterada.',
+      });
+      return;
+    }
+
     const name = parsed.data.name;
 
     await pool.execute('UPDATE users SET name = ? WHERE id = ?', [name, authUser.id]);

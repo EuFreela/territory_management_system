@@ -60,6 +60,9 @@ export default function TerritoryDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { can } = useAuth();
+  /** Download/exportação de território: só quem trabalha com o mapa/checklist — viewer não. */
+  const canDownload =
+    can('territory:update') || can('block:manage') || can('block:check');
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [mapConfig, setMapConfig] = useState<CepLocation | null>(null);
   const [error, setError] = useState('');
@@ -733,9 +736,13 @@ export default function TerritoryDetailPage() {
                     finishedKeys={blocksByQuadra
                       .filter(([, streets]) => streets.every((b) => blockProgress(b).finished))
                       .map(([name]) => name)}
-                    onPrintViewport={(viewport) => {
-                      void downloadMapCard(viewport);
-                    }}
+                    onPrintViewport={
+                      canDownload
+                        ? (viewport) => {
+                            void downloadMapCard(viewport);
+                          }
+                        : undefined
+                    }
                   />
                   {!hasArea && can('territory:update') ? (
                     <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
@@ -795,6 +802,7 @@ export default function TerritoryDetailPage() {
                     </Link>
                   </Button>
                 ) : null}
+                {canDownload ? (
                 <Button
                   type="button"
                   size="icon"
@@ -808,6 +816,7 @@ export default function TerritoryDetailPage() {
                 >
                   {backingUp ? <Spinner size="sm" /> : <IconDownload className="size-4" />}
                 </Button>
+              ) : null}
               </div>
             </div>
 

@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Conta de sistema fixa e download de território restrito (v0.0.46)',
+    items: [
+      'A conta admin@campo.local virou usuário de sistema fixo: nunca é excluída e nem bloqueada de entrar — nela só a senha pode ser alterada',
+      'Na tela de Usuários ela ganha o selo "Sistema": sem cadeado (bloqueio), sem chave (permissões exclusivas) e sem lixeira; o lápis abre a edição com nome, email, papel e congregação travados',
+      'Download/exportação de território restrito: gerar a imagem do mapa e salvar o backup (.txt) do não em casa passam a exigir quem trabalha com o cartão (campo, editor ou admin) — o visualizador não baixa mais',
+    ],
+  },
+  {
     title: 'Permissão própria para dirigentes (v0.0.45)',
     items: [
       'Nova permissão "Gerir escala de dirigentes" (schedule:manage), separada da de não em casa: por padrão, só editor e admin criam e editam dirigentes',
