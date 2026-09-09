@@ -40,6 +40,14 @@ type TabId = 'sistema' | 'atualizacoes';
 /** Atualizações baseadas no histórico de desenvolvimento (commits) */
 const updates: { title: string; items: string[] }[] = [
   {
+    title: 'Tutorial: seção Usuários e permissões revisada (v0.0.44)',
+    items: [
+      'Tutorial alinhado à tela atual de Usuários: menu com Minha conta, Criar usuários e Permissões; busca, selo do papel, "SC" (sem congregação), bloquear/desbloquear e permissões exclusivas',
+      'Nova página "Papéis e permissões (RBAC)" documentando a tela de Permissões: papéis de sistema fixos, papel admin "Somente leitura" e como criar/editar/excluir um papel',
+      'As folhas seguintes foram renuméradas — o documento passa a ter 47 páginas',
+    ],
+  },
+  {
     title: 'Backup com escolha do dirigente e datas padronizadas (v0.0.43)',
     items: [
       'O popup do backup traz a lista completa de dirigentes da escala (a mesma da página Dirigentes) num seletor, com nome, dia, horário e tipo (Fixo/Designado)',
