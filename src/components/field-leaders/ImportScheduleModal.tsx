@@ -13,6 +13,7 @@ import FieldError from '@/components/ui/FieldError';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { formatDateBr } from '@/lib/date';
 import {
   isAllowedScheduleTxtFile,
   parseScheduleProgram,
@@ -27,12 +28,6 @@ type Props = {
   onClose: () => void;
   onImported: () => void;
 };
-
-function formatDateBr(iso: string | null) {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return y && m && d ? `${d}/${m}/${y}` : iso;
-}
 
 function previewLabel(item: {
   is_fixed: boolean;

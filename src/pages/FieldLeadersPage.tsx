@@ -24,6 +24,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import ImportScheduleModal from '@/components/field-leaders/ImportScheduleModal';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { formatDateBr } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { FieldAssignment } from '@/lib/types';
 
@@ -115,14 +116,6 @@ function AssignmentTableColgroup({ canManage }: { canManage: boolean }) {
 const TD_CLASS = 'px-4 py-3 align-middle';
 const SELECT_CLASS =
   'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
-
-function formatDateBr(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const raw = String(iso).slice(0, 10);
-  const [y, m, d] = raw.split('-');
-  if (!y || !m || !d) return raw;
-  return `${d}/${m}/${y}`;
-}
 
 /** Dia da semana em PT a partir de YYYY-MM-DD (calendário local, sem UTC) */
 function weekdayLabelFromIsoDate(iso: string): string {

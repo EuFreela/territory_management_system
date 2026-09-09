@@ -123,6 +123,25 @@ router.get('/today', requireAuth, requirePermission('territory:read'), async (re
   });
 });
 
+/**
+ * Lista completa de dirigentes (a mesma da página Dirigentes), acessível a
+ * quem consulta sem gerir a escala — usada no popup de backup dos não em casa.
+ */
+router.get('/leaders', requireAuth, requirePermission('territory:read'), async (req, res) => {
+  const digits = workingDigits(req as AuthedRequest);
+  const [rows] = await pool.execute(
+    `SELECT * FROM field_assignments
+     WHERE ${sqlCepDigitsEq('cep')}
+     ORDER BY is_fixed ASC,
+       COALESCE(service_date, '9999-12-31') ASC,
+       fixed_weekday ASC,
+       sort_order ASC,
+       id ASC`,
+    [digits],
+  );
+  res.json(rows);
+});
+
 router.post(
   '/import',
   requireAuth,

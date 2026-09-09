@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { IconCheck, IconDownload } from '@/components/Map/mapIcons';
+import { useEffect, useState } from 'react';
+import { IconDownload } from '@/components/Map/mapIcons';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,8 +11,21 @@ import {
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/Spinner';
 import { api } from '@/lib/api';
+import { formatDateBr } from '@/lib/date';
 import type { FieldAssignment } from '@/lib/types';
-import { cn } from '@/lib/utils';
+
+/** Mesmo estilo dos demais selects do sistema (ver FieldLeadersPage) */
+const SELECT_CLASS =
+  'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-muted';
+
+function leaderOptionLabel(leader: FieldAssignment) {
+  const day = leader.service_date
+    ? formatDateBr(leader.service_date)
+    : leader.weekday_label?.trim() || '';
+  const time = leader.fixed_time?.trim();
+  const kind = leader.is_fixed ? 'Fixo' : 'Designado';
+  return `${leader.assignee_name}${day ? ` · ${day}` : ''}${time ? ` · ${time}` : ''} (${kind})`;
+}
 
 type Props = {
   onClose: () => void;
@@ -22,7 +35,8 @@ type Props = {
 
 /**
  * Escolhe o dirigente responsável pelo campo no dia em que os não em casa
- * foram registrados. O nome e o horário dele entram no arquivo do backup.
+ * foram registrados. Lista completa (a mesma da página Dirigentes); o nome
+ * e o horário do escolhido entram no arquivo do backup.
  */
 export default function BackupLeadersModal({ onClose, onConfirm }: Props) {
   const [leaders, setLeaders] = useState<FieldAssignment[]>([]);
@@ -32,10 +46,10 @@ export default function BackupLeadersModal({ onClose, onConfirm }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    api<{ dated: FieldAssignment[]; fixed: FieldAssignment[] }>('/api/field-assignments/today')
-      .then((data) => {
+    api<FieldAssignment[]>('/api/field-assignments/leaders')
+      .then((rows) => {
         if (cancelled) return;
-        setLeaders([...(data.dated ?? []), ...(data.fixed ?? [])]);
+        setLeaders(rows ?? []);
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Erro ao carregar.');
@@ -48,15 +62,7 @@ export default function BackupLeadersModal({ onClose, onConfirm }: Props) {
     };
   }, []);
 
-  const sortedLeaders = useMemo(() => {
-    return [...leaders].sort((a, b) => {
-      const delta = Number(b.is_fixed) - Number(a.is_fixed);
-      if (delta !== 0) return delta;
-      return String(a.fixed_time ?? '').localeCompare(String(b.fixed_time ?? ''));
-    });
-  }, [leaders]);
-
-  const selected = sortedLeaders.find((l) => String(l.id) === selectedId) ?? null;
+  const selected = leaders.find((l) => String(l.id) === selectedId) ?? null;
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -69,71 +75,31 @@ export default function BackupLeadersModal({ onClose, onConfirm }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="scrollbar-thin max-h-64 space-y-1.5 overflow-y-auto pr-1">
-          {loading ? (
-            <div className="flex justify-center py-6">
-              <Spinner label="Carregando dirigentes…" />
-            </div>
-          ) : error ? (
-            <p className="text-[13px] text-destructive">{error}</p>
-          ) : sortedLeaders.length === 0 ? (
-            <p className="py-4 text-center text-[13px] text-muted-foreground">
-              Nenhum dirigente na escala de hoje. O backup sairá sem dirigente.
-            </p>
-          ) : (
-            sortedLeaders.map((leader) => {
-              const isSelected = String(leader.id) === selectedId;
-              const time = leader.fixed_time?.trim();
-              return (
-                <button
-                  key={leader.id}
-                  type="button"
-                  onClick={() => setSelectedId(String(leader.id))}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition',
-                    isSelected
-                      ? 'border-primary/50 bg-primary/5'
-                      : 'border-border hover:bg-muted/60',
-                  )}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-medium text-foreground">
-                      {leader.assignee_name}
-                    </span>
-                    <span className="text-[12px] text-muted-foreground">
-                      {leader.is_fixed ? 'Fixo' : 'Designado'}
-                      {time ? ` · ${time}` : ''}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'flex size-5 shrink-0 items-center justify-center rounded-full border transition',
-                      isSelected
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-muted-foreground/40',
-                    )}
-                  >
-                    {isSelected ? <IconCheck className="size-3" /> : null}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-
-        {!loading && !error && sortedLeaders.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedId('');
-              setError('');
-            }}
-            className="w-fit text-[12px] font-medium text-muted-foreground underline underline-offset-4 transition hover:text-foreground"
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Spinner label="Carregando dirigentes…" />
+          </div>
+        ) : error ? (
+          <p className="text-[13px] text-destructive">{error}</p>
+        ) : leaders.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground">
+            Nenhum dirigente cadastrado. O backup sairá sem dirigente.
+          </p>
+        ) : (
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className={SELECT_CLASS}
+            autoFocus
           >
-            Backup sem dirigente
-          </button>
-        ) : null}
+            <option value="">— Sem dirigente —</option>
+            {leaders.map((leader) => (
+              <option key={leader.id} value={String(leader.id)}>
+                {leaderOptionLabel(leader)}
+              </option>
+            ))}
+          </select>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

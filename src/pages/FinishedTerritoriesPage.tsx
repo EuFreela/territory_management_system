@@ -26,58 +26,11 @@ import { confirmToast } from '@/lib/confirm-toast';
 import { Spinner } from '@/components/ui/Spinner';
 import FinishedMetrics from '@/components/finished/FinishedMetrics';
 import { api } from '@/lib/api';
+import { formatDateBr, formatDateTimeBr, formatTimeBr } from '@/lib/date';
 import { tooltipText } from '@/lib/tooltip';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
 import type { FinishedTerritoryHistory } from '@/lib/types';
-
-function formatDateBr(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const raw = String(iso).slice(0, 10);
-  const [y, m, d] = raw.split('-');
-  if (!y || !m || !d) return raw;
-  return `${d}/${m}/${y}`;
-}
-
-/** Data e hora da ação de finalizar (America/Sao_Paulo) */
-function formatDateTimeBr(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    // fallback: "YYYY-MM-DD HH:MM:SS" ou ISO sem Z
-    const s = String(iso).replace('T', ' ').slice(0, 16);
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
-    if (m) return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`;
-    return String(iso);
-  }
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-}
-
-/** Só a hora da ação de finalizar (America/Sao_Paulo) */
-function formatTimeBr(iso: string | null | undefined) {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    const s = String(iso).replace('T', ' ').slice(0, 16);
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
-    if (m) return `${m[4]}:${m[5]}`;
-    return String(iso);
-  }
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-}
 
 function normalize(text: string) {
   return text
