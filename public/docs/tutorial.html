@@ -656,7 +656,7 @@
             </p>
             <div class="meta">
               <span>Guia do usuário</span>
-              <span>v0.0.43</span>
+              <span>v0.0.44</span>
               <span>Setembro 2026</span>
             </div>
           </div>
@@ -706,59 +706,59 @@
               <span class="n">25–28</span>
             </li>
             <li>
-              <a href="#usuarios">Usuários e minha conta</a>
+              <a href="#usuarios">Usuários e permissões</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">29–31</span>
+              <span class="n">29–32</span>
             </li>
             <li>
               <a href="#configuracao">Configuração</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">32</span>
+              <span class="n">33</span>
             </li>
             <li>
               <a href="#congregacoes">Congregações</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">33</span>
+              <span class="n">34</span>
             </li>
             <li>
               <a href="#finalizados">Finalizados</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">34–36</span>
+              <span class="n">35–37</span>
             </li>
             <li>
               <a href="#chat">Chat</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">37–38</span>
+              <span class="n">38–39</span>
             </li>
             <li>
               <a href="#editar">Editar território</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">39–40</span>
+              <span class="n">40–41</span>
             </li>
             <li>
               <a href="#mapa">Mapa e GPS</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">41</span>
+              <span class="n">42</span>
             </li>
             <li>
               <a href="#relatorio">Relatório A4</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">42</span>
+              <span class="n">43</span>
             </li>
             <li>
               <a href="#sobre">Sobre</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">43–44</span>
+              <span class="n">44–45</span>
             </li>
             <li>
               <a href="#conta-menu">Ícone da conta</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">45</span>
+              <span class="n">46</span>
             </li>
             <li>
               <a href="#tema">Tema claro e escuro</a>
               <span class="dots" aria-hidden="true"></span>
-              <span class="n">46</span>
+              <span class="n">47</span>
             </li>
           </ol>
 
@@ -1019,13 +1019,14 @@
           <div class="sample">
             <img
               src="tutorial/inicio-menu-usuarios.webp"
-              alt="Menu Usuários aberto: Minha conta e Criar usuários"
+              alt="Menu Usuários aberto: Minha conta, Criar usuários e Permissões"
             />
             <div class="txt">
               <strong class="label">Usuários</strong>
               <p>
-                Minha conta: seu nome e senha. Criar usuários: cadastro de contas, só para o
-                administrador.
+                Minha conta: seu nome e senha. Criar usuários: cadastro de contas. Permissões:
+                os papéis do controle de acesso — as três aparecem conforme a sua permissão
+                (Permissões só para quem gerencia).
               </p>
             </div>
           </div>
@@ -1039,7 +1040,7 @@
               <strong class="label">Ícone da conta e tema</strong>
               <p>
                 A pessoa abre seus dados e os atalhos Configuração e Sair. O sol/lua ao lado
-                troca o tema. O detalhe está nas folhas 45 e 46.
+                troca o tema. O detalhe está nas folhas 46 e 47.
               </p>
             </div>
           </div>
@@ -2191,9 +2192,10 @@
           <p class="eyebrow">08 · Usuários</p>
           <h2>Contas e papéis</h2>
           <p>
-            No menu, <strong>Usuários → Criar usuários</strong>. Só o administrador vê esta
-            página. Em cima, o formulário de conta nova; embaixo, a lista com papel, lápis e
-            lixeira.
+            No menu, <strong>Usuários</strong> abre as opções <strong>Minha conta</strong>,
+            <strong>Criar usuários</strong> e — para quem tem a permissão de gerir usuários (na
+            prática, o administrador) — <strong>Permissões</strong>. Em cima, o formulário de
+            conta nova; embaixo, a lista de contas com busca, papel e as ações de cada uma.
           </p>
           <figure class="shot">
             <img
@@ -2202,6 +2204,36 @@
             />
             <figcaption>Gestão de usuários — captura real. Só o administrador entra aqui.</figcaption>
           </figure>
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Busca e contagem</strong>
+              <span>
+                O buscador filtra por nome, email ou papel; a contagem mostra quantos usuários
+                aparecem. “(você)” marca a própria conta.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Papel e congregação</strong>
+              <span>
+                Cada conta mostra o selo colorido do papel, o email e a congregação · CEP. O selo
+                vermelho “SC” significa “sem congregação”.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Bloqueio e permissões exclusivas</strong>
+              <span>
+                O cadeado bloqueia o login do usuário (e desbloqueia em seguida). A chave abre as
+                permissões exclusivas: dá direitos extras a uma pessoa, além dos do papel.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lápis e lixeira</strong>
+              <span>
+                O lápis edita a conta; a lixeira exclui, com confirmação. Você não bloqueia nem
+                exclui a própria conta.
+              </span>
+            </div>
+          </div>
         </div>
         <div class="page-foot">
           <span class="page-foot-left">
@@ -2240,22 +2272,33 @@
             <div class="part">
               <strong class="label">Papel</strong>
               <span>
-                O interrogação ao lado abre a janela Papéis e permissões. Admin: tudo. Editor:
-                territórios e escala. Campo: lê cartões e marca números. Visualizador: só lê.
+                O interrogação ao lado abre a janela <strong>Papéis e permissões</strong>: cada
+                papel lista as suas permissões. O resumo: admin gerencia tudo; editor cria e edita
+                territórios, define o do dia e gerencia o não em casa; campo vê cartões e marca
+                casas; visualizador só vê.
               </span>
             </div>
             <div class="part">
-              <strong class="label">Lápis e lixeira</strong>
+              <strong class="label">O que o papel define</strong>
               <span>
-                O lápis edita nome, email, papel e, se quiser, a senha (em branco = não muda). A
-                lixeira exclui, com confirmação — você não pode excluir a própria conta.
+                Campo não edita o não em casa, não marca território do dia e não acessa a escala
+                de dirigentes. Se um botão não aparece, é porque o papel não tem essa
+                permissão.
               </span>
             </div>
             <div class="part">
               <strong class="label">Região</strong>
               <span>
-                A conta nova entra no mesmo CEP de quem a cadastrou. Email e papel depois só o
-                administrador altera.
+                A conta nova entra na congregação de quem a cadastrou. Quem tem a permissão de
+                gerir usuários, mas não é admin, vê apenas os usuários comuns da própria
+                congregação e não mexe em administradores.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Lápis e lixeira</strong>
+              <span>
+                O lápis edita nome, email, papel, senha (em branco = não muda) e a congregação. A
+                lixeira exclui, com confirmação — você não pode excluir a própria conta.
               </span>
             </div>
           </div>
@@ -2273,7 +2316,57 @@
         </div>
       </article>
 
-      <!-- 31 MINHA CONTA -->
+      <!-- 31 PAPÉIS E PERMISSÕES -->
+      <article class="page" id="permissoes" aria-label="Papéis e permissões — a tela">
+        <div class="page-inner">
+          <p class="eyebrow">08 · Usuários</p>
+          <h2>Papéis e permissões (RBAC)</h2>
+          <p>
+            No menu, <strong>Usuários → Permissões</strong>. Os papéis são o coração do controle
+            de acesso: cada um é um nome + a lista de permissões que o usuário ganha ao ser
+            colocado nele. Para chegar aqui é preciso ter a permissão de gerir usuários; criar,
+            editar e excluir papel é só do administrador.
+          </p>
+          <div class="parts" style="margin-top: 3mm">
+            <div class="part">
+              <strong class="label">Uma linha por papel</strong>
+              <span>
+                Cada cartão traz o nome, o código (slug), a descrição e os selos das permissões.
+                O papel <strong>admin</strong> sempre tem tudo e aparece como “Somente leitura”.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Novo papel</strong>
+              <span>
+                Dê um nome, uma descrição opcional e marque as permissões. Cada uma mostra o nome
+                em português e o código (ex.: Gerir territórios · territory:update). As
+                permissões valem para quem receber aquele papel.
+              </span>
+            </div>
+            <div class="part">
+              <strong class="label">Editar e excluir</strong>
+              <span>
+                O lápis muda nome, descrição e permissões. A lixeira exclui — mas os papéis de
+                sistema (admin, editor, campo, visualizador) são fixos. Reatribua os usuários
+                antes de excluir um papel.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="page-foot">
+          <span class="page-foot-left">
+            <a class="to-toc" href="#sumario" title="Voltar ao sumário" aria-label="Voltar ao sumário">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path fill="currentColor" d="M8 2.6 2.6 8h2.9v5.4h4.9V8h2.9L8 2.6z" />
+              </svg>
+            </a>
+            <span>CAMPO · Tutorial · Permissões</span>
+          </span>
+          <span class="page-num">31</span>
+        </div>
+      </article>
+
+      <!-- 32 MINHA CONTA -->
       <article class="page" id="conta" aria-label="Minha conta">
         <div class="page-inner">
           <p class="eyebrow">08 · Usuários</p>
@@ -2314,11 +2407,11 @@
             </a>
             <span>CAMPO · Tutorial · Minha conta</span>
           </span>
-          <span class="page-num">31</span>
+          <span class="page-num">32</span>
         </div>
       </article>
 
-      <!-- 32 CONFIGURAÇÃO — A TELA -->
+      <!-- 33 CONFIGURAÇÃO — A TELA -->
       <article class="page" id="configuracao" aria-label="Configuração — a tela">
         <div class="page-inner">
           <p class="eyebrow">09 · Configuração</p>
@@ -2345,11 +2438,11 @@
             </a>
             <span>CAMPO · Tutorial · Configuração</span>
           </span>
-          <span class="page-num">32</span>
+          <span class="page-num">33</span>
         </div>
       </article>
 
-      <!-- 33 CONGREGAÇÕES — CADASTRO -->
+      <!-- 34 CONGREGAÇÕES — CADASTRO -->
       <article class="page" id="congregacoes" aria-label="Congregações — cadastro">
         <div class="page-inner">
           <p class="eyebrow">10 · Congregações</p>
@@ -2399,11 +2492,11 @@
             </a>
             <span>CAMPO · Tutorial · Congregações</span>
           </span>
-          <span class="page-num">33</span>
+          <span class="page-num">34</span>
         </div>
       </article>
 
-      <!-- 34 FINALIZADOS — A TELA -->
+      <!-- 35 FINALIZADOS — A TELA -->
       <article class="page" id="finalizados" aria-label="Finalizados — a tela">
         <div class="page-inner">
           <p class="eyebrow">10 · Finalizados</p>
@@ -2430,11 +2523,11 @@
             </a>
             <span>CAMPO · Tutorial · Finalizados</span>
           </span>
-          <span class="page-num">34</span>
+          <span class="page-num">35</span>
         </div>
       </article>
 
-      <!-- 35 FINALIZADOS — TABELA E RELATÓRIO -->
+      <!-- 36 FINALIZADOS — TABELA E RELATÓRIO -->
       <article class="page" id="finalizados-tabela" aria-label="Finalizados — tabela e relatório">
         <div class="page-inner">
           <p class="eyebrow">10 · Finalizados</p>
@@ -2482,11 +2575,11 @@
             </a>
             <span>CAMPO · Tutorial · Finalizados</span>
           </span>
-          <span class="page-num">35</span>
+          <span class="page-num">36</span>
         </div>
       </article>
 
-      <!-- 36 FINALIZADOS — MÉTRICAS -->
+      <!-- 37 FINALIZADOS — MÉTRICAS -->
       <article class="page" id="finalizados-metricas" aria-label="Finalizados — métricas">
         <div class="page-inner">
           <p class="eyebrow">10 · Finalizados</p>
@@ -2513,11 +2606,11 @@
             </a>
             <span>CAMPO · Tutorial · Finalizados</span>
           </span>
-          <span class="page-num">36</span>
+          <span class="page-num">37</span>
         </div>
       </article>
 
-      <!-- 37 CHAT — A TELA -->
+      <!-- 38 CHAT — A TELA -->
       <article class="page" id="chat" aria-label="Chat — a tela">
         <div class="page-inner">
           <p class="eyebrow">11 · Chat</p>
@@ -2544,11 +2637,11 @@
             </a>
             <span>CAMPO · Tutorial · Chat</span>
           </span>
-          <span class="page-num">37</span>
+          <span class="page-num">38</span>
         </div>
       </article>
 
-      <!-- 38 CHAT — O PAINEL -->
+      <!-- 39 CHAT — O PAINEL -->
       <article class="page" id="chat-painel" aria-label="Chat — o painel">
         <div class="page-inner">
           <p class="eyebrow">11 · Chat</p>
@@ -2599,11 +2692,11 @@
             </a>
             <span>CAMPO · Tutorial · Chat</span>
           </span>
-          <span class="page-num">38</span>
+          <span class="page-num">39</span>
         </div>
       </article>
 
-      <!-- 39 EDITAR TERRITÓRIO -->
+      <!-- 40 EDITAR TERRITÓRIO -->
       <article class="page" id="editar" aria-label="Editar território">
         <div class="page-inner">
           <p class="eyebrow">12 · Editar</p>
@@ -2631,11 +2724,11 @@
             </a>
             <span>CAMPO · Tutorial · Editar</span>
           </span>
-          <span class="page-num">39</span>
+          <span class="page-num">40</span>
         </div>
       </article>
 
-      <!-- 40 EDITAR — NÃO EM CASA -->
+      <!-- 41 EDITAR — NÃO EM CASA -->
       <article class="page" id="editar-nao-em-casa" aria-label="Editar — cadastrar não em casa">
         <div class="page-inner">
           <p class="eyebrow">12 · Editar</p>
@@ -2689,11 +2782,11 @@
             </a>
             <span>CAMPO · Tutorial · Editar</span>
           </span>
-          <span class="page-num">40</span>
+          <span class="page-num">41</span>
         </div>
       </article>
 
-      <!-- 41 MAPA E GPS -->
+      <!-- 42 MAPA E GPS -->
       <article class="page" id="mapa" aria-label="Mapa e GPS">
         <div class="page-inner">
           <p class="eyebrow">13 · Mapa</p>
@@ -2749,11 +2842,11 @@
             </a>
             <span>CAMPO · Tutorial · Mapa</span>
           </span>
-          <span class="page-num">41</span>
+          <span class="page-num">42</span>
         </div>
       </article>
 
-      <!-- 42 RELATÓRIO A4 -->
+      <!-- 43 RELATÓRIO A4 -->
       <article class="page" id="relatorio" aria-label="Relatório A4">
         <div class="page-inner">
           <p class="eyebrow">14 · Relatório</p>
@@ -2780,11 +2873,11 @@
             </a>
             <span>CAMPO · Tutorial · Relatório</span>
           </span>
-          <span class="page-num">42</span>
+          <span class="page-num">43</span>
         </div>
       </article>
 
-      <!-- 43 SOBRE — A TELA -->
+      <!-- 44 SOBRE — A TELA -->
       <article class="page" id="sobre" aria-label="Sobre — a tela">
         <div class="page-inner">
           <p class="eyebrow">15 · Sobre</p>
@@ -2810,11 +2903,11 @@
             </a>
             <span>CAMPO · Tutorial · Sobre</span>
           </span>
-          <span class="page-num">43</span>
+          <span class="page-num">44</span>
         </div>
       </article>
 
-      <!-- 44 SOBRE — ABAS -->
+      <!-- 45 SOBRE — ABAS -->
       <article class="page" id="sobre-abas" aria-label="Sobre — as abas">
         <div class="page-inner">
           <p class="eyebrow">15 · Sobre</p>
@@ -2860,11 +2953,11 @@
             </a>
             <span>CAMPO · Tutorial · Sobre</span>
           </span>
-          <span class="page-num">44</span>
+          <span class="page-num">45</span>
         </div>
       </article>
 
-      <!-- 45 ÍCONE DA CONTA -->
+      <!-- 46 ÍCONE DA CONTA -->
       <article class="page" id="conta-menu" aria-label="Ícone da conta">
         <div class="page-inner">
           <p class="eyebrow">16 · Conta</p>
@@ -2926,11 +3019,11 @@
             </a>
             <span>CAMPO · Tutorial · Conta</span>
           </span>
-          <span class="page-num">45</span>
+          <span class="page-num">46</span>
         </div>
       </article>
 
-      <!-- 46 TEMA -->
+      <!-- 47 TEMA -->
       <article class="page" id="tema" aria-label="Tema claro e escuro">
         <div class="page-inner">
           <p class="eyebrow">16 · Conta</p>
@@ -2973,7 +3066,7 @@
             </a>
             <span>CAMPO · Tutorial · Tema</span>
           </span>
-          <span class="page-num">46</span>
+          <span class="page-num">47</span>
         </div>
       </article>
     </div>
