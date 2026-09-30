@@ -46,7 +46,7 @@ export type RateLimitOptions = {
 
 /**
  * Rate limit em memória (por processo).
- * Adequado a 1 instância Node (VM / single process).
+ * Adequado a 1 instância Node (processo único).
  */
 export function rateLimit(options: RateLimitOptions) {
   const { windowMs, max, name, keyExtra } = options;

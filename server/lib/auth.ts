@@ -17,7 +17,7 @@ const DEV_FALLBACK = 'dev-secret-change-me';
 function resolveJwtSecret() {
   const fromEnv = (process.env.JWT_SECRET || '').trim();
   const appUrl = (process.env.VITE_APP_URL || '').trim();
-  // "Produção" = NODE_ENV=production OU app exposto por URL https (ex.: https://analp.tec.br)
+  // "Produção" = NODE_ENV=production OU app exposto por URL https
   const looksPublic = process.env.NODE_ENV === 'production' || /^https:\/\//i.test(appUrl);
 
   if (looksPublic && (!fromEnv || fromEnv === DEV_FALLBACK || fromEnv.length < 32)) {

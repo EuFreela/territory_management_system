@@ -21,7 +21,7 @@
 <a href="https://expressjs.com/"><img alt="Express" src="https://img.shields.io/badge/Express-5-111111?style=for-the-badge&logo=express&logoColor=white"/></a>
 <a href="https://www.mysql.com/"><img alt="MySQL" src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/></a>
 <a href="https://tailwindcss.com/"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white"/></a>
-<a href="https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8"><img alt="Versão" src="https://img.shields.io/badge/versão-0.0.8-7C3AED?style=for-the-badge"/></a>
+<a href="https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.46"><img alt="Versão" src="https://img.shields.io/badge/versão-0.0.46-7C3AED?style=for-the-badge"/></a>
 
 <br/>
 <br/>
@@ -206,6 +206,9 @@ A plataforma implementa boas práticas recomendadas de segurança para garantir 
 
 ---
 
+## Dependencias
+
+<a href="https://github.com/EuFreela/maps-tj">Mapas do território</a>
 
 <div align="center">
 
