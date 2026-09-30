@@ -1,7 +1,6 @@
 <div align="center">
 
 <!-- Banner -->
-
 <div style="display: inline-block; padding: 32px 40px; border-radius: 20px; border: 1px solid #E5E5E5; background: #FFFFFF; text-align: center; font-family: Inter, system-ui, sans-serif;">
   <div style="font-size: 44px;">🗺️</div>
   <div style="font-size: 30px; font-weight: 700; color: #171717; margin-top: 8px;">CAMPO</div>
@@ -16,7 +15,6 @@
 <br/>
 
 <!-- Badges -->
-
 <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black"/></a>
 <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/></a>
 <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white"/></a>
@@ -26,350 +24,141 @@
 <a href="https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8"><img alt="Versão" src="https://img.shields.io/badge/versão-0.0.8-7C3AED?style=for-the-badge"/></a>
 
 <br/>
+<br/>
 
-React · Node.js · Express · MySQL · Mapas
+**React · Node.js · Express · MySQL · Mapas**
 
 A organização de territórios, atividades de campo e registros operacionais em uma única aplicação web.
 
 <br/>
 
-<a href="#sobre">Sobre</a> · <a href="#funcionalidades">Funcionalidades</a> · <a href="#fluxo">Fluxo do sistema</a> · <a href="#stack">Stack</a> · <a href="#arquitetura">Arquitetura</a> · <a href="#seguranca">Segurança</a> · <a href="#versao">Versão</a>
+[Sobre](#sobre) · [Funcionalidades](#funcionalidades) · [Fluxo do Sistema](#fluxo) · [Stack Tecnológica](#stack) · [Arquitetura](#arquitetura) · [Segurança](#seguranca)
 
 </div>
 
-🎯 Sobre o projeto <a id="sobre"></a>
+---
 
-O CAMPO — Sistema de Gestão de Territórios de Campo é uma aplicação web desenvolvida para apoiar a organização de territórios, o planejamento de atividades e o acompanhamento de operações de campo.
+## 🎯 Sobre o projeto <a id="sobre"></a>
 
-A plataforma centraliza informações que podem estar dispersas em controles manuais, reunindo mapas, checklists, escalas e histórico de execução em uma interface responsiva.
+O **CAMPO — Sistema de Gestão de Territórios de Campo** é uma aplicação web desenvolvida para apoiar a organização de territórios, o planejamento de atividades e o acompanhamento de operações de campo. 
 
-O sistema foi desenvolvido para a Congregação Alpinópolis, considerando necessidades práticas de organização territorial, acompanhamento das atividades e gestão de usuários.
+A plataforma centraliza informações que costumam ficar dispersas em controles manuais, reunindo mapas, checklists, escalas e histórico de execução em uma interface moderna e responsiva. O sistema foi projetado especificamente para a *Congregação Alpinópolis*, atendendo a necessidades práticas de mapeamento geográfico e coordenação de equipes.
 
-Não é
+| ❌ O CAMPO não é: | ✅ O CAMPO é: |
+| :--- | :--- |
+| Apenas uma lista de tarefas estática | Uma plataforma viva para organizar territórios e atividades |
+| Um visualizador de mapas isolado | Gestão de territórios integrada diretamente a registros operacionais |
+| Um sistema de acesso genérico ou único | Uma aplicação robusta com perfis e permissões de usuário (RBAC) |
 
-É
+---
 
-❌ Apenas uma lista de tarefas
+## ✨ Funcionalidades <a id="funcionalidades"></a>
 
-✅ Uma plataforma para organizar territórios e atividades
+*   **🗺️ Gestão de territórios:** Cadastro detalhado e organização de territórios por localidades e numeração de identificação.
+*   **📍 Visualização geográfica:** Exibição dos territórios diretamente no mapa, utilizando dados em formato GeoJSON e suporte à busca inteligente de endereços.
+*   **🏠 Checklist de campo:** Acompanhamento dinâmico de blocos, ruas e residências visitadas durante as atividades ativas.
+*   **📆 Território do dia:** Definição em tempo real do território a ser trabalhado e registro direto de sua conclusão pelas equipes.
+*   **📊 Histórico de atividades:** Armazenamento centralizado de finalizações, quantidade de participantes envolvidos e relatórios acumulados.
+*   **👥 Escalas de dirigentes:** Organização e escala de responsáveis por dia da semana, data e períodos específicos (manhã ou noite).
+*   **🔐 Perfis de acesso:** Permissões granulares diferenciadas para os perfis *Administrador, Editor, Campo* e *Visualizador*.
+*   **🌗 Tema claro/escuro:** Preferência de aparência individual salva por usuário para melhor legibilidade em ambientes externos.
+*   **📱 Interface responsiva:** Layout adaptável e otimizado para o uso em smartphones, tablets ou computadores.
+*   **🧭 Usuários no mapa:** Exibição e monitoramento de múltiplos usuários ativos no mapa com identificação customizada por nome e cor.
 
-❌ Um mapa isolado
+---
 
-✅ Gestão de territórios integrada a registros operacionais
+## 🔄 Fluxo de utilização <a id="fluxo"></a>
 
-❌ Um sistema de acesso único
+O fluxo de trabalho do sistema unifica o planejamento estratégico ao acompanhamento operacional:
 
-✅ Aplicação com perfis e permissões de usuário
+Use o código com cuidado.
+[Organizar Territórios] ──> [Planejar Atividades] ──> [Executar o Trabalho] ──> [Registrar Conclusão] ──> [Consultar Histórico]
 
-✨ Funcionalidades <a id="funcionalidades"></a>
+1.  **Organizar territórios:** Administradores cadastram territórios e definem suas poligonais e informações geográficas.
+2.  **Planejar atividades:** Coordenadores definem o território ativo do dia e distribuem as escalas de dirigentes.
+3.  **Executar o trabalho:** As equipes em campo utilizam o checklist interativo no celular para marcar ruas e blocos visitados.
+4.  **Registrar a conclusão:** O dirigente finaliza a atividade do dia informando métricas como a quantidade de participantes.
+5.  **Consultar o histórico:** O sistema consolida os dados operacionais gerando relatórios de cobertura do território ao longo do tempo.
 
-Recurso
+### 👤 Perfis e permissões (RBAC)
 
-Descrição
+O cadastro público de contas está desabilitado por padrão. Os acessos são distribuídos e gerenciados por administradores conforme a tabela abaixo:
 
-🗺️ Gestão de territórios
+| Perfil | Finalidade Principal |
+| :--- | :--- |
+| **Administrador** | Controle total do sistema, configurações globais e gerenciamento de usuários. |
+| **Editor** | Atualização de registros, escalas e edição de informações territoriais. |
+| **Campo** | Acesso direcionado às ferramentas operacionais do dia, checklists e mapas em tempo real. |
+| **Visualizador** | Consulta de relatórios, histórico e informações do mapa, sem permissão de alteração. |
 
-Cadastro e organização de territórios por localidades e numeração.
+---
 
-📍 Visualização geográfica
+## 🧰 Stack tecnológica <a id="stack"></a>
 
-Exibição de territórios em mapa, uso de dados GeoJSON e busca de endereços.
+### Frontend
+*   **React 19:** Construção da interface de usuário baseada em componentes reativos de alta performance.
+*   **TypeScript:** Tipagem estática para maior segurança durante o desenvolvimento do ecossistema.
+*   **Vite 7:** Ferramenta de build de última geração para um ambiente de desenvolvimento instantâneo.
+*   **React Router 7:** Gerenciamento de rotas e navegação integrada da aplicação.
+*   **Tailwind CSS 4 + shadcn/ui:** Estilização utilitária e componentes de interface consistentes e acessíveis.
+*   **Leaflet / React Leaflet:** Biblioteca para renderização e manipulação de mapas interativos.
+*   **MapLibre:** Renderização de camadas de mapas vetoriais de alto desempenho.
+*   **Sonner:** Sistema de notificações de UI limpo e não intrusivo.
 
-🏠 Checklist de campo
+### Backend
+*   **Node.js:** Ambiente de execução javascript assíncrono para o servidor de aplicação.
+*   **Express 5:** Framework web minimalista para gerenciamento da camada HTTP e rotas da API.
+*   **TypeScript:** Padronização e tipagem estática também na camada de servidor.
+*   **MySQL + mysql2:** Banco de dados relacional estável e driver nativo de comunicação otimizado para conexões simultâneas.
+*   **jose:** Implementação leve para geração e validação de tokens JWT.
+*   **Zod:** Validação estrita de esquemas de dados no recebimento de requisições.
+*   **Bcrypt:** Criptografia avançada para armazenamento seguro de hashes de senhas.
 
-Acompanhamento de blocos, ruas e casas durante as atividades.
+### Recursos Cartográficos & Provedores de Dados
+*   **GeoJSON:** Padrão aberto utilizado para representar estruturas e geometrias geográficas dos territórios.
+*   **OpenStreetMap (Shortbread):** Fonte cartográfica base para dados abertos e mapeamentos comunitários.
+*   **Google Maps APIs:** Utilizado como mapeamento de apoio e no suporte inteligente para autocompletar e buscar endereços.
 
-📆 Território do dia
+---
 
-Definição do território a ser trabalhado e registro de sua conclusão.
+## 🏗️ Arquitetura do sistema <a id="arquitetura"></a>
 
-📊 Histórico de atividades
+O CAMPO adota o modelo de arquitetura desacoplada (Client-Server), dividindo de forma clara as responsabilidades de cada camada:
 
-Registro de finalizações, quantidade de participantes e histórico acumulado.
-
-👥 Escalas de dirigentes
-
-Organização de responsáveis por dia da semana, data e período (manhã/noite).
-
-🔐 Perfis de acesso
-
-Permissões diferenciadas para administrador, editor, campo e visualizador.
-
-🌗 Tema claro/escuro
-
-Preferência de aparência individual por usuário.
-
-📱 Interface responsiva
-
-Layout adaptável a diferentes tamanhos de tela.
-
-🧭 Visualização de usuários no mapa
-
-Exibição de múltiplos usuários com identificação por nome e cor.
-
-🔄 Fluxo de utilização <a id="fluxo"></a>
-
-O fluxo de trabalho reúne planejamento, execução e consulta de registros:
-
-Organizar territórios: cadastrar e consultar territórios e suas informações geográficas.
-
-Planejar atividades: definir o território do dia e organizar escalas de dirigentes.
-
-Executar o trabalho: utilizar o checklist para acompanhar ruas, blocos e casas.
-
-Registrar a conclusão: finalizar o território, informar a quantidade de participantes e salvar o registro.
-
-Consultar o histórico: acompanhar os registros acumulados das atividades realizadas.
-
-👤 Perfis e permissões
-
-O sistema utiliza controle de acesso baseado em papéis (RBAC) para separar as permissões conforme o perfil do usuário.
-
-Perfil
-
-Finalidade
-
-Administrador
-
-Administração do sistema e gerenciamento de usuários.
-
-Editor
-
-Edição de informações conforme as permissões atribuídas.
-
-Campo
-
-Acesso direcionado às atividades operacionais de campo.
-
-Visualizador
-
-Consulta de informações sem permissões de edição.
-
-O cadastro público está desabilitado; as contas são criadas por administradores.
-
-🧰 Stack tecnológica <a id="stack"></a>
-
-Frontend
-
-Tecnologia
-
-Responsabilidade
-
-React 19
-
-Construção da interface baseada em componentes.
-
-TypeScript
-
-Tipagem estática e organização do código.
-
-Vite 7
-
-Ferramentas de desenvolvimento e build.
-
-React Router 7
-
-Navegação entre páginas.
-
-Tailwind CSS 4
-
-Estilização da interface.
-
-shadcn/ui
-
-Componentes de interface.
-
-Leaflet / React Leaflet
-
-Interação com mapas.
-
-MapLibre
-
-Renderização de mapas vetoriais.
-
-Sonner
-
-Notificações da interface.
-
-Backend
-
-Tecnologia
-
-Responsabilidade
-
-Node.js
-
-Ambiente de execução do servidor.
-
-Express 5
-
-Aplicação backend e camada HTTP.
-
-TypeScript
-
-Tipagem e organização do código do servidor.
-
-MySQL
-
-Persistência relacional dos dados.
-
-mysql2
-
-Conexão com o banco de dados.
-
-jose
-
-Recursos de autenticação com JWT.
-
-Zod
-
-Validação de dados.
-
-bcrypt
-
-Hash de senhas.
-
-Mapas e dados geográficos
-
-GeoJSON para representar dados geográficos.
-
-Leaflet e React Leaflet para recursos cartográficos interativos.
-
-MapLibre para renderização de mapas vetoriais.
-
-OpenStreetMap Shortbread como fonte cartográfica.
-
-Google Maps como base cartográfica e suporte à busca de endereços.
-
-🏗️ Arquitetura <a id="arquitetura"></a>
-
-O CAMPO segue uma estrutura Full Stack, separando a interface, a aplicação de servidor e a persistência dos dados.
-
-CAMPO
+CAMPO (Arquitetura Geral)
 │
-├── Frontend
-│   ├── React + TypeScript
-│   ├── React Router
-│   ├── Tailwind CSS + shadcn/ui
-│   └── Interface e componentes cartográficos
+├── 📱 Frontend (Interface do Usuário)
+│   ├── React 19 + TypeScript / React Router 7
+│   ├── Design System (Tailwind CSS 4 + shadcn/ui)
+│   └── Camada Cartográfica (Leaflet / MapLibre)
 │
-├── Backend / Server
-│   ├── Node.js + Express
-│   ├── Rotas e regras de negócio
-│   ├── Autenticação e autorização
-│   └── Validação de dados
+├── ⚙️ Backend (Servidor de Aplicação)
+│   ├── Node.js + Express 5 + TypeScript
+│   ├── Middlewares (Autenticação, Rate Limit, RBAC)
+│   └── Validadores de Entrada (Zod)
 │
-├── Banco de dados
-│   └── MySQL
+├── 🗄️ Banco de Dados (Persistência)
+│   └── MySQL (Modelagem Relacional de Usuários, Territórios e Históricos)
 │
-└── Integrações geográficas
-    ├── Leaflet / MapLibre
-    ├── OpenStreetMap Shortbread
-    ├── Google Maps
-    └── Dados GeoJSON
+└── 🌐 Provedores Externos
+└── APIs Geográficas (OpenStreetMap / Google Maps GeoCoding)
 
-Responsabilidades por camada
+---
 
-Frontend: apresenta a interface, permite a interação com mapas e formulários e comunica-se com o backend.
+## 🔐 Segurança aplicada <a id="seguranca"></a>
 
-Backend (server): processa as requisições, aplica as regras da aplicação, valida dados e controla o acesso às funcionalidades.
+A plataforma implementa boas práticas recomendadas de segurança para garantir a integridade dos dados e a privacidade dos usuários:
 
-Banco de dados: armazena os dados persistentes do sistema.
+*   **Sessões Seguras:** Autenticação baseada em tokens JWT transmitidos exclusivamente via cookies com a flag `httpOnly`, prevenindo ataques do tipo XSS (Cross-Site Scripting).
+*   **Proteção de Credenciais:** As senhas dos usuários nunca são armazenadas em texto plano, utilizando a função de hash de criptografia `bcrypt` com fatores de custo computacional elevados.
+*   **Resiliência de Infraestrutura:** Inclusão de limitadores de requisições (*Rate Limiting*) nas rotas críticas de autenticação, reduzindo a viabilidade de ataques de força bruta (*Brute Force*).
+*   **Validação Sanitizada:** Todas as informações enviadas ao servidor passam obrigatoriamente por esquemas de validação do `Zod`, prevenindo a persistência de dados corrompidos ou injeções indesejadas no banco de dados.
 
-Integrações cartográficas: fornecem recursos de visualização e consulta geográfica.
+---
 
-🔐 Segurança <a id="seguranca"></a>
-
-A aplicação incorpora mecanismos de autenticação, controle de acesso e proteção de dados:
-
-Autenticação baseada em JWT.
-
-Cookies httpOnly para o armazenamento do token de autenticação.
-
-Hash de senhas com bcrypt.
-
-Limitação de tentativas de login para ajudar a reduzir ataques de força bruta.
-
-Controle de acesso baseado em papéis (RBAC).
-
-Cadastro público desabilitado e criação de contas por administradores.
-
-Validação de dados com Zod.
-
-Consultas SQL parametrizadas para ajudar a reduzir o risco de injeção de SQL.
-
-Requisitos de senha forte e alteração de senha.
-
-Essas medidas descrevem mecanismos implementados no projeto; não representam, por si só, uma certificação ou auditoria de segurança.
-
-🚀 Infraestrutura e implantação
-
-A aplicação utiliza Node.js para execução do servidor e Cloudflare Tunnel na conectividade com o ambiente de hospedagem.
-
-A estrutura de implantação contempla a aplicação web, o backend e a conexão com o banco de dados MySQL.
-
-📦 Versão e evolução <a id="versao"></a>
-
-Versão 0.0.8
-
-Destaques desta versão:
-
-Exibição de múltiplos usuários no mapa, identificados por nomes e cores.
-
-Integração de mapa vetorial OpenStreetMap Shortbread, com MapLibre como alternativa de renderização.
-
-Restrição da navegação do mapa à área de atuação de Alpinópolis, definida pelo CEP.
-
-Padronização das notificações com Sonner.
-
-Ajustes nas validações em português brasileiro.
-
-Melhorias gerais na interface.
-
-📌 Informações do projeto
-
-Campo
-
-Informação
-
-Projeto
-
-CAMPO — Sistema de Gestão de Territórios de Campo
-
-Organização
-
-Congregação Alpinópolis
-
-Categoria
-
-Aplicação web Full Stack
-
-Área
-
-Gestão de territórios e operações de campo
-
-Versão
-
-0.0.8
-
-Status
-
-Aplicação em produção
-
-Licença
-
-Privada, mediante solicitação
-
-🔗 Repositório
-
-O código-fonte e o histórico de versões estão disponíveis no GitHub:
-
-Repositório: territory_management_system
-
-Release v0.0.8: Consultar versão
 
 <div align="center">
 
-<sub>Desenvolvido para transformar a organização de atividades de campo em um fluxo digital integrado — CAMPO 🗺️</sub>
+<sub>CAMPO — Mais organização para o planejamento e acompanhamento das atividades de campo. 🗺️</sub>
 
 </div>
