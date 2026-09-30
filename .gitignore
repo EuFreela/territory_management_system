@@ -73,3 +73,6 @@ security-report-harness/
 # Scripts e capturas ad-hoc de teste
 test-*.mjs
 shot-*.png
+scripts/capture-*.mjs
+scripts/preview-*.mjs
+scripts/_tutorial-preview/

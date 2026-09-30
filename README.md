@@ -169,6 +169,32 @@ Essa organização favorece a separação de responsabilidades, a manutenção d
 
 ---
 
+## 🚀 Instalação <a id="instalacao"></a>
+
+```bash
+npm install
+cp .env.example .env      # preencha as credenciais do MySQL e o JWT_SECRET
+mysql -u root -p < db/schema.sql   # cria o banco e as tabelas (somente DDL, sem dados)
+npm run create:admin              # cria o administrador (senha aleatória forte)
+npm run dev
+```
+
+<details>
+<summary>Atualizações de schema (migrações incrementais)</summary>
+
+As migrações posteriores ao schema base ficam em `scripts/`, uma por npm script:
+
+```bash
+npm run migrate:rbac
+npm run migrate:congregations
+npm run migrate:schedule-manage
+# ...veja a lista completa em package.json > scripts
+```
+
+</details>
+
+---
+
 ## 🔐 Segurança aplicada <a id="seguranca"></a>
 
 A plataforma implementa boas práticas recomendadas de segurança para garantir a integridade dos dados e a privacidade dos usuários:
