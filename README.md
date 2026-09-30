@@ -123,25 +123,49 @@ O cadastro público de contas está desabilitado por padrão. Os acessos são di
 
 ## 🏗️ Arquitetura do sistema <a id="arquitetura"></a>
 
-O CAMPO adota o modelo de arquitetura desacoplada (Client-Server), dividindo de forma clara as responsabilidades de cada camada:
+O **CAMPO** adota uma arquitetura **Client-Server desacoplada**, com responsabilidades distribuídas entre as camadas de interface, processamento, persistência de dados e integração com serviços externos.
 
-CAMPO (Arquitetura Geral)
+Essa organização favorece a separação de responsabilidades, a manutenção do código e a evolução independente dos componentes.
+
+```text
+🗺️ CAMPO — Arquitetura Geral
 │
-├── 📱 Frontend (Interface do Usuário)
-│   ├── React 19 + TypeScript / React Router 7
-│   ├── Design System (Tailwind CSS 4 + shadcn/ui)
-│   └── Camada Cartográfica (Leaflet / MapLibre)
+├── 📱 Frontend — Interface do Usuário
+│   ├── React 19 + TypeScript
+│   ├── React Router 7 — Navegação
+│   ├── Tailwind CSS 4 + shadcn/ui — Design System
+│   └── Leaflet / MapLibre — Camada Cartográfica
 │
-├── ⚙️ Backend (Servidor de Aplicação)
+├── ⚙️ Backend — Servidor de Aplicação
 │   ├── Node.js + Express 5 + TypeScript
-│   ├── Middlewares (Autenticação, Rate Limit, RBAC)
-│   └── Validadores de Entrada (Zod)
+│   ├── Middlewares
+│   │   ├── Autenticação
+│   │   ├── Rate Limiting
+│   │   └── RBAC — Controle de Acesso por Perfil
+│   └── Zod — Validação de Dados de Entrada
 │
-├── 🗄️ Banco de Dados (Persistência)
-│   └── MySQL (Modelagem Relacional de Usuários, Territórios e Históricos)
+├── 🗄️ Banco de Dados — Persistência
+│   └── MySQL
+│       └── Modelagem Relacional
+│           ├── Usuários
+│           ├── Territórios
+│           └── Históricos de Atividades
 │
 └── 🌐 Provedores Externos
-└── APIs Geográficas (OpenStreetMap / Google Maps GeoCoding)
+    └── APIs Geográficas
+        ├── OpenStreetMap
+        └── Google Maps — Geocodificação
+```
+
+### 🔍 Responsabilidades das Camadas
+
+| Camada                  | Responsabilidade                                                                                  |
+| :---------------------- | :------------------------------------------------------------------------------------------------ |
+| **Frontend**            | Renderizar a interface, gerenciar a navegação e apresentar os recursos cartográficos.             |
+| **Backend**             | Processar requisições, aplicar regras de negócio, autenticar usuários e controlar permissões.     |
+| **Banco de Dados**      | Persistir e organizar os dados de usuários, territórios e históricos em uma estrutura relacional. |
+| **Provedores Externos** | Fornecer serviços e informações geográficas para os recursos de mapas e localização.              |
+
 
 ---
 
