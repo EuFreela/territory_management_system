@@ -1,301 +1,242 @@
-# CAMPO
+# CAMPO — Sistema de Gestão de Territórios de Campo
 
-**Sistema de gestão de territórios de campo** · Congregação Alpinópolis
+**Uma aplicação web Full Stack para planejamento, organização e acompanhamento de atividades de campo com suporte a informações geográficas.**
 
-**Versão:** [`v0.0.8`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8)
+O CAMPO é um sistema desenvolvido para centralizar a gestão de territórios, organizar atividades de campo e registrar o histórico de execução das operações.
 
-**Produção:** [https://analp.tec.br](https://analp.tec.br)
+A plataforma reúne visualização geográfica, organização de escalas, acompanhamento de atividades e gerenciamento de usuários em uma interface responsiva.
 
-Aplicação web para planejar, acompanhar e registrar o trabalho de campo: cartões de território no mapa, checklist de casas (não em casa), escala de dirigentes, território do dia, histórico de finalizações e controle de acesso por papéis.
-
----
-
-## Sobre
-
-O **CAMPO** centraliza o que antes ficava em planilhas e papel:
-
-| Área | O que faz |
-|------|-----------|
-| **Territórios** | Localidade, Terr. N.º, áreas no mapa (GeoJSON), busca de endereço |
-| **Território do dia** | Destaque no Início; finalizar com contagem de pessoas e histórico |
-| **Não em casa** | Quadras, ruas, casas e checklist; status finalizado |
-| **Dirigentes** | Escala com dias, horários e card de “hoje” (fuso `America/Sao_Paulo`) |
-| **Finalizados** | Histórico de finalizações (busca; remoção só admin) |
-| **Usuários (RBAC)** | Papéis admin, editor, campo e visualizador com permissões |
-| **Sobre** | Descrição do sistema + changelog da versão |
-| **Tema** | Light/dark salvo **por usuário** no banco |
-
-Interface no estilo Apple (tokens, menu responsivo, tooltips, dark mode).
+O projeto foi desenvolvido com foco em usabilidade, controle de acesso, organização de dados e integração entre serviços de backend e recursos cartográficos.
 
 ---
 
-## Stack
+## Visão geral
 
-| Camada | Tecnologia |
-|--------|------------|
-| Frontend | Vite 7, React 19, React Router 7, Tailwind CSS 4, shadcn/ui |
-| API | Express 5, TypeScript (`tsx`) |
-| Banco | MySQL (`mysql2`) |
-| Auth | JWT (`jose`) + cookie httpOnly |
-| Mapa | Leaflet + react-leaflet + Google Maps (basemap) |
-| Validação | Zod |
+O CAMPO foi concebido para substituir processos manuais e descentralizados por uma plataforma digital que permite organizar territórios, acompanhar atividades e consultar registros anteriores.
 
----
+A aplicação oferece recursos para diferentes perfis de usuários, permitindo que cada pessoa acesse as funcionalidades correspondentes ao seu nível de permissão.
 
-## Pré-requisitos
+### Principais funcionalidades
 
-- Node.js **20+**
-- MySQL **8+**
-- npm
+* **Gestão de territórios:** cadastro e organização de territórios, localidades e endereços.
+* **Visualização geográfica:** representação de territórios em mapas, com suporte a dados geográficos e busca de endereços.
+* **Controle de atividades:** atribuição de territórios do dia, registro de finalizações e acompanhamento do histórico.
+* **Checklist de campo:** acompanhamento de blocos, ruas e casas durante a execução das atividades.
+* **Gestão de escalas:** organização de dirigentes por data, dia da semana e período.
+* **Controle de acesso:** gerenciamento de permissões por perfil de usuário.
+* **Personalização da interface:** suporte aos temas claro e escuro, com preferência individual.
+* **Interface responsiva:** experiência adaptável a diferentes tamanhos de tela.
 
 ---
 
-## Configuração
+## Funcionalidades em detalhes
 
-### 1. Clone e instale
+### 1. Gestão e visualização de territórios
 
-```bash
-git clone https://github.com/EuFreela/territory_management_system.git
-cd territory_management_system
-npm install
-```
+O sistema permite organizar territórios por localidades e números, utilizando informações geográficas para facilitar a identificação e a navegação.
 
-### 2. Variáveis de ambiente
+Entre os recursos disponíveis estão:
 
-```bash
-cp .env.example .env
-```
+* Visualização dos territórios em mapa.
+* Utilização de dados geográficos no formato GeoJSON.
+* Busca de endereços.
+* Organização de localidades e numeração dos territórios.
+* Navegação geográfica com delimitação da área de atuação.
 
-Principais variáveis:
+### 2. Acompanhamento das atividades de campo
 
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=sua_senha
-DB_NAME=campo
+O CAMPO permite organizar e registrar a execução das atividades realizadas nos territórios.
 
-# Obrigatório em produção: mín. 32 caracteres aleatórios
-JWT_SECRET=gere-uma-chave-longa-aleatoria-com-pelo-menos-32-chars
-JWT_EXPIRES=12h
+Os recursos incluem:
 
-PORT=3001
-VITE_APP_URL=http://localhost:3000
+* Definição do território do dia.
+* Checklist de blocos, ruas e casas.
+* Registro da conclusão de um território.
+* Registro da quantidade de pessoas participantes.
+* Histórico acumulado das finalizações.
 
-# Google Maps no Leaflet (Maps JavaScript API no Google Cloud)
-VITE_GOOGLE_MAPS_API_KEY=sua_chave_google_maps
+### 3. Gestão de escalas
 
-# true só com HTTPS; false em HTTP local/LAN
-# COOKIE_SECURE=false
+A plataforma disponibiliza recursos para organizar a programação de dirigentes.
 
-APP_TIMEZONE=America/Sao_Paulo
+É possível estruturar escalas considerando:
 
-# CEP base do mapa (região de trabalho)
-TERRITORY_CEP=37940-000
-```
+* Dias da semana.
+* Datas específicas.
+* Períodos da manhã e da noite.
 
-### 3. Banco de dados
+### 4. Controle de acesso e usuários
 
-Schema inicial:
+O sistema utiliza controle de acesso baseado em papéis (RBAC), com diferentes níveis de permissão.
 
-```bash
-mysql -u root -p < migration.sql
-```
+Os perfis disponíveis são:
 
-Migrações auxiliares (se o banco já existia):
+| Perfil        | Descrição                                                             |
+| ------------- | --------------------------------------------------------------------- |
+| Administrador | Gerenciamento administrativo da aplicação e dos usuários.             |
+| Editor        | Acesso às funcionalidades de edição conforme as permissões definidas. |
+| Campo         | Perfil destinado às atividades operacionais de campo.                 |
+| Visualizador  | Acesso de consulta, sem permissões de edição.                         |
 
-```bash
-npm run migrate:rbac              # papéis e permissões
-npm run migrate:finish-history    # histórico de finalizações
-npm run migrate:theme             # preferência light/dark por usuário
-```
+O cadastro público de usuários é desabilitado. As contas são criadas por administradores.
 
-Crie o primeiro administrador (senha forte aleatória, exibida uma única vez):
+### 5. Experiência de uso
 
-```bash
-npm run create:admin
-```
+A interface foi desenvolvida para oferecer uma experiência consistente em diferentes dispositivos.
 
-> O `migration.sql` **não** cria usuário com senha padrão conhecida. Sem `create:admin` não há como logar.
+Entre os recursos de interface estão:
 
-Opcional — seed da escala de dirigentes:
-
-```bash
-node scripts/setup-field-leaders.js
-```
-
-### 4. Desenvolvimento
-
-```bash
-npm run dev
-```
-
-| Serviço | URL |
-|---------|-----|
-| Web | http://localhost:3000 |
-| API | http://localhost:3001 |
-
-O Vite faz proxy de `/api` → API.
-
-### 5. Produção
-
-```bash
-npm run build
-npm start
-```
-
-A API serve o frontend buildado (`dist`) e o fallback SPA (Express 5).
-
-#### Domínio de produção
-
-| Item | Valor |
-|------|--------|
-| URL pública | **https://analp.tec.br** |
-| App (origin) | `VITE_APP_URL=https://analp.tec.br` |
-| Cookie HTTPS | `COOKIE_SECURE=true` |
-| Google Maps (chave) | Restringir referrer a `https://analp.tec.br/*` |
-| Túnel / exposição | Cloudflare Tunnel → serviço local (ex.: porta da API / `npm start`) |
-
-Exemplo de trecho do `.env` na VM:
-
-```env
-VITE_APP_URL=https://analp.tec.br
-COOKIE_SECURE=true
-VITE_GOOGLE_MAPS_API_KEY=sua_chave
-```
-
-Após alterar `VITE_*`, rode **`npm run build`** e reinicie o processo Node.
+* Layout responsivo.
+* Temas claro e escuro.
+* Preferência de tema individual por usuário.
+* Componentes de interface reutilizáveis.
+* Notificações padronizadas.
+* Validação de formulários em português brasileiro.
 
 ---
 
-## Scripts
+## Tecnologias utilizadas
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Frontend + API em paralelo |
-| `npm run dev:web` | Só Vite |
-| `npm run dev:server` | Só API |
-| `npm run build` | Typecheck + build web + compile server |
-| `npm start` | API em produção (serve `dist`) |
-| `npm run migrate:rbac` | Migração RBAC |
-| `npm run migrate:finish-history` | Tabela de histórico de finalizações |
-| `npm run migrate:theme` | Coluna `theme_preference` em `users` |
-| `npm run migrate:daily-per-leader` | Coluna `daily_assignment_id` em `territories` (território do dia por dirigente) |
-| `npm run create:admin` | Cria o primeiro administrador com senha aleatória |
+O projeto utiliza uma arquitetura baseada em frontend e backend, com persistência relacional e integração com serviços de mapas.
+
+### Frontend
+
+| Tecnologia     | Aplicação                                 |
+| -------------- | ----------------------------------------- |
+| React 19       | Construção da interface.                  |
+| TypeScript     | Tipagem estática e organização do código. |
+| Vite 7         | Ferramenta de desenvolvimento e build.    |
+| React Router 7 | Navegação entre páginas.                  |
+| Tailwind CSS 4 | Estilização da interface.                 |
+| shadcn/ui      | Componentes de interface.                 |
+| Leaflet        | Recursos de mapas interativos.            |
+| React Leaflet  | Integração do Leaflet com React.          |
+| MapLibre       | Recursos de visualização cartográfica.    |
+
+### Backend
+
+| Tecnologia | Aplicação                                     |
+| ---------- | --------------------------------------------- |
+| Node.js    | Ambiente de execução.                         |
+| Express 5  | Construção da aplicação backend e das rotas.  |
+| TypeScript | Tipagem e organização do código.              |
+| MySQL      | Banco de dados relacional.                    |
+| mysql2     | Integração com o banco de dados.              |
+| jose       | Recursos relacionados à autenticação com JWT. |
+| Zod        | Validação de dados.                           |
+
+### Mapas e dados geográficos
+
+* Leaflet e React Leaflet para visualização cartográfica.
+* MapLibre para renderização de mapas vetoriais.
+* OpenStreetMap Shortbread como fonte de dados cartográficos.
+* Google Maps como base cartográfica.
+* GeoJSON para representação de informações geográficas.
 
 ---
 
-## Estrutura
+## Segurança
 
-```
-campo/
-├── src/                    # Frontend (React + Vite)
-│   ├── pages/              # Login, Início, Territórios, Dirigentes, Usuários, Sobre…
-│   ├── components/         # Shell, mapa, UI, guards de permissão
-│   └── lib/                # API client, auth, tema, tipos
-├── server/                 # API Express
-│   ├── routes/             # auth, territories, field-assignments, users
-│   ├── lib/                # DB, JWT, RBAC, finish-history…
-│   └── middleware/         # auth, permissões, rate limit
-├── scripts/                # Migrações auxiliares
-├── public/logo.webp        # Logo do sistema
-├── migration.sql           # Schema inicial MySQL
-└── package.json
+A aplicação incorpora mecanismos de segurança voltados à proteção do acesso e à integridade dos dados.
+
+Entre as medidas implementadas estão:
+
+* Cadastro público desabilitado.
+* Criação de contas por administradores.
+* Autenticação baseada em JWT.
+* Utilização de cookies `httpOnly` para armazenamento do token de autenticação.
+* Hash de senhas com bcrypt.
+* Limitação de tentativas de login.
+* Exigência de senha forte e alteração de senha.
+* Controle de acesso baseado em papéis (RBAC).
+* Utilização de consultas SQL parametrizadas para reduzir riscos de injeção de SQL.
+
+---
+
+## Arquitetura e organização
+
+O CAMPO utiliza uma estrutura Full Stack com responsabilidades distribuídas entre interface, backend e banco de dados.
+
+```text
+CAMPO
+│
+├── Frontend
+│   ├── React
+│   ├── TypeScript
+│   ├── Vite
+│   ├── React Router
+│   ├── Tailwind CSS
+│   └── Interface e recursos cartográficos
+│
+├── Backend
+│   ├── Node.js
+│   ├── Express
+│   ├── TypeScript
+│   ├── Autenticação e autorização
+│   ├── Validação de dados
+│   └── Regras de negócio
+│
+├── Persistência
+│   └── MySQL
+│
+└── Integrações
+    ├── Serviços cartográficos
+    └── Dados geográficos GeoJSON
 ```
 
 ---
 
-## Funcionalidades
+## Infraestrutura e implantação
 
-### Autenticação e segurança
+A aplicação utiliza uma infraestrutura baseada em Node.js para execução do sistema e Cloudflare Tunnel para conectividade com o ambiente de hospedagem.
 
-- Login com JWT em cookie httpOnly (cadastro **público desabilitado**)
-- Senha forte; troca obrigatória se a senha atual for fraca (`/change-password`)
-- Rate limit em login e troca de senha
-- Contas criadas apenas pelo administrador
-
-### Territórios e mapa
-
-- Cartões com localidade e Terr. N.º
-- Desenho de áreas, tela cheia, reenquadrar, desfazer/refazer
-- Busca de endereço (Nominatim) com pin no mapa
-- CEP global via `TERRITORY_CEP`
-
-### Território do dia e finalizados
-
-- Marcar / desvincular território do dia
-- Finalizar com quantidade de pessoas → histórico cumulativo
-- Página **Finalizados** com busca e exclusão (admin)
-
-### Não em casa
-
-- Quadra, rua e números das casas
-- Checklist por casa (confirmação ao desmarcar)
-- Destaque mapa ↔ cartão; status finalizado
-
-### Dirigentes
-
-- Escala por dia da semana e data específica
-- Horários (manhã/noite), card de “hoje” no topo
-
-### RBAC
-
-| Papel | Resumo |
-|-------|--------|
-| **admin** | Acesso total + usuários |
-| **editor** | Territórios e checklist (sem excluir nem gerir usuários) |
-| **field** | Leitura, território do dia e checklist |
-| **viewer** | Somente leitura de territórios |
-
-### Tema
-
-Preferência **light/dark** gravada em `users.theme_preference` (por conta). Na tela de login (sem sessão) usa cache local do dispositivo.
+A estrutura contempla a execução do backend, a disponibilização da interface e a integração com o banco de dados MySQL.
 
 ---
 
-## Segurança (checklist)
+## Evolução do projeto
 
-- Não commite o arquivo `.env`
-- Use `JWT_SECRET` forte (≥ 32 caracteres) em produção
-- `COOKIE_SECURE=true` apenas com HTTPS
-- Senhas com bcrypt; SQL com prepared statements
+### Versão 0.0.8
 
----
+A versão 0.0.8 trouxe melhorias na visualização cartográfica, no acompanhamento de usuários e na experiência de uso.
 
-## Changelog (v0.0.8)
+**Principais atualizações:**
 
-Resumo das entregas desta versão (detalhes também em **Sobre → Atualizações** no app):
-
-- GPS multi-usuário no mapa: quem está logado com GPS ativo aparece com nome e cor própria
-- Basemap OpenStreetMap Shortbread (vetorial via MapLibre) no fallback do Google Maps
-- Zoom e navegação limitados à região do CEP (Alpinópolis)
-- Toasts Sonner unificados (caixas quadradas, cores padrão, X interno) em todo o app
-- Validação em português (PT-BR) e campo de senha polido em Usuários
-- Lista de finalizados sem scrollbar e tooltips legíveis
-
-### Histórico (v0.0.7)
-
-- Confirmações padronizadas em alerta estilo iOS; gestão de usuários (RBAC); escala por data
-
-### Histórico (v0.0.6.2)
-
-- Lista de territórios por **Terr. N.º** com toggle crescente/decrescente
-- Tooltips compactos (1 linha, máx. 40 caracteres)
-
-### Histórico (v0.0.6.1)
-
-- Rota de carro; pan livre com GPS; voltar ao GPS ou às quadras
-
-Tag no repositório: [`v0.0.8`](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8)
+* Visualização de múltiplos usuários no mapa, com identificação por nomes e cores.
+* Integração com mapa vetorial OpenStreetMap Shortbread.
+* Utilização de MapLibre como alternativa de renderização cartográfica.
+* Restrição da navegação do mapa à área de atuação definida pelo CEP de Alpinópolis.
+* Padronização das notificações com Sonner.
+* Aprimoramento das validações em português brasileiro.
+* Melhorias gerais na interface.
 
 ---
 
-## Licença
+## Contexto do projeto
 
-Projeto privado / sob demanda. Ajuste conforme o acordo do freela.
+**CAMPO — Sistema de Gestão de Territórios de Campo**
+
+* **Organização:** Congregação Alpinópolis.
+* **Categoria:** Aplicação web Full Stack.
+* **Área:** Gestão de operações e informações geográficas.
+* **Versão:** 0.0.8.
+* **Status:** Aplicação em produção.
+* **Licença:** Privada, mediante solicitação.
 
 ---
 
-## Autor
+## Repositório
 
-Desenvolvido para gestão de territórios de campo das Testemunhas de Jeová · Congregação Alpinópolis.
+O código-fonte e o histórico de versões estão disponíveis no GitHub.
+
+**Repositório:** [territory_management_system](https://github.com/EuFreela/territory_management_system)
+
+**Versão 0.0.8:** [Consultar release](https://github.com/EuFreela/territory_management_system/releases/tag/v0.0.8)
+
+---
+
+## Considerações finais
+
+O CAMPO é um projeto que reúne desenvolvimento Full Stack, integração com mapas, gerenciamento de dados, autenticação e controle de acesso em uma aplicação voltada a uma necessidade operacional concreta.
+
+Sua implementação demonstra a integração entre diferentes tecnologias e a construção de uma solução que combina organização de informações, recursos geográficos e experiência de uso.
